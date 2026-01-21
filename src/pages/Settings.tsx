@@ -8,6 +8,7 @@ import {
 import { PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Modal } from "@/components/shared/Modal";
 import { Alert } from "@/components/shared/Alert";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { BusinessForm } from "@/components/settings/BusinessForm";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
@@ -38,7 +39,7 @@ export const Settings: FC = () => {
 
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(
-    null
+    null,
   );
 
   // Cargar empresas al montar el componente
@@ -107,7 +108,7 @@ export const Settings: FC = () => {
       const form = document.querySelector("form") as HTMLFormElement;
       if (form) {
         form.dispatchEvent(
-          new Event("submit", { cancelable: true, bubbles: true })
+          new Event("submit", { cancelable: true, bubbles: true }),
         );
       }
     }
@@ -169,7 +170,7 @@ export const Settings: FC = () => {
         },
       },
     ],
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -260,12 +261,10 @@ export const Settings: FC = () => {
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ajustes</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Gestiona los datos fiscales de las empresas
-            </p>
-          </div>
+          <PageHeader
+            title="Ajustes"
+            description="Gestiona los datos fiscales de las empresas"
+          />
           <button
             onClick={handleCreate}
             disabled={isSaving}
@@ -292,7 +291,7 @@ export const Settings: FC = () => {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -332,7 +331,7 @@ export const Settings: FC = () => {
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
