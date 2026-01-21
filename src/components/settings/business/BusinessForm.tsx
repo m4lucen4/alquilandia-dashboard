@@ -1,6 +1,7 @@
 import { type FC, useState } from "react";
 import InputField from "@/components/shared/InputField";
 import type { Business, BusinessFormData } from "@/types/business";
+import { validateBusinessForm } from "@/helpers/form";
 
 interface BusinessFormProps {
   business?: Business | null;
@@ -17,6 +18,10 @@ export const BusinessForm: FC<BusinessFormProps> = ({
     name: business?.name ?? "",
     nif: business?.nif ?? "",
     address: business?.address ?? "",
+    locality: business?.locality ?? "",
+    province: business?.province ?? "",
+    phone: business?.phone ?? "",
+    postal_code: business?.postal_code ?? "",
   }));
 
   const [errors, setErrors] = useState<
@@ -24,22 +29,7 @@ export const BusinessForm: FC<BusinessFormProps> = ({
   >({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof BusinessFormData, string>> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "El nombre es obligatorio";
-    }
-
-    if (!formData.nif.trim()) {
-      newErrors.nif = "El NIF es obligatorio";
-    } else if (!/^[A-Z0-9]{9}$/i.test(formData.nif.trim())) {
-      newErrors.nif = "El NIF debe tener 9 caracteres alfanuméricos";
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = "La dirección es obligatoria";
-    }
-
+    const newErrors = validateBusinessForm(formData);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,10 +80,58 @@ export const BusinessForm: FC<BusinessFormProps> = ({
         value={formData.address}
         onChange={handleChange}
         error={errors.address}
-        placeholder="Ej: Calle Principal 123, Madrid"
+        placeholder="Ej: Calle Principal 123"
         required
         disabled={isLoading}
       />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <InputField
+          label="Localidad"
+          name="locality"
+          value={formData.locality}
+          onChange={handleChange}
+          error={errors.locality}
+          placeholder="Ej: Madrid"
+          required
+          disabled={isLoading}
+        />
+
+        <InputField
+          label="Provincia"
+          name="province"
+          value={formData.province}
+          onChange={handleChange}
+          error={errors.province}
+          placeholder="Ej: Madrid"
+          required
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <InputField
+          label="Teléfono"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          placeholder="Ej: 912345678"
+          required
+          disabled={isLoading}
+        />
+
+        <InputField
+          label="Código Postal"
+          name="postal_code"
+          value={formData.postal_code}
+          onChange={handleChange}
+          error={errors.postal_code}
+          placeholder="Ej: 28001"
+          required
+          disabled={isLoading}
+        />
+      </div>
 
       {/* Hidden submit button - form will be submitted by modal's accept button */}
       <button type="submit" className="hidden" />

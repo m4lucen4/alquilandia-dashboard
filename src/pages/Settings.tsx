@@ -9,7 +9,7 @@ import { PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Modal } from "@/components/shared/Modal";
 import { Alert } from "@/components/shared/Alert";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { BusinessForm } from "@/components/settings/BusinessForm";
+import { BusinessForm } from "@/components/settings/business/BusinessForm";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchAllBusiness,
@@ -138,13 +138,6 @@ export const Settings: FC = () => {
         ),
       },
       {
-        accessorKey: "address",
-        header: "Dirección",
-        cell: (info) => (
-          <span className="text-gray-600">{info.getValue() as string}</span>
-        ),
-      },
-      {
         id: "actions",
         header: "Acciones",
         cell: (info) => {
@@ -193,13 +186,6 @@ export const Settings: FC = () => {
     (!deleteBusinessRequest.ok && deleteBusinessRequest.messages) ||
     null;
 
-  // Determinar si hay mensajes de éxito
-  const successMessage =
-    (createBusinessRequest.ok && createBusinessRequest.messages) ||
-    (updateBusinessRequest.ok && updateBusinessRequest.messages) ||
-    (deleteBusinessRequest.ok && deleteBusinessRequest.messages) ||
-    null;
-
   return (
     <>
       {/* Alertas */}
@@ -208,18 +194,6 @@ export const Settings: FC = () => {
           title="Error"
           description={errorMessage}
           onClose={() => dispatch(clearBusinessErrors())}
-        />
-      )}
-
-      {successMessage && (
-        <Alert
-          title="Éxito"
-          description={successMessage}
-          onClose={() => {
-            dispatch(clearCreateBusinessSuccess());
-            dispatch(clearUpdateBusinessSuccess());
-            dispatch(clearDeleteBusinessSuccess());
-          }}
         />
       )}
 

@@ -10,6 +10,7 @@ import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
+import { fetchAllBusiness } from "../redux/actions/business";
 import { Alert } from "../components/shared/Alert";
 import { Modal } from "../components/shared/Modal";
 import { Pagination } from "../components/budgets/Pagination";
@@ -21,11 +22,13 @@ export const Budgets: FC = () => {
   const { budgets, total, fetchBudgetsRequest } = useAppSelector(
     (state) => state.budgets,
   );
+  const { businesses } = useAppSelector((state) => state.business);
 
   const [pageIndex, setPageIndex] = useState(0);
   const pageSize = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
 
   // Estados para filtros de búsqueda
   const [budgetNumber, setBudgetNumber] = useState("");
@@ -34,6 +37,13 @@ export const Budgets: FC = () => {
     budgetNumber: "",
     clientName: "",
   });
+
+  // Cargar empresas al montar el componente
+  useEffect(() => {
+    if (businesses.length === 0) {
+      dispatch(fetchAllBusiness());
+    }
+  }, [dispatch, businesses.length]);
 
   useEffect(() => {
     // Construir query de filtros
@@ -253,14 +263,52 @@ export const Budgets: FC = () => {
             console.log(
               "Generando factura para presupuesto:",
               selectedBudget.id,
+              "Empresa seleccionada:",
+              selectedBusinessId,
             );
           }}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedBudget(null);
+            setSelectedBusinessId("");
           }}
         >
-          <p>Aquí irá la gestión de facturas</p>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-4 text-sm text-gray-600">
+                Selecciona la empresa emisora de la factura para el presupuesto{" "}
+                <span className="font-semibold">
+                  #{selectedBudget.budgetReference}
+                </span>
+              </p>
+
+              <label
+                htmlFor="business-select"
+                className="block text-sm font-medium text-gray-900"
+              >
+                Empresa <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="business-select"
+                value={selectedBusinessId}
+                onChange={(e) => setSelectedBusinessId(e.target.value)}
+                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Selecciona una empresa</option>
+                {businesses.map((business) => (
+                  <option key={business.id} value={business.id}>
+                    {business.name}
+                  </option>
+                ))}
+              </select>
+
+              {businesses.length === 0 && (
+                <p className="mt-2 text-sm text-gray-500">
+                  No hay empresas disponibles. Crea una empresa en Ajustes.
+                </p>
+              )}
+            </div>
+          </div>
         </Modal>
       )}
 

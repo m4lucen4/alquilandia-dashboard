@@ -27,6 +27,10 @@ export interface Database {
           name: string;
           nif: string;
           address: string;
+          locality: string;
+          province: string;
+          phone: string;
+          postal_code: string;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +39,10 @@ export interface Database {
           name: string;
           nif: string;
           address: string;
+          locality: string;
+          province: string;
+          phone: string;
+          postal_code: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -43,6 +51,10 @@ export interface Database {
           name?: string;
           nif?: string;
           address?: string;
+          locality?: string;
+          province?: string;
+          phone?: string;
+          postal_code?: string;
           updated_at?: string;
         };
       };

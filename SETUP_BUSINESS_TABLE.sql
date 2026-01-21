@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS public.business (
   name TEXT NOT NULL,
   nif TEXT NOT NULL UNIQUE,
   address TEXT NOT NULL,
+  locality TEXT NOT NULL,
+  province TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  postal_code TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -62,7 +66,7 @@ CREATE TRIGGER update_business_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Insertar datos de ejemplo (opcional)
-INSERT INTO public.business (name, nif, address) VALUES
-  ('Empresa Demo S.L.', 'B12345678', 'Calle Principal 123, Madrid'),
-  ('Alquilandia Sevilla', 'B87654321', 'Avenida de Andalucía 456, Sevilla')
+INSERT INTO public.business (name, nif, address, locality, province, phone, postal_code) VALUES
+  ('Empresa Demo S.L.', 'B12345678', 'Calle Principal 123', 'Madrid', 'Madrid', '912345678', '28001'),
+  ('Alquilandia Sevilla', 'B87654321', 'Avenida de Andalucía 456', 'Sevilla', 'Sevilla', '954123456', '41001')
 ON CONFLICT (nif) DO NOTHING;

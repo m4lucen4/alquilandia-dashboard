@@ -10,6 +10,10 @@ export interface Business {
   name: string;
   nif: string;
   address: string;
+  locality: string;
+  province: string;
+  phone: string;
+  postal_code: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -18,6 +22,10 @@ export interface BusinessFormData {
   name: string;
   nif: string;
   address: string;
+  locality: string;
+  province: string;
+  phone: string;
+  postal_code: string;
 }
 
 export interface BusinessInsert extends BusinessFormData {}
