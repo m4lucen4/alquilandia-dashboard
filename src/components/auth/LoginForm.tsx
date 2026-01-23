@@ -29,13 +29,13 @@ export const LoginForm: FC<LoginFormProps> = ({
   };
 
   const handleEmailBlur = () => {
-    setTouched({ ...touched, email: true });
+    setTouched((prev) => ({ ...prev, email: true }));
     const error = validateEmail(email);
     setEmailError(error);
   };
 
   const handlePasswordBlur = () => {
-    setTouched({ ...touched, password: true });
+    setTouched((prev) => ({ ...prev, password: true }));
     const error = validatePassword(password);
     setPasswordError(error);
   };

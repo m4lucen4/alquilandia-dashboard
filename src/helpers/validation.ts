@@ -1,3 +1,6 @@
+// Hoist RegExp outside function to avoid recreation on every call
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Valida si un email tiene una estructura válida
  * @param email - Email a validar
@@ -5,9 +8,8 @@
  */
 export const isValidEmail = (email: string): boolean => {
   if (!email) return false;
-  
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+
+  return EMAIL_REGEX.test(email);
 };
 
 /**

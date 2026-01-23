@@ -15,6 +15,16 @@ interface InputFieldProps {
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
 }
 
+// Hoist static CSS classes outside component to avoid recalculation on every render
+const BASE_INPUT_CLASSES =
+  'block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 sm:text-sm/6 transition-colors';
+
+const NORMAL_INPUT_CLASSES =
+  'outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600';
+
+const ERROR_INPUT_CLASSES =
+  'outline-1 -outline-offset-1 outline-red-500 focus:outline-2 focus:-outline-offset-2 focus:outline-red-600';
+
 const InputField = ({
   label,
   name,
@@ -31,17 +41,8 @@ const InputField = ({
 }: InputFieldProps) => {
   const inputId = `input-${name}`;
 
-  const baseInputClasses =
-    'block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 sm:text-sm/6 transition-colors';
-
-  const normalInputClasses =
-    'outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600';
-
-  const errorInputClasses =
-    'outline-1 -outline-offset-1 outline-red-500 focus:outline-2 focus:-outline-offset-2 focus:outline-red-600';
-
-  const inputClasses = `${baseInputClasses} ${
-    error ? errorInputClasses : normalInputClasses
+  const inputClasses = `${BASE_INPUT_CLASSES} ${
+    error ? ERROR_INPUT_CLASSES : NORMAL_INPUT_CLASSES
   }`;
 
   return (

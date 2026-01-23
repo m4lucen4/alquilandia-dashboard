@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { clearLoginErrors } from "../redux/slices/authSlice";
 import { login } from "../redux/actions/auth";
@@ -7,29 +7,31 @@ import { LoginForm } from "../components/auth/LoginForm";
 
 export const Login: FC = () => {
   const dispatch = useAppDispatch();
-  const loginRequest = useAppSelector((state) => state.auth.loginRequest);
+  // Use specific selectors to avoid unnecessary re-renders
+  const loginMessages = useAppSelector((state) => state.auth.loginRequest.messages);
+  const loginInProgress = useAppSelector((state) => state.auth.loginRequest.inProgress);
+  const loginOk = useAppSelector((state) => state.auth.loginRequest.ok);
 
-  const handleCloseAlert = () => {
+  const handleCloseAlert = useCallback(() => {
     dispatch(clearLoginErrors());
-  };
+  }, [dispatch]);
 
-  const handleSubmit = (email: string, password: string) => {
+  const handleSubmit = useCallback((email: string, password: string) => {
     dispatch(login({ email, password }));
-  };
+  }, [dispatch]);
 
-  const shouldShowError =
-    loginRequest.messages && !loginRequest.inProgress && !loginRequest.ok;
+  const shouldShowError = loginMessages && !loginInProgress && !loginOk;
 
   return (
     <>
       {shouldShowError && (
         <Alert
           title="Error en el inicio de sesión"
-          description={loginRequest.messages}
+          description={loginMessages}
           onClose={handleCloseAlert}
         />
       )}
-      <LoginForm onSubmit={handleSubmit} isLoading={loginRequest.inProgress} />
+      <LoginForm onSubmit={handleSubmit} isLoading={loginInProgress} />
     </>
   );
 };
