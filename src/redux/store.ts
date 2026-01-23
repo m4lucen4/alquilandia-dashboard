@@ -4,6 +4,8 @@ import storage from "redux-persist/lib/storage";
 import authReducer from "./slices/authSlice";
 import budgetsReducer from "./slices/budgetsSlice";
 import businessReducer from "./slices/businessSlice";
+import taxesTypesReducer from "./slices/taxesTypesSlice";
+import invoicesTypesReducer from "./slices/invoicesTypesSlice";
 
 const persistConfig = {
   key: "auth",
@@ -17,6 +19,8 @@ export const store = configureStore({
     auth: persistedAuthReducer,
     budgets: budgetsReducer,
     business: businessReducer,
+    taxesTypes: taxesTypesReducer,
+    invoicesTypes: invoicesTypesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

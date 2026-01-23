@@ -16,6 +16,8 @@ import { Modal } from "../components/shared/Modal";
 import { Pagination } from "../components/budgets/Pagination";
 import type { Budget } from "../types/budgets";
 import { formatDate } from "@/helpers/dates";
+import { formatCurrency } from "@/helpers";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
@@ -89,13 +91,6 @@ export const Budgets: FC = () => {
       clientName: "",
     });
     setPageIndex(0); // Reset a la primera página
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -313,13 +308,10 @@ export const Budgets: FC = () => {
       )}
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-3xl font-semibold text-gray-900">
-              Presupuestos
-            </h1>
-          </div>
-        </div>
+        <PageHeader
+          title="Presupuestos"
+          description="Gestiona tus presupuestos"
+        />
 
         {/* Buscador */}
         <div className="mt-6 rounded-lg bg-white p-4 shadow ring-1 ring-black/5">

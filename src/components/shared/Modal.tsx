@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "./Button";
 
 interface ModalProps {
   title: string;
@@ -92,18 +93,16 @@ export const Modal = ({
         {/* Footer with two buttons */}
         <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 sm:px-8">
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
+            <Button
+              title={cancelText}
               onClick={handleClose}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 sm:w-auto sm:px-6"
-            >
-              {cancelText}
-            </button>
-            <button
+              variant="secondary"
+            />
+            <Button
+              title={acceptText}
               onClick={handleAccept}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-800 sm:w-auto sm:px-6"
-            >
-              {acceptText}
-            </button>
+              variant="primary"
+            />
           </div>
         </div>
       </div>

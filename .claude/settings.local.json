@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(pnpm install:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Skill(supabase-postgres-best-practices)",
+      "Bash(xargs:*)",
+      "Skill(vercel-react-best-practices)"
     ]
   }
 }

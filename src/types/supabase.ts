@@ -58,6 +58,50 @@ export interface Database {
           updated_at?: string;
         };
       };
+      taxes_types: {
+        Row: {
+          id: string;
+          name: string;
+          tax: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          tax: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          tax?: number;
+          updated_at?: string;
+        };
+      };
+      invoices_types: {
+        Row: {
+          id: string;
+          invoices: string;
+          percentage: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoices: string;
+          percentage: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          invoices?: string;
+          percentage?: number;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       // Aquí van tus vistas
