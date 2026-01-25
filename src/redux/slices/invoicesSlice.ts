@@ -1,8 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { InvoicesState } from "@/types/invoices";
-import { createInvoice } from "../actions/invoices";
+import { fetchAllInvoices, createInvoice } from "../actions/invoices";
 
 const initialState: InvoicesState = {
+  invoices: [],
+  fetchInvoicesRequest: {
+    inProgress: false,
+    ok: false,
+    messages: "",
+  },
   createInvoiceRequest: {
     inProgress: false,
     ok: false,
@@ -15,6 +21,8 @@ const invoicesSlice = createSlice({
   initialState,
   reducers: {
     clearInvoicesErrors: (state) => {
+      state.fetchInvoicesRequest.messages = "";
+      state.fetchInvoicesRequest.ok = false;
       state.createInvoiceRequest.messages = "";
       state.createInvoiceRequest.ok = false;
     },
@@ -28,6 +36,24 @@ const invoicesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch all invoices
+      .addCase(fetchAllInvoices.pending, (state) => {
+        state.fetchInvoicesRequest.inProgress = true;
+        state.fetchInvoicesRequest.ok = false;
+        state.fetchInvoicesRequest.messages = "";
+      })
+      .addCase(fetchAllInvoices.fulfilled, (state, action) => {
+        state.fetchInvoicesRequest.inProgress = false;
+        state.fetchInvoicesRequest.ok = true;
+        state.fetchInvoicesRequest.messages = "";
+        state.invoices = action.payload;
+      })
+      .addCase(fetchAllInvoices.rejected, (state, action) => {
+        state.fetchInvoicesRequest.inProgress = false;
+        state.fetchInvoicesRequest.ok = false;
+        state.fetchInvoicesRequest.messages =
+          (action.payload as string) || "Error al cargar las facturas";
+      })
       // Create invoice
       .addCase(createInvoice.pending, (state) => {
         state.createInvoiceRequest.inProgress = true;

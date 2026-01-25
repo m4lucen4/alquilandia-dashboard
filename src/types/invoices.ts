@@ -15,6 +15,10 @@ export interface Invoice {
   price: Price;
   created_at?: string;
   updated_at?: string;
+  business?: {
+    id: string;
+    name: string;
+  };
 }
 
 /**
@@ -33,5 +37,7 @@ export interface CreateInvoiceData {
  * Redux state for invoices
  */
 export interface InvoicesState {
+  invoices: Invoice[];
+  fetchInvoicesRequest: IRequest;
   createInvoiceRequest: IRequest;
 }
