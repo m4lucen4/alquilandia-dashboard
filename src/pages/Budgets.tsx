@@ -11,6 +11,13 @@ import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
+import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
+import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
+import { createInvoice } from "../redux/actions/invoices";
+import {
+  clearInvoicesErrors,
+  resetCreateInvoiceRequest,
+} from "../redux/slices/invoicesSlice";
 import { Alert } from "../components/shared/Alert";
 import { Modal } from "../components/shared/Modal";
 import { Pagination } from "../components/budgets/Pagination";
@@ -25,12 +32,18 @@ export const Budgets: FC = () => {
     (state) => state.budgets,
   );
   const { businesses } = useAppSelector((state) => state.business);
+  const { taxesTypes } = useAppSelector((state) => state.taxesTypes);
+  const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
+  const { createInvoiceRequest } = useAppSelector((state) => state.invoices);
 
   const [pageIndex, setPageIndex] = useState(0);
   const pageSize = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
+  const [selectedInvoicesTypeId, setSelectedInvoicesTypeId] =
+    useState<string>("");
+  const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
 
   // Estados para filtros de búsqueda
   const [budgetNumber, setBudgetNumber] = useState("");
@@ -40,12 +53,14 @@ export const Budgets: FC = () => {
     clientName: "",
   });
 
-  // Cargar empresas al montar el componente
+  // Cargar empresas, tipos de impuestos y tipos de facturas al montar el componente
   useEffect(() => {
-    if (businesses.length === 0) {
-      dispatch(fetchAllBusiness());
-    }
-  }, [dispatch, businesses.length]);
+    Promise.all([
+      businesses.length === 0 && dispatch(fetchAllBusiness()),
+      taxesTypes.length === 0 && dispatch(fetchAllTaxesTypes()),
+      invoicesTypes.length === 0 && dispatch(fetchAllInvoicesTypes()),
+    ]);
+  }, [dispatch, businesses.length, taxesTypes.length, invoicesTypes.length]);
 
   useEffect(() => {
     // Construir query de filtros
@@ -73,6 +88,45 @@ export const Budgets: FC = () => {
 
   const handleCloseAlert = () => {
     dispatch(clearBudgetsErrors());
+  };
+
+  const handleCloseInvoiceAlert = () => {
+    dispatch(clearInvoicesErrors());
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedBudget(null);
+    setSelectedBusinessId("");
+    setSelectedInvoicesTypeId("");
+    setSelectedTaxesTypeId("");
+    dispatch(resetCreateInvoiceRequest());
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (
+      !selectedBudget ||
+      !selectedBusinessId ||
+      !selectedInvoicesTypeId ||
+      !selectedTaxesTypeId
+    ) {
+      return;
+    }
+
+    const result = await dispatch(
+      createInvoice({
+        business_id: selectedBusinessId,
+        invoices_type_id: selectedInvoicesTypeId,
+        taxes_type_id: selectedTaxesTypeId,
+        budget_reference: selectedBudget.budgetReference,
+        budgetlines: selectedBudget.budgetLines,
+        price: selectedBudget.price,
+      }),
+    );
+
+    if (createInvoice.fulfilled.match(result)) {
+      handleCloseModal();
+    }
   };
 
   const handleSearch = () => {
@@ -251,56 +305,137 @@ export const Budgets: FC = () => {
         />
       )}
 
+      {createInvoiceRequest.messages && !createInvoiceRequest.inProgress && (
+        <Alert
+          title={
+            createInvoiceRequest.ok
+              ? "Factura generada"
+              : "Error al generar factura"
+          }
+          description={createInvoiceRequest.messages}
+          onClose={handleCloseInvoiceAlert}
+        />
+      )}
+
       {isModalOpen && selectedBudget && (
         <Modal
           title="Generar Factura"
-          onAccept={() => {
-            console.log(
-              "Generando factura para presupuesto:",
-              selectedBudget.id,
-              "Empresa seleccionada:",
-              selectedBusinessId,
-            );
-          }}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedBudget(null);
-            setSelectedBusinessId("");
-          }}
+          onAccept={handleGenerateInvoice}
+          onClose={handleCloseModal}
+          acceptDisabled={
+            !selectedBusinessId ||
+            !selectedInvoicesTypeId ||
+            !selectedTaxesTypeId ||
+            createInvoiceRequest.inProgress
+          }
         >
           <div className="space-y-4">
             <div>
               <p className="mb-4 text-sm text-gray-600">
-                Selecciona la empresa emisora de la factura para el presupuesto{" "}
+                Selecciona los datos necesarios para generar la factura del
+                presupuesto{" "}
                 <span className="font-semibold">
                   #{selectedBudget.budgetReference}
                 </span>
               </p>
 
-              <label
-                htmlFor="business-select"
-                className="block text-sm font-medium text-gray-900"
-              >
-                Empresa <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="business-select"
-                value={selectedBusinessId}
-                onChange={(e) => setSelectedBusinessId(e.target.value)}
-                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Selecciona una empresa</option>
-                {businesses.map((business) => (
-                  <option key={business.id} value={business.id}>
-                    {business.name}
-                  </option>
-                ))}
-              </select>
+              {/* Business Select */}
+              <div className="mb-4">
+                <label
+                  htmlFor="business-select"
+                  className="block text-sm font-medium text-gray-900"
+                >
+                  Empresa <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="business-select"
+                  value={selectedBusinessId}
+                  onChange={(e) => setSelectedBusinessId(e.target.value)}
+                  disabled={createInvoiceRequest.inProgress}
+                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+                >
+                  <option value="">Selecciona una empresa</option>
+                  {businesses.map((business) => (
+                    <option key={business.id} value={business.id}>
+                      {business.name}
+                    </option>
+                  ))}
+                </select>
 
-              {businesses.length === 0 && (
-                <p className="mt-2 text-sm text-gray-500">
-                  No hay empresas disponibles. Crea una empresa en Ajustes.
-                </p>
+                {businesses.length === 0 && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    No hay empresas disponibles. Crea una empresa en Ajustes.
+                  </p>
+                )}
+              </div>
+
+              {/* Invoices Type Select */}
+              <div className="mb-4">
+                <label
+                  htmlFor="invoices-type-select"
+                  className="block text-sm font-medium text-gray-900"
+                >
+                  Tipo de Factura <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="invoices-type-select"
+                  value={selectedInvoicesTypeId}
+                  onChange={(e) => setSelectedInvoicesTypeId(e.target.value)}
+                  disabled={createInvoiceRequest.inProgress}
+                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+                >
+                  <option value="">Selecciona un tipo de factura</option>
+                  {invoicesTypes.map((invoiceType) => (
+                    <option key={invoiceType.id} value={invoiceType.id}>
+                      {invoiceType.invoices} ({invoiceType.percentage}%)
+                    </option>
+                  ))}
+                </select>
+
+                {invoicesTypes.length === 0 && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    No hay tipos de factura disponibles. Crea uno en Ajustes.
+                  </p>
+                )}
+              </div>
+
+              {/* Taxes Type Select */}
+              <div>
+                <label
+                  htmlFor="taxes-type-select"
+                  className="block text-sm font-medium text-gray-900"
+                >
+                  Tipo de Impuesto <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="taxes-type-select"
+                  value={selectedTaxesTypeId}
+                  onChange={(e) => setSelectedTaxesTypeId(e.target.value)}
+                  disabled={createInvoiceRequest.inProgress}
+                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+                >
+                  <option value="">Selecciona un tipo de impuesto</option>
+                  {taxesTypes.map((taxType) => (
+                    <option key={taxType.id} value={taxType.id}>
+                      {taxType.name} ({taxType.tax}%)
+                    </option>
+                  ))}
+                </select>
+
+                {taxesTypes.length === 0 && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    No hay tipos de impuesto disponibles. Crea uno en Ajustes.
+                  </p>
+                )}
+              </div>
+
+              {createInvoiceRequest.inProgress && (
+                <div className="mt-4 flex items-center justify-center">
+                  <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+                  <span className="ml-3 text-sm text-gray-600">
+                    Generando factura...
+                  </span>
+                </div>
               )}
             </div>
           </div>

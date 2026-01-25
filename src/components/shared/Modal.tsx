@@ -8,6 +8,7 @@ interface ModalProps {
   onClose?: () => void;
   acceptText?: string;
   cancelText?: string;
+  acceptDisabled?: boolean;
 }
 
 export const Modal = ({
@@ -17,6 +18,7 @@ export const Modal = ({
   onClose,
   acceptText = "Aceptar",
   cancelText = "Cancelar",
+  acceptDisabled = false,
 }: ModalProps) => {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -102,6 +104,7 @@ export const Modal = ({
               title={acceptText}
               onClick={handleAccept}
               variant="primary"
+              disabled={acceptDisabled}
             />
           </div>
         </div>

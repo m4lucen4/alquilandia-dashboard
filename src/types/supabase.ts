@@ -102,6 +102,43 @@ export interface Database {
           updated_at?: string;
         };
       };
+      invoices: {
+        Row: {
+          id: string;
+          business_id: string;
+          invoices_type_id: string;
+          taxes_type_id: string;
+          budget_reference: number;
+          invoice_number: number;
+          budgetlines: Json;
+          price: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          invoices_type_id: string;
+          taxes_type_id: string;
+          budget_reference: number;
+          invoice_number?: number;
+          budgetlines: Json;
+          price: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          business_id?: string;
+          invoices_type_id?: string;
+          taxes_type_id?: string;
+          budget_reference?: number;
+          invoice_number?: number;
+          budgetlines?: Json;
+          price?: Json;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       // Aquí van tus vistas
