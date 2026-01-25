@@ -23,6 +23,7 @@ CREATE TABLE invoices (
   invoice_number INTEGER NOT NULL,
   budgetlines JSONB NOT NULL DEFAULT '[]'::jsonb,
   price JSONB NOT NULL DEFAULT '{}'::jsonb,
+  pdf_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -35,6 +36,7 @@ CREATE INDEX idx_invoices_business_id ON invoices(business_id);
 CREATE INDEX idx_invoices_invoices_type_id ON invoices(invoices_type_id);
 CREATE INDEX idx_invoices_taxes_type_id ON invoices(taxes_type_id);
 CREATE INDEX idx_invoices_budget_reference ON invoices(budget_reference);
+CREATE INDEX idx_invoices_pdf_url ON invoices(pdf_url);
 CREATE INDEX idx_invoices_created_at ON invoices(created_at DESC);
 
 -- Create function to get next invoice number for a business
@@ -114,3 +116,4 @@ COMMENT ON COLUMN invoices.budget_reference IS 'Reference number of the original
 COMMENT ON COLUMN invoices.invoice_number IS 'Auto-increments independently for each business_id (business 1: 1,2,3... business 2: 1,2,3...)';
 COMMENT ON COLUMN invoices.budgetlines IS 'Array of budget line items from the original budget';
 COMMENT ON COLUMN invoices.price IS 'Price breakdown from the original budget (total, subTotal, vat, extras, etc.)';
+COMMENT ON COLUMN invoices.pdf_url IS 'URL of the generated PDF stored in Supabase Storage';

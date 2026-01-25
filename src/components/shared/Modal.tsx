@@ -92,14 +92,16 @@ export const Modal = ({
           </div>
         </div>
 
-        {/* Footer with two buttons */}
+        {/* Footer with buttons */}
         <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 sm:px-8">
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              title={cancelText}
-              onClick={handleClose}
-              variant="secondary"
-            />
+            {cancelText && (
+              <Button
+                title={cancelText}
+                onClick={handleClose}
+                variant="secondary"
+              />
+            )}
             <Button
               title={acceptText}
               onClick={handleAccept}

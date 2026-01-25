@@ -5,7 +5,10 @@
       "Bash(pnpm test:*)",
       "Skill(supabase-postgres-best-practices)",
       "Bash(xargs:*)",
-      "Skill(vercel-react-best-practices)"
+      "Skill(vercel-react-best-practices)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

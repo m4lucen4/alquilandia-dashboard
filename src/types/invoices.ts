@@ -13,11 +13,28 @@ export interface Invoice {
   invoice_number: number;
   budgetlines: BudgetLine[];
   price: Price;
+  pdf_url?: string;
   created_at?: string;
   updated_at?: string;
   business?: {
     id: string;
     name: string;
+    nif?: string;
+    address?: string;
+    locality?: string;
+    province?: string;
+    phone?: string;
+    postal_code?: string;
+  };
+  invoices_type?: {
+    id: string;
+    invoices: string;
+    percentage: number;
+  };
+  taxes_type?: {
+    id: string;
+    name: string;
+    tax: number;
   };
 }
 

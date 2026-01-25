@@ -5,6 +5,7 @@ import {
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchAllInvoices } from "@/redux/actions/invoices";
 import { fetchAllBusiness } from "@/redux/actions/business";
@@ -116,6 +117,28 @@ export const Invoices: FC = () => {
             {formatDate(info.getValue() as string)}
           </span>
         ),
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: (info) => {
+          const invoice = info.row.original;
+          return invoice.pdf_url ? (
+            <a
+              href={invoice.pdf_url}
+              download={`factura_${invoice.invoice_number}.pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              title="Descargar PDF"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4" />
+              PDF
+            </a>
+          ) : (
+            <span className="text-xs text-gray-400">Sin PDF</span>
+          );
+        },
       },
     ],
     [],

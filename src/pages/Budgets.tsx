@@ -6,14 +6,21 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+import {
+  EllipsisVerticalIcon,
+  DocumentCheckIcon,
+  ArrowDownTrayIcon,
+} from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
 import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
-import { createInvoice } from "../redux/actions/invoices";
+import {
+  createInvoice,
+  fetchAllInvoices,
+} from "../redux/actions/invoices";
 import {
   clearInvoicesErrors,
   resetCreateInvoiceRequest,
@@ -22,6 +29,8 @@ import { Alert } from "../components/shared/Alert";
 import { Modal } from "../components/shared/Modal";
 import { Pagination } from "../components/budgets/Pagination";
 import type { Budget } from "../types/budgets";
+import type { Invoice } from "../types/invoices";
+import { getInvoiceByBudgetReference } from "../services/invoicesService";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency } from "@/helpers";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -34,12 +43,17 @@ export const Budgets: FC = () => {
   const { businesses } = useAppSelector((state) => state.business);
   const { taxesTypes } = useAppSelector((state) => state.taxesTypes);
   const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
-  const { createInvoiceRequest } = useAppSelector((state) => state.invoices);
+  const { invoices, createInvoiceRequest } = useAppSelector(
+    (state) => state.invoices,
+  );
 
   const [pageIndex, setPageIndex] = useState(0);
   const pageSize = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
   const [selectedInvoicesTypeId, setSelectedInvoicesTypeId] =
     useState<string>("");
@@ -53,14 +67,22 @@ export const Budgets: FC = () => {
     clientName: "",
   });
 
-  // Cargar empresas, tipos de impuestos y tipos de facturas al montar el componente
+  // Cargar empresas, tipos de impuestos, tipos de facturas y facturas al montar el componente
   useEffect(() => {
     Promise.all([
       businesses.length === 0 && dispatch(fetchAllBusiness()),
       taxesTypes.length === 0 && dispatch(fetchAllTaxesTypes()),
       invoicesTypes.length === 0 && dispatch(fetchAllInvoicesTypes()),
+      dispatch(fetchAllInvoices(undefined)),
     ]);
   }, [dispatch, businesses.length, taxesTypes.length, invoicesTypes.length]);
+
+  // Helper function to check if a budget has an invoice
+  const budgetHasInvoice = (budgetReference: number): boolean => {
+    return invoices.some(
+      (invoice) => invoice.budget_reference === budgetReference,
+    );
+  };
 
   useEffect(() => {
     // Construir query de filtros
@@ -126,7 +148,35 @@ export const Budgets: FC = () => {
 
     if (createInvoice.fulfilled.match(result)) {
       handleCloseModal();
+      // Reload budgets to update the invoice indicator
+      dispatch(
+        fetchBudgets({
+          pageSize,
+          pageToFetch: pageIndex + 1,
+          filtersQuery: "",
+        }),
+      );
     }
+  };
+
+  const handleViewInvoice = async (budget: Budget) => {
+    setLoadingInvoice(true);
+    try {
+      const invoice = await getInvoiceByBudgetReference(budget.budgetReference);
+      if (invoice) {
+        setSelectedInvoice(invoice);
+        setIsViewInvoiceModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error loading invoice:", error);
+    } finally {
+      setLoadingInvoice(false);
+    }
+  };
+
+  const handleCloseViewInvoiceModal = () => {
+    setIsViewInvoiceModalOpen(false);
+    setSelectedInvoice(null);
   };
 
   const handleSearch = () => {
@@ -186,11 +236,21 @@ export const Budgets: FC = () => {
       {
         accessorKey: "budgetReference",
         header: "Nº Presupuesto",
-        cell: (info) => (
-          <span className="font-medium text-gray-900">
-            #{info.getValue() as number}
-          </span>
-        ),
+        cell: (info) => {
+          const budgetRef = info.getValue() as number;
+          const hasInvoice = budgetHasInvoice(budgetRef);
+          return (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-900">#{budgetRef}</span>
+              {hasInvoice && (
+                <DocumentCheckIcon
+                  className="h-5 w-5 text-green-600"
+                  title="Factura generada"
+                />
+              )}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "client",
@@ -244,21 +304,43 @@ export const Budgets: FC = () => {
                 className="absolute right-0 bottom-full z-10 mb-2 w-56 origin-bottom-right rounded-md bg-white shadow-lg ring-1 ring-black/5 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
               >
                 <div className="py-1">
-                  <MenuItem>
-                    {({ focus }) => (
-                      <button
-                        onClick={() => {
-                          setSelectedBudget(budget);
-                          setIsModalOpen(true);
-                        }}
-                        className={`${
-                          focus ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } block w-full px-4 py-2 text-left text-sm`}
-                      >
-                        Generar factura
-                      </button>
-                    )}
-                  </MenuItem>
+                  {!budgetHasInvoice(budget.budgetReference) ? (
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={() => {
+                            setSelectedBudget(budget);
+                            setIsModalOpen(true);
+                          }}
+                          className={`${
+                            focus
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700"
+                          } block w-full px-4 py-2 text-left text-sm`}
+                        >
+                          Generar factura
+                        </button>
+                      )}
+                    </MenuItem>
+                  ) : (
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={() => handleViewInvoice(budget)}
+                          disabled={loadingInvoice}
+                          className={`${
+                            focus
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700"
+                          } block w-full px-4 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          {loadingInvoice
+                            ? "Cargando..."
+                            : "Ver datos factura"}
+                        </button>
+                      )}
+                    </MenuItem>
+                  )}
                 </div>
               </MenuItems>
             </Menu>
@@ -437,6 +519,166 @@ export const Budgets: FC = () => {
                   </span>
                 </div>
               )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isViewInvoiceModalOpen && selectedInvoice && (
+        <Modal
+          title="Datos de la Factura"
+          onAccept={handleCloseViewInvoiceModal}
+          onClose={handleCloseViewInvoiceModal}
+          acceptText="Cerrar"
+          cancelText=""
+        >
+          <div className="space-y-6">
+            {/* Invoice Header */}
+            <div className="grid grid-cols-2 gap-4 border-b border-gray-200 pb-4">
+              <div>
+                <p className="text-xs text-gray-500">Nº Factura</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  #{selectedInvoice.invoice_number}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Nº Presupuesto</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  #{selectedInvoice.budget_reference}
+                </p>
+              </div>
+            </div>
+
+            {/* Download PDF Button */}
+            {selectedInvoice.pdf_url && (
+              <div className="flex justify-center">
+                <a
+                  href={selectedInvoice.pdf_url}
+                  download={`factura_${selectedInvoice.invoice_number}.pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5" />
+                  Descargar PDF
+                </a>
+              </div>
+            )}
+
+            {/* Business Information */}
+            <div>
+              <h4 className="mb-2 text-sm font-semibold text-gray-900">
+                Empresa Emisora
+              </h4>
+              <div className="rounded-lg bg-gray-50 p-3 text-sm">
+                <p className="font-medium text-gray-900">
+                  {selectedInvoice.business?.name}
+                </p>
+                {selectedInvoice.business?.nif && (
+                  <p className="text-gray-600">NIF: {selectedInvoice.business.nif}</p>
+                )}
+                {selectedInvoice.business?.address && (
+                  <p className="text-gray-600">
+                    {selectedInvoice.business.address}
+                  </p>
+                )}
+                {selectedInvoice.business?.locality && (
+                  <p className="text-gray-600">
+                    {selectedInvoice.business.postal_code}{" "}
+                    {selectedInvoice.business.locality},{" "}
+                    {selectedInvoice.business.province}
+                  </p>
+                )}
+                {selectedInvoice.business?.phone && (
+                  <p className="text-gray-600">
+                    Tel: {selectedInvoice.business.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Invoice Type and Tax Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-gray-900">
+                  Tipo de Factura
+                </h4>
+                <div className="rounded-lg bg-blue-50 p-3 text-sm">
+                  <p className="font-medium text-blue-900">
+                    {selectedInvoice.invoices_type?.invoices}
+                  </p>
+                  <p className="text-blue-700">
+                    {selectedInvoice.invoices_type?.percentage}%
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-gray-900">
+                  Tipo de Impuesto
+                </h4>
+                <div className="rounded-lg bg-green-50 p-3 text-sm">
+                  <p className="font-medium text-green-900">
+                    {selectedInvoice.taxes_type?.name}
+                  </p>
+                  <p className="text-green-700">
+                    {selectedInvoice.taxes_type?.tax}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Information */}
+            <div>
+              <h4 className="mb-2 text-sm font-semibold text-gray-900">
+                Información de Precio
+              </h4>
+              <div className="rounded-lg bg-gray-50 p-3 text-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(selectedInvoice.price?.subTotal || 0)}
+                  </span>
+                </div>
+                {selectedInvoice.price?.vat !== undefined && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-600">IVA:</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(selectedInvoice.price.vat)}
+                    </span>
+                  </div>
+                )}
+                {selectedInvoice.price?.extras !== undefined &&
+                  selectedInvoice.price.extras > 0 && (
+                    <div className="flex justify-between py-1">
+                      <span className="text-gray-600">Extras:</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(selectedInvoice.price.extras)}
+                      </span>
+                    </div>
+                  )}
+                {selectedInvoice.price?.userDiscount !== undefined &&
+                  selectedInvoice.price.userDiscount > 0 && (
+                    <div className="flex justify-between py-1">
+                      <span className="text-gray-600">Descuento:</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(selectedInvoice.price.userDiscount)}
+                      </span>
+                    </div>
+                  )}
+                <div className="mt-2 flex justify-between border-t border-gray-300 pt-2">
+                  <span className="font-semibold text-gray-900">Total:</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatCurrency(selectedInvoice.price?.total || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Creation Date */}
+            <div className="text-center text-xs text-gray-500">
+              Factura generada el{" "}
+              {selectedInvoice.created_at &&
+                formatDate(selectedInvoice.created_at)}
             </div>
           </div>
         </Modal>
