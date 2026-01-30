@@ -1,42 +1,30 @@
-import { type FC, useEffect, useMemo, useState } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from "@tanstack/react-table";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import {
-  EllipsisVerticalIcon,
-  DocumentCheckIcon,
-  ArrowDownTrayIcon,
-} from "@heroicons/react/24/outline";
+import { type FC, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
 import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
-import {
-  createInvoice,
-  fetchAllInvoices,
-} from "../redux/actions/invoices";
+import { createInvoice, fetchAllInvoices } from "../redux/actions/invoices";
 import {
   clearInvoicesErrors,
   resetCreateInvoiceRequest,
 } from "../redux/slices/invoicesSlice";
 import { Alert } from "../components/shared/Alert";
-import { Modal } from "../components/shared/Modal";
-import { Pagination } from "../components/budgets/Pagination";
+import { SearchBudgets } from "../components/budgets/SearchBudgets";
+import { BudgetsTable } from "../components/budgets/BudgetsTable";
 import type { Budget } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoiceByBudgetReference } from "../services/invoicesService";
-import { formatDate } from "@/helpers/dates";
-import { formatCurrency } from "@/helpers";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useBudgetSearch } from "../hooks/useBudgetSearch";
+import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
+import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
 
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { budgets, total, fetchBudgetsRequest } = useAppSelector(
     (state) => state.budgets,
   );
@@ -59,15 +47,18 @@ export const Budgets: FC = () => {
     useState<string>("");
   const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
 
-  // Estados para filtros de búsqueda
-  const [budgetNumber, setBudgetNumber] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState({
-    budgetNumber: "",
-    clientName: "",
-  });
+  // Hook personalizado para la lógica de búsqueda
+  const {
+    budgetNumber,
+    setBudgetNumber,
+    clientName,
+    setClientName,
+    appliedFilters,
+    handleSearch,
+    handleClearFilters,
+    buildFiltersQuery,
+  } = useBudgetSearch();
 
-  // Cargar empresas, tipos de impuestos, tipos de facturas y facturas al montar el componente
   useEffect(() => {
     Promise.all([
       businesses.length === 0 && dispatch(fetchAllBusiness()),
@@ -77,26 +68,17 @@ export const Budgets: FC = () => {
     ]);
   }, [dispatch, businesses.length, taxesTypes.length, invoicesTypes.length]);
 
-  // Helper function to check if a budget has an invoice
-  const budgetHasInvoice = (budgetReference: number): boolean => {
-    return invoices.some(
-      (invoice) => invoice.budget_reference === budgetReference,
-    );
-  };
+  const budgetHasInvoice = useCallback(
+    (budgetReference: number): boolean => {
+      return invoices.some(
+        (invoice) => invoice.budget_reference === budgetReference,
+      );
+    },
+    [invoices],
+  );
 
   useEffect(() => {
-    // Construir query de filtros
-    const filters: string[] = [];
-
-    if (appliedFilters.budgetNumber) {
-      filters.push(`budgetReference=${appliedFilters.budgetNumber}`);
-    }
-
-    if (appliedFilters.clientName) {
-      filters.push(`client=${encodeURIComponent(appliedFilters.clientName)}`);
-    }
-
-    const filtersQuery = filters.join("&");
+    const filtersQuery = buildFiltersQuery();
 
     dispatch(
       fetchBudgets({
@@ -108,24 +90,24 @@ export const Budgets: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageIndex, appliedFilters]);
 
-  const handleCloseAlert = () => {
+  const handleCloseAlert = useCallback(() => {
     dispatch(clearBudgetsErrors());
-  };
+  }, [dispatch]);
 
-  const handleCloseInvoiceAlert = () => {
+  const handleCloseInvoiceAlert = useCallback(() => {
     dispatch(clearInvoicesErrors());
-  };
+  }, [dispatch]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedBudget(null);
     setSelectedBusinessId("");
     setSelectedInvoicesTypeId("");
     setSelectedTaxesTypeId("");
     dispatch(resetCreateInvoiceRequest());
-  };
+  }, [dispatch]);
 
-  const handleGenerateInvoice = async () => {
+  const handleGenerateInvoice = useCallback(async () => {
     if (
       !selectedBudget ||
       !selectedBusinessId ||
@@ -148,18 +130,20 @@ export const Budgets: FC = () => {
 
     if (createInvoice.fulfilled.match(result)) {
       handleCloseModal();
-      // Reload budgets to update the invoice indicator
-      dispatch(
-        fetchBudgets({
-          pageSize,
-          pageToFetch: pageIndex + 1,
-          filtersQuery: "",
-        }),
-      );
+      // Navigate to invoices page
+      navigate("/accounting/invoices");
     }
-  };
+  }, [
+    selectedBudget,
+    selectedBusinessId,
+    selectedInvoicesTypeId,
+    selectedTaxesTypeId,
+    dispatch,
+    handleCloseModal,
+    navigate,
+  ]);
 
-  const handleViewInvoice = async (budget: Budget) => {
+  const handleViewInvoice = useCallback(async (budget: Budget) => {
     setLoadingInvoice(true);
     try {
       const invoice = await getInvoiceByBudgetReference(budget.budgetReference);
@@ -172,205 +156,12 @@ export const Budgets: FC = () => {
     } finally {
       setLoadingInvoice(false);
     }
-  };
+  }, []);
 
-  const handleCloseViewInvoiceModal = () => {
+  const handleCloseViewInvoiceModal = useCallback(() => {
     setIsViewInvoiceModalOpen(false);
     setSelectedInvoice(null);
-  };
-
-  const handleSearch = () => {
-    setAppliedFilters({
-      budgetNumber: budgetNumber.trim(),
-      clientName: clientName.trim(),
-    });
-    setPageIndex(0); // Reset a la primera página cuando se busca
-  };
-
-  const handleClearFilters = () => {
-    setBudgetNumber("");
-    setClientName("");
-    setAppliedFilters({
-      budgetNumber: "",
-      clientName: "",
-    });
-    setPageIndex(0); // Reset a la primera página
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; className: string }> = {
-      pending: {
-        label: "PAID_PENDING",
-        className: "bg-yellow-100 text-yellow-800",
-      },
-      confirmed: {
-        label: "Confirmado",
-        className: "bg-green-100 text-green-800",
-      },
-      cancelled: {
-        label: "Cancelado",
-        className: "bg-red-100 text-red-800",
-      },
-      completed: {
-        label: "Completado",
-        className: "bg-blue-100 text-blue-800",
-      },
-    };
-
-    const config = statusConfig[status] || {
-      label: status,
-      className: "bg-gray-100 text-gray-800",
-    };
-
-    return (
-      <span
-        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${config.className}`}
-      >
-        {config.label}
-      </span>
-    );
-  };
-
-  const columns = useMemo<ColumnDef<Budget>[]>(
-    () => [
-      {
-        accessorKey: "budgetReference",
-        header: "Nº Presupuesto",
-        cell: (info) => {
-          const budgetRef = info.getValue() as number;
-          const hasInvoice = budgetHasInvoice(budgetRef);
-          return (
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">#{budgetRef}</span>
-              {hasInvoice && (
-                <DocumentCheckIcon
-                  className="h-5 w-5 text-green-600"
-                  title="Factura generada"
-                />
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "client",
-        header: "Cliente",
-        cell: (info) => {
-          const budget = info.row.original;
-          const clientName = budget.client || budget.user?.FullName || "-";
-          return <span className="text-gray-900">{clientName}</span>;
-        },
-      },
-      {
-        accessorKey: "eventDate",
-        header: "Fecha Evento",
-        cell: (info) => (
-          <span className="text-gray-600">
-            {formatDate(info.getValue() as string)}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Estado",
-        cell: (info) => getStatusBadge(info.getValue() as string),
-      },
-      {
-        accessorKey: "price.total",
-        header: "Total",
-        cell: (info) => {
-          const budget = info.row.original;
-          return (
-            <span className="font-semibold text-gray-900">
-              {formatCurrency(budget.price?.total || 0)}
-            </span>
-          );
-        },
-      },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: (info) => {
-          const budget = info.row.original;
-          return (
-            <Menu as="div" className="relative inline-block text-left">
-              <MenuButton className="flex items-center rounded-full p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                <span className="sr-only">Abrir menú</span>
-                <EllipsisVerticalIcon className="h-5 w-5" aria-hidden="true" />
-              </MenuButton>
-
-              <MenuItems
-                transition
-                className="absolute right-0 bottom-full z-10 mb-2 w-56 origin-bottom-right rounded-md bg-white shadow-lg ring-1 ring-black/5 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-              >
-                <div className="py-1">
-                  {!budgetHasInvoice(budget.budgetReference) ? (
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          onClick={() => {
-                            setSelectedBudget(budget);
-                            setIsModalOpen(true);
-                          }}
-                          className={`${
-                            focus
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700"
-                          } block w-full px-4 py-2 text-left text-sm`}
-                        >
-                          Generar factura
-                        </button>
-                      )}
-                    </MenuItem>
-                  ) : (
-                    <MenuItem>
-                      {({ focus }) => (
-                        <button
-                          onClick={() => handleViewInvoice(budget)}
-                          disabled={loadingInvoice}
-                          className={`${
-                            focus
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700"
-                          } block w-full px-4 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50`}
-                        >
-                          {loadingInvoice
-                            ? "Cargando..."
-                            : "Ver datos factura"}
-                        </button>
-                      )}
-                    </MenuItem>
-                  )}
-                </div>
-              </MenuItems>
-            </Menu>
-          );
-        },
-      },
-    ],
-    [],
-  );
-
-  const table = useReactTable({
-    data: budgets,
-    columns,
-    pageCount: Math.ceil(total / pageSize),
-    state: {
-      pagination: {
-        pageIndex,
-        pageSize,
-      },
-    },
-    onPaginationChange: (updater) => {
-      const newPagination =
-        typeof updater === "function"
-          ? updater({ pageIndex, pageSize })
-          : updater;
-      setPageIndex(newPagination.pageIndex);
-    },
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-  });
+  }, []);
 
   const shouldShowError =
     fetchBudgetsRequest.messages &&
@@ -399,290 +190,28 @@ export const Budgets: FC = () => {
         />
       )}
 
-      {isModalOpen && selectedBudget && (
-        <Modal
-          title="Generar Factura"
-          onAccept={handleGenerateInvoice}
-          onClose={handleCloseModal}
-          acceptDisabled={
-            !selectedBusinessId ||
-            !selectedInvoicesTypeId ||
-            !selectedTaxesTypeId ||
-            createInvoiceRequest.inProgress
-          }
-        >
-          <div className="space-y-4">
-            <div>
-              <p className="mb-4 text-sm text-gray-600">
-                Selecciona los datos necesarios para generar la factura del
-                presupuesto{" "}
-                <span className="font-semibold">
-                  #{selectedBudget.budgetReference}
-                </span>
-              </p>
+      <ModalGenerateInvoice
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onGenerate={handleGenerateInvoice}
+        selectedBudget={selectedBudget}
+        businesses={businesses}
+        invoicesTypes={invoicesTypes}
+        taxesTypes={taxesTypes}
+        selectedBusinessId={selectedBusinessId}
+        setSelectedBusinessId={setSelectedBusinessId}
+        selectedInvoicesTypeId={selectedInvoicesTypeId}
+        setSelectedInvoicesTypeId={setSelectedInvoicesTypeId}
+        selectedTaxesTypeId={selectedTaxesTypeId}
+        setSelectedTaxesTypeId={setSelectedTaxesTypeId}
+        isGenerating={createInvoiceRequest.inProgress}
+      />
 
-              {/* Business Select */}
-              <div className="mb-4">
-                <label
-                  htmlFor="business-select"
-                  className="block text-sm font-medium text-gray-900"
-                >
-                  Empresa <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="business-select"
-                  value={selectedBusinessId}
-                  onChange={(e) => setSelectedBusinessId(e.target.value)}
-                  disabled={createInvoiceRequest.inProgress}
-                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
-                >
-                  <option value="">Selecciona una empresa</option>
-                  {businesses.map((business) => (
-                    <option key={business.id} value={business.id}>
-                      {business.name}
-                    </option>
-                  ))}
-                </select>
-
-                {businesses.length === 0 && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    No hay empresas disponibles. Crea una empresa en Ajustes.
-                  </p>
-                )}
-              </div>
-
-              {/* Invoices Type Select */}
-              <div className="mb-4">
-                <label
-                  htmlFor="invoices-type-select"
-                  className="block text-sm font-medium text-gray-900"
-                >
-                  Tipo de Factura <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="invoices-type-select"
-                  value={selectedInvoicesTypeId}
-                  onChange={(e) => setSelectedInvoicesTypeId(e.target.value)}
-                  disabled={createInvoiceRequest.inProgress}
-                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
-                >
-                  <option value="">Selecciona un tipo de factura</option>
-                  {invoicesTypes.map((invoiceType) => (
-                    <option key={invoiceType.id} value={invoiceType.id}>
-                      {invoiceType.invoices} ({invoiceType.percentage}%)
-                    </option>
-                  ))}
-                </select>
-
-                {invoicesTypes.length === 0 && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    No hay tipos de factura disponibles. Crea uno en Ajustes.
-                  </p>
-                )}
-              </div>
-
-              {/* Taxes Type Select */}
-              <div>
-                <label
-                  htmlFor="taxes-type-select"
-                  className="block text-sm font-medium text-gray-900"
-                >
-                  Tipo de Impuesto <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="taxes-type-select"
-                  value={selectedTaxesTypeId}
-                  onChange={(e) => setSelectedTaxesTypeId(e.target.value)}
-                  disabled={createInvoiceRequest.inProgress}
-                  className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
-                >
-                  <option value="">Selecciona un tipo de impuesto</option>
-                  {taxesTypes.map((taxType) => (
-                    <option key={taxType.id} value={taxType.id}>
-                      {taxType.name} ({taxType.tax}%)
-                    </option>
-                  ))}
-                </select>
-
-                {taxesTypes.length === 0 && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    No hay tipos de impuesto disponibles. Crea uno en Ajustes.
-                  </p>
-                )}
-              </div>
-
-              {createInvoiceRequest.inProgress && (
-                <div className="mt-4 flex items-center justify-center">
-                  <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                  <span className="ml-3 text-sm text-gray-600">
-                    Generando factura...
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {isViewInvoiceModalOpen && selectedInvoice && (
-        <Modal
-          title="Datos de la Factura"
-          onAccept={handleCloseViewInvoiceModal}
-          onClose={handleCloseViewInvoiceModal}
-          acceptText="Cerrar"
-          cancelText=""
-        >
-          <div className="space-y-6">
-            {/* Invoice Header */}
-            <div className="grid grid-cols-2 gap-4 border-b border-gray-200 pb-4">
-              <div>
-                <p className="text-xs text-gray-500">Nº Factura</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  #{selectedInvoice.invoice_number}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Nº Presupuesto</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  #{selectedInvoice.budget_reference}
-                </p>
-              </div>
-            </div>
-
-            {/* Download PDF Button */}
-            {selectedInvoice.pdf_url && (
-              <div className="flex justify-center">
-                <a
-                  href={selectedInvoice.pdf_url}
-                  download={`factura_${selectedInvoice.invoice_number}.pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
-                  Descargar PDF
-                </a>
-              </div>
-            )}
-
-            {/* Business Information */}
-            <div>
-              <h4 className="mb-2 text-sm font-semibold text-gray-900">
-                Empresa Emisora
-              </h4>
-              <div className="rounded-lg bg-gray-50 p-3 text-sm">
-                <p className="font-medium text-gray-900">
-                  {selectedInvoice.business?.name}
-                </p>
-                {selectedInvoice.business?.nif && (
-                  <p className="text-gray-600">NIF: {selectedInvoice.business.nif}</p>
-                )}
-                {selectedInvoice.business?.address && (
-                  <p className="text-gray-600">
-                    {selectedInvoice.business.address}
-                  </p>
-                )}
-                {selectedInvoice.business?.locality && (
-                  <p className="text-gray-600">
-                    {selectedInvoice.business.postal_code}{" "}
-                    {selectedInvoice.business.locality},{" "}
-                    {selectedInvoice.business.province}
-                  </p>
-                )}
-                {selectedInvoice.business?.phone && (
-                  <p className="text-gray-600">
-                    Tel: {selectedInvoice.business.phone}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Invoice Type and Tax Type */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="mb-2 text-sm font-semibold text-gray-900">
-                  Tipo de Factura
-                </h4>
-                <div className="rounded-lg bg-blue-50 p-3 text-sm">
-                  <p className="font-medium text-blue-900">
-                    {selectedInvoice.invoices_type?.invoices}
-                  </p>
-                  <p className="text-blue-700">
-                    {selectedInvoice.invoices_type?.percentage}%
-                  </p>
-                </div>
-              </div>
-              <div>
-                <h4 className="mb-2 text-sm font-semibold text-gray-900">
-                  Tipo de Impuesto
-                </h4>
-                <div className="rounded-lg bg-green-50 p-3 text-sm">
-                  <p className="font-medium text-green-900">
-                    {selectedInvoice.taxes_type?.name}
-                  </p>
-                  <p className="text-green-700">
-                    {selectedInvoice.taxes_type?.tax}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Price Information */}
-            <div>
-              <h4 className="mb-2 text-sm font-semibold text-gray-900">
-                Información de Precio
-              </h4>
-              <div className="rounded-lg bg-gray-50 p-3 text-sm">
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium text-gray-900">
-                    {formatCurrency(selectedInvoice.price?.subTotal || 0)}
-                  </span>
-                </div>
-                {selectedInvoice.price?.vat !== undefined && (
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">IVA:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(selectedInvoice.price.vat)}
-                    </span>
-                  </div>
-                )}
-                {selectedInvoice.price?.extras !== undefined &&
-                  selectedInvoice.price.extras > 0 && (
-                    <div className="flex justify-between py-1">
-                      <span className="text-gray-600">Extras:</span>
-                      <span className="font-medium text-gray-900">
-                        {formatCurrency(selectedInvoice.price.extras)}
-                      </span>
-                    </div>
-                  )}
-                {selectedInvoice.price?.userDiscount !== undefined &&
-                  selectedInvoice.price.userDiscount > 0 && (
-                    <div className="flex justify-between py-1">
-                      <span className="text-gray-600">Descuento:</span>
-                      <span className="font-medium text-red-600">
-                        -{formatCurrency(selectedInvoice.price.userDiscount)}
-                      </span>
-                    </div>
-                  )}
-                <div className="mt-2 flex justify-between border-t border-gray-300 pt-2">
-                  <span className="font-semibold text-gray-900">Total:</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    {formatCurrency(selectedInvoice.price?.total || 0)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Creation Date */}
-            <div className="text-center text-xs text-gray-500">
-              Factura generada el{" "}
-              {selectedInvoice.created_at &&
-                formatDate(selectedInvoice.created_at)}
-            </div>
-          </div>
-        </Modal>
-      )}
+      <ModalInvoiceData
+        isOpen={isViewInvoiceModalOpen}
+        onClose={handleCloseViewInvoiceModal}
+        invoice={selectedInvoice}
+      />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
@@ -691,178 +220,38 @@ export const Budgets: FC = () => {
         />
 
         {/* Buscador */}
-        <div className="mt-6 rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Input Número de Presupuesto */}
-            <div>
-              <label
-                htmlFor="budgetNumber"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Nº Presupuesto
-              </label>
-              <input
-                type="text"
-                id="budgetNumber"
-                value={budgetNumber}
-                onChange={(e) => setBudgetNumber(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                placeholder="Ej: 12345"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
+        <SearchBudgets
+          budgetNumber={budgetNumber}
+          setBudgetNumber={setBudgetNumber}
+          clientName={clientName}
+          setClientName={setClientName}
+          onSearch={() => {
+            handleSearch();
+            setPageIndex(0);
+          }}
+          onClearFilters={() => {
+            handleClearFilters();
+            setPageIndex(0);
+          }}
+          appliedFilters={appliedFilters}
+          isLoading={fetchBudgetsRequest.inProgress}
+        />
 
-            {/* Input Cliente */}
-            <div>
-              <label
-                htmlFor="clientName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Cliente
-              </label>
-              <input
-                type="text"
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                placeholder="Nombre del cliente"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Botones */}
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
-              <button
-                type="button"
-                onClick={handleSearch}
-                disabled={fetchBudgetsRequest.inProgress}
-                className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                Buscar
-              </button>
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                disabled={fetchBudgetsRequest.inProgress}
-                className="flex-1 rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                Limpiar
-              </button>
-            </div>
-          </div>
-
-          {/* Indicador de filtros activos */}
-          {(appliedFilters.budgetNumber || appliedFilters.clientName) && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600">Filtros activos:</span>
-              {appliedFilters.budgetNumber && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                  Nº {appliedFilters.budgetNumber}
-                </span>
-              )}
-              {appliedFilters.clientName && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                  Cliente: {appliedFilters.clientName}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 flow-root">
-          <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <th
-                            key={header.id}
-                            scope="col"
-                            className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </th>
-                        ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {fetchBudgetsRequest.inProgress ? (
-                      <tr>
-                        <td
-                          colSpan={columns.length}
-                          className="px-3 py-12 text-center text-sm text-gray-500"
-                        >
-                          <div className="flex items-center justify-center">
-                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                            <span className="ml-3">
-                              Cargando presupuestos...
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : budgets.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={columns.length}
-                          className="px-3 py-12 text-center text-sm text-gray-500"
-                        >
-                          No se encontraron presupuestos
-                        </td>
-                      </tr>
-                    ) : (
-                      table.getRowModel().rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-gray-50">
-                          {row.getVisibleCells().map((cell) => (
-                            <td
-                              key={cell.id}
-                              className="whitespace-nowrap px-3 py-4 text-sm"
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Paginación */}
-              {budgets.length > 0 && (
-                <Pagination
-                  currentPage={pageIndex}
-                  totalPages={table.getPageCount()}
-                  pageSize={pageSize}
-                  totalItems={total}
-                  onPageChange={setPageIndex}
-                  canPreviousPage={table.getCanPreviousPage()}
-                  canNextPage={table.getCanNextPage()}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+        <BudgetsTable
+          budgets={budgets}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          isLoading={fetchBudgetsRequest.inProgress}
+          loadingInvoice={loadingInvoice}
+          budgetHasInvoice={budgetHasInvoice}
+          onPageChange={setPageIndex}
+          onGenerateInvoice={(budget) => {
+            setSelectedBudget(budget);
+            setIsModalOpen(true);
+          }}
+          onViewInvoice={handleViewInvoice}
+        />
       </div>
     </>
   );

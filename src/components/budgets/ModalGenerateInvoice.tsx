@@ -1,0 +1,141 @@
+import { type FC, useMemo } from "react";
+import { Modal } from "../shared/Modal";
+import SelectField from "../shared/SelectField";
+import type { Budget } from "../../types/budgets";
+import type { Business } from "../../types/business";
+import type { InvoicesType } from "../../types/invoicesTypes";
+import type { TaxesType } from "../../types/taxesTypes";
+
+interface ModalGenerateInvoiceProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onGenerate: () => void;
+  selectedBudget: Budget | null;
+  businesses: Business[];
+  invoicesTypes: InvoicesType[];
+  taxesTypes: TaxesType[];
+  selectedBusinessId: string;
+  setSelectedBusinessId: (value: string) => void;
+  selectedInvoicesTypeId: string;
+  setSelectedInvoicesTypeId: (value: string) => void;
+  selectedTaxesTypeId: string;
+  setSelectedTaxesTypeId: (value: string) => void;
+  isGenerating: boolean;
+}
+
+export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
+  isOpen,
+  onClose,
+  onGenerate,
+  selectedBudget,
+  businesses,
+  invoicesTypes,
+  taxesTypes,
+  selectedBusinessId,
+  setSelectedBusinessId,
+  selectedInvoicesTypeId,
+  setSelectedInvoicesTypeId,
+  selectedTaxesTypeId,
+  setSelectedTaxesTypeId,
+  isGenerating,
+}) => {
+  // Memoize options to avoid recreating on every render
+  const businessOptions = useMemo(
+    () =>
+      businesses.map((business) => ({
+        value: business.id,
+        label: business.name,
+      })),
+    [businesses],
+  );
+
+  const invoiceTypeOptions = useMemo(
+    () =>
+      invoicesTypes.map((invoiceType) => ({
+        value: invoiceType.id,
+        label: `${invoiceType.invoices} (${invoiceType.percentage}%)`,
+      })),
+    [invoicesTypes],
+  );
+
+  const taxTypeOptions = useMemo(
+    () =>
+      taxesTypes.map((taxType) => ({
+        value: taxType.id,
+        label: `${taxType.name} (${taxType.tax}%)`,
+      })),
+    [taxesTypes],
+  );
+
+  // Early return after all hooks have been called
+  if (!isOpen || !selectedBudget) return null;
+
+  const isFormValid =
+    selectedBusinessId && selectedInvoicesTypeId && selectedTaxesTypeId;
+
+  return (
+    <Modal
+      title="Generar Factura"
+      onAccept={onGenerate}
+      onClose={onClose}
+      acceptDisabled={!isFormValid || isGenerating}
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Selecciona los datos necesarios para generar la factura del
+          presupuesto{" "}
+          <span className="font-semibold">
+            #{selectedBudget.budgetReference}
+          </span>
+        </p>
+
+        <SelectField
+          label="Empresa"
+          name="business"
+          value={selectedBusinessId}
+          onChange={(e) => setSelectedBusinessId(e.target.value)}
+          options={businessOptions}
+          placeholder="Selecciona una empresa"
+          required
+          disabled={isGenerating}
+          emptyMessage="No hay empresas disponibles. Crea una empresa en Ajustes."
+          className="mb-4"
+        />
+
+        <SelectField
+          label="Tipo de Factura"
+          name="invoices-type"
+          value={selectedInvoicesTypeId}
+          onChange={(e) => setSelectedInvoicesTypeId(e.target.value)}
+          options={invoiceTypeOptions}
+          placeholder="Selecciona un tipo de factura"
+          required
+          disabled={isGenerating}
+          emptyMessage="No hay tipos de factura disponibles. Crea uno en Ajustes."
+          className="mb-4"
+        />
+
+        <SelectField
+          label="Tipo de Impuesto"
+          name="taxes-type"
+          value={selectedTaxesTypeId}
+          onChange={(e) => setSelectedTaxesTypeId(e.target.value)}
+          options={taxTypeOptions}
+          placeholder="Selecciona un tipo de impuesto"
+          required
+          disabled={isGenerating}
+          emptyMessage="No hay tipos de impuesto disponibles. Crea uno en Ajustes."
+        />
+
+        {isGenerating && (
+          <div className="mt-4 flex items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+            <span className="ml-3 text-sm text-gray-600">
+              Generando factura...
+            </span>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};

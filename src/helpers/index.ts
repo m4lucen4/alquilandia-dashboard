@@ -9,3 +9,6 @@ export { isValidEmail, validateEmail, validatePassword } from "./validation";
 
 // Helpers de moneda
 export { formatCurrency } from "./currency";
+
+// Helpers de estado de presupuestos
+export { getStatusBadgeConfig } from "./badgetsStatus";
