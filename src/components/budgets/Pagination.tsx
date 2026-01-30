@@ -68,8 +68,7 @@ export const Pagination: FC<PaginationProps> = ({
     "relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0";
 
   const activePageStyles = "z-10 bg-blue-600 text-white ring-blue-600";
-  const inactivePageStyles =
-    "text-gray-900 hover:bg-gray-50 cursor-pointer";
+  const inactivePageStyles = "text-gray-900 hover:bg-gray-50 cursor-pointer";
 
   const arrowButtonStyles =
     "relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-50";
@@ -99,8 +98,7 @@ export const Pagination: FC<PaginationProps> = ({
         <div>
           <p className="text-sm text-gray-700">
             Mostrando <span className="font-medium">{startItem}</span> a{" "}
-            <span className="font-medium">{endItem}</span> de{" "}
-            <span className="font-medium">{totalItems}</span> resultados
+            <span className="font-medium">{endItem}</span> resultados
           </p>
         </div>
         <div>

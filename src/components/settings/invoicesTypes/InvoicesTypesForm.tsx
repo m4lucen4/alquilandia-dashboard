@@ -17,6 +17,8 @@ export const InvoicesTypesForm: FC<InvoicesTypesFormProps> = ({
   const [formData, setFormData] = useState<InvoicesTypeFormData>(() => ({
     invoices: invoicesType?.invoices ?? "",
     percentage: invoicesType?.percentage ?? 0,
+    concept: invoicesType?.concept ?? "",
+    show_budgetlines: invoicesType?.show_budgetlines ?? true,
   }));
 
   const [errors, setErrors] = useState<
@@ -30,10 +32,15 @@ export const InvoicesTypesForm: FC<InvoicesTypesFormProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
 
-    // Convert to number for percentage field
-    const processedValue = name === 'percentage' ? parseFloat(value) || 0 : value;
+    // Process value based on field type
+    let processedValue: string | number | boolean = value;
+    if (type === 'checkbox') {
+      processedValue = checked;
+    } else if (name === 'percentage') {
+      processedValue = parseFloat(value) || 0;
+    }
 
     setFormData((prev) => ({ ...prev, [name]: processedValue }));
 
@@ -74,6 +81,34 @@ export const InvoicesTypesForm: FC<InvoicesTypesFormProps> = ({
         required
         disabled={isLoading}
       />
+
+      <InputField
+        label="Concepto"
+        name="concept"
+        value={formData.concept || ""}
+        onChange={handleChange}
+        error={errors.concept}
+        placeholder="Texto que aparecerá en el PDF de la factura"
+        disabled={isLoading}
+      />
+
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          id="show_budgetlines"
+          name="show_budgetlines"
+          checked={formData.show_budgetlines || false}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <label
+          htmlFor="show_budgetlines"
+          className="text-sm font-medium text-gray-700"
+        >
+          Mostrar líneas de presupuesto en el PDF
+        </label>
+      </div>
 
       {/* Hidden submit button - form will be submitted by modal's accept button */}
       <button type="submit" className="hidden" />

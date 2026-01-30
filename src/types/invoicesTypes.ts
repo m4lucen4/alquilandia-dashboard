@@ -9,6 +9,8 @@ export interface InvoicesType {
   id: string;
   invoices: string;
   percentage: number;
+  concept?: string;
+  show_budgetlines?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -16,6 +18,8 @@ export interface InvoicesType {
 export interface InvoicesTypeFormData {
   invoices: string;
   percentage: number;
+  concept?: string;
+  show_budgetlines?: boolean;
 }
 
 export interface InvoicesTypeInsert extends InvoicesTypeFormData {}
