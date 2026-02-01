@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, logout } from "../actions/auth";
+import { login, logout, changePassword } from "../actions/auth";
 import type { CurrentUser, IRequest } from "@/types/auth";
 
 interface AuthState {
@@ -8,6 +8,7 @@ interface AuthState {
   user: CurrentUser | null;
   loginRequest: IRequest;
   logoutRequest: IRequest;
+  changePasswordRequest: IRequest;
 }
 
 const initialState: AuthState = {
@@ -24,6 +25,11 @@ const initialState: AuthState = {
     messages: "",
     ok: false,
   },
+  changePasswordRequest: {
+    inProgress: false,
+    messages: "",
+    ok: false,
+  },
 };
 
 const authSlice = createSlice({
@@ -32,6 +38,9 @@ const authSlice = createSlice({
   reducers: {
     clearLoginErrors: (state) => {
       state.loginRequest = initialState.loginRequest;
+    },
+    clearChangePasswordRequest: (state) => {
+      state.changePasswordRequest = initialState.changePasswordRequest;
     },
   },
   extraReducers: (builder) => {
@@ -85,9 +94,34 @@ const authSlice = createSlice({
           ok: false,
         };
       });
+    builder
+      .addCase(changePassword.pending, (state) => {
+        state.changePasswordRequest = {
+          inProgress: true,
+          messages: "",
+          ok: false,
+        };
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.changePasswordRequest = {
+          inProgress: false,
+          messages: "",
+          ok: true,
+        };
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.changePasswordRequest = {
+          inProgress: false,
+          messages:
+            (action.payload as string) ||
+            "Error al solicitar el cambio de contraseña",
+          ok: false,
+        };
+      });
   },
 });
 
-export const { clearLoginErrors } = authSlice.actions;
+export const { clearLoginErrors, clearChangePasswordRequest } =
+  authSlice.actions;
 
 export default authSlice.reducer;

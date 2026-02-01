@@ -1,5 +1,9 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { loginUser, logoutUser } from "../../services/authService";
+import {
+  loginUser,
+  logoutUser,
+  requestPasswordChange,
+} from "../../services/authService";
 import type { LoginPayload } from "@/types/auth";
 
 // Thunk para login
@@ -26,6 +30,22 @@ export const logout = createAsyncThunk(
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al cerrar sesión";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+// Thunk para solicitar cambio de contraseña
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (email: string, { rejectWithValue }) => {
+    try {
+      await requestPasswordChange(email);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error al solicitar el cambio de contraseña";
       return rejectWithValue(errorMessage);
     }
   },

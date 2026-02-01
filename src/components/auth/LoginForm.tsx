@@ -1,16 +1,19 @@
 import { type FC, useState } from "react";
 import logo from "@/assets/logo.png";
 import InputField from "@/components/shared/InputField";
+import Button from "@/components/shared/Button";
 import { validateEmail, validatePassword } from "@/helpers/validation";
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;
   isLoading?: boolean;
+  onForgotPassword?: () => void;
 }
 
 export const LoginForm: FC<LoginFormProps> = ({
   onSubmit,
   isLoading = false,
+  onForgotPassword,
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -103,13 +106,24 @@ export const LoginForm: FC<LoginFormProps> = ({
             placeholder="••••••••"
           />
 
-          <button
+          <Button
             type="submit"
-            disabled={isLoading}
-            className="flex w-full justify-center rounded-md bg-blue-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
-          </button>
+            title={isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+            onClick={() => {}}
+            loading={isLoading}
+            block
+            variant="primary"
+          />
+
+          {onForgotPassword && (
+            <Button
+              type="button"
+              title="¿Olvidaste tu contraseña?"
+              onClick={onForgotPassword}
+              block
+              variant="ghost"
+            />
+          )}
         </form>
       </div>
     </div>
