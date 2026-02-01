@@ -2,15 +2,14 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Invoice } from "@/types/invoices";
 import { formatCurrency } from "@/helpers";
+import logoImage from "@/assets/logo.png";
 
 /**
  * Generates a PDF document for an invoice using jsPDF
  * @param invoice - Invoice data with all relations
  * @returns PDF blob
  */
-export const generateInvoicePDF = async (
-  invoice: Invoice,
-): Promise<Blob> => {
+export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
   try {
     // Create new PDF document (A4 size)
     const doc = new jsPDF({
@@ -22,11 +21,18 @@ export const generateInvoicePDF = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPosition = 20;
 
+    // Logo (top left)
+    try {
+      doc.addImage(logoImage, "PNG", 20, yPosition, 35, 30);
+    } catch (error) {
+      console.error("Error adding logo to PDF:", error);
+    }
+
     // Header - FACTURA
-    doc.setFontSize(24);
-    doc.setTextColor(25, 118, 210); // Blue color
-    doc.text("FACTURA", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
+    // doc.setFontSize(24);
+    // doc.setTextColor(25, 118, 210);
+    // doc.text("FACTURA", pageWidth / 2, yPosition + 15, { align: "center" });
+    yPosition += 35;
 
     // Invoice and Budget Reference
     doc.setFontSize(10);
@@ -45,117 +51,150 @@ export const generateInvoicePDF = async (
     doc.text(`Nº Presupuesto: ${invoice.budget_reference}`, 20, yPosition);
     yPosition += 12;
 
-    // Business Information Box
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("DATOS DE LA EMPRESA", 20, yPosition);
-    yPosition += 2;
+    // Fiscal Data - Two columns (Vendor and Client)
+    const columnWidth = (pageWidth - 50) / 2;
+    const boxHeight = 38;
 
     doc.setFillColor(245, 245, 245);
-    doc.rect(20, yPosition, pageWidth - 40, 28, "F");
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "F");
     doc.setDrawColor(200, 200, 200);
-    doc.rect(20, yPosition, pageWidth - 40, 28, "S");
-    yPosition += 6;
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
 
-    doc.setFont("helvetica", "bold");
-    doc.text(invoice.business?.name || "-", 24, yPosition);
-    yPosition += 5;
-
-    doc.setFont("helvetica", "normal");
-    doc.text(`NIF: ${invoice.business?.nif || "-"}`, 24, yPosition);
-    yPosition += 4;
-    doc.text(invoice.business?.address || "", 24, yPosition);
-    yPosition += 4;
-    doc.text(
-      `${invoice.business?.postal_code || ""} ${invoice.business?.locality || ""}, ${invoice.business?.province || ""}`,
-      24,
-      yPosition,
-    );
-    yPosition += 4;
-    doc.text(`Teléfono: ${invoice.business?.phone || ""}`, 24, yPosition);
-    yPosition += 10;
-
-    // Invoice Type and Tax Type - Two columns
-    const boxWidth = (pageWidth - 50) / 2;
-
-    // Invoice Type Box (Blue)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("TIPO DE FACTURA", 20, yPosition);
-
-    doc.setFillColor(227, 242, 253);
-    doc.rect(20, yPosition + 2, boxWidth, 12, "F");
-    doc.setDrawColor(144, 202, 249);
-    doc.rect(20, yPosition + 2, boxWidth, 12, "S");
-
+    let vendorY = yPosition + 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(invoice.invoices_type?.invoices || "-", 24, yPosition + 8);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${invoice.invoices_type?.percentage || 0}%`, 24, yPosition + 12);
+    doc.text(invoice.business?.name || "-", 24, vendorY);
+    vendorY += 5;
 
-    // Tax Type Box (Green)
-    const secondBoxX = 20 + boxWidth + 10;
-    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("TIPO DE IMPUESTO", secondBoxX, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIF: ${invoice.business?.nif || "-"}`, 24, vendorY);
+    vendorY += 4;
+
+    const businessAddress = doc.splitTextToSize(
+      invoice.business?.address || "",
+      columnWidth - 8,
+    );
+    doc.text(businessAddress, 24, vendorY);
+    vendorY += businessAddress.length * 4;
+
+    doc.text(
+      `${invoice.business?.postal_code || ""} ${invoice.business?.locality || ""}`,
+      24,
+      vendorY,
+    );
+    vendorY += 4;
+    doc.text(invoice.business?.province || "", 24, vendorY);
+    vendorY += 4;
+    doc.text(`Tel: ${invoice.business?.phone || ""}`, 24, vendorY);
+
+    // CLIENT - Right Column
+    const clientX = 20 + columnWidth + 10;
 
     doc.setFillColor(232, 245, 233);
-    doc.rect(secondBoxX, yPosition + 2, boxWidth, 12, "F");
+    doc.rect(clientX, yPosition + 2, columnWidth, boxHeight, "F");
     doc.setDrawColor(129, 199, 132);
-    doc.rect(secondBoxX, yPosition + 2, boxWidth, 12, "S");
+    doc.rect(clientX, yPosition + 2, columnWidth, boxHeight, "S");
 
+    let clientY = yPosition + 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(invoice.taxes_type?.name || "-", secondBoxX + 4, yPosition + 8);
+    doc.text(invoice.client_name || "-", clientX + 4, clientY);
+    clientY += 5;
+
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text(`${invoice.taxes_type?.tax || 0}%`, secondBoxX + 4, yPosition + 12);
+    doc.text(`NIF: ${invoice.client_nif || "-"}`, clientX + 4, clientY);
+    clientY += 4;
 
-    yPosition += 20;
+    const clientAddress = doc.splitTextToSize(
+      invoice.client_address || "",
+      columnWidth - 8,
+    );
+    doc.text(clientAddress, clientX + 4, clientY);
+    clientY += clientAddress.length * 4;
 
-    // Budget Lines Table
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("LÍNEAS DE PRESUPUESTO", 20, yPosition);
-    yPosition += 5;
+    doc.text(
+      `${invoice.client_postal_code || ""} ${invoice.client_locality || ""}`,
+      clientX + 4,
+      clientY,
+    );
+    clientY += 4;
+    doc.text(`Tel: ${invoice.client_phone || ""}`, clientX + 4, clientY);
 
-    const tableData = invoice.budgetlines.map((line, index) => [
-      (index + 1).toString(),
-      line.nombre || "-",
-      line.categoria || "-",
-      line.unidades?.toString() || "1",
-      formatCurrency(line.precioUd || 0),
-      formatCurrency(line.totalPrice || 0),
-    ]);
+    yPosition += boxHeight + 12;
 
-    autoTable(doc, {
-      startY: yPosition,
-      head: [["#", "Nombre", "Categoría", "Unidades", "Precio Ud.", "Total"]],
-      body: tableData,
-      theme: "grid",
-      headStyles: {
-        fillColor: [51, 51, 51],
-        textColor: [255, 255, 255],
-        fontSize: 8,
-        fontStyle: "bold",
-      },
-      bodyStyles: {
-        fontSize: 8,
-      },
-      columnStyles: {
-        0: { cellWidth: 10, halign: "center" },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 20, halign: "center" },
-        4: { cellWidth: 30, halign: "right" },
-        5: { cellWidth: 30, halign: "right" },
-      },
-      margin: { left: 20, right: 20 },
-    });
+    // Concept (if exists)
+    if (invoice.invoices_type?.concept) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("CONCEPTO", 20, yPosition);
+      yPosition += 5;
 
-    // Get Y position after table
-    // @ts-expect-error - autoTable adds finalY to doc
-    yPosition = doc.lastAutoTable.finalY + 10;
+      doc.setFont("helvetica", "normal");
+      doc.setFillColor(255, 248, 225);
+      const conceptLines = doc.splitTextToSize(
+        invoice.invoices_type.concept,
+        pageWidth - 44,
+      );
+      const conceptHeight = conceptLines.length * 5 + 4;
+
+      doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "F");
+      doc.setDrawColor(255, 193, 7);
+      doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "S");
+
+      doc.text(conceptLines, 24, yPosition + 5);
+      yPosition += conceptHeight + 8;
+    }
+
+    // Budget Lines Table (only if show_budgetlines is true)
+    if (invoice.invoices_type?.show_budgetlines !== false) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("LÍNEAS DE PRESUPUESTO", 20, yPosition);
+      yPosition += 5;
+
+      const tableData = invoice.budgetlines.map((line, index) => [
+        (index + 1).toString(),
+        line.nombre || "-",
+        line.categoria || "-",
+        line.unidades?.toString() || "1",
+        formatCurrency(line.precioUd || 0),
+        formatCurrency(line.totalPrice || 0),
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["#", "Nombre", "Categoría", "Unidades", "Precio Ud.", "Total"]],
+        body: tableData,
+        theme: "grid",
+        headStyles: {
+          fillColor: [51, 51, 51],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 8,
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: "center" },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20, halign: "center" },
+          4: { cellWidth: 30, halign: "right" },
+          5: { cellWidth: 30, halign: "right" },
+        },
+        margin: { left: 20, right: 20 },
+      });
+
+      // Get Y position after table
+      // @ts-expect-error - autoTable adds finalY to doc
+      yPosition = doc.lastAutoTable.finalY + 10;
+    } else {
+      // If budget lines are not shown, add some spacing
+      yPosition += 5;
+    }
 
     // Price Summary (right aligned)
     const summaryX = pageWidth - 70;

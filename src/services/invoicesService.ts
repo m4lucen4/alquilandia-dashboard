@@ -75,7 +75,9 @@ export const getInvoiceByBudgetReference = async (
       invoices_type:invoices_type_id (
         id,
         invoices,
-        percentage
+        percentage,
+        concept,
+        show_budgetlines
       ),
       taxes_type:taxes_type_id (
         id,
@@ -120,6 +122,13 @@ export const createInvoice = async (
     budget_reference: invoiceData.budget_reference,
     budgetlines: invoiceData.budgetlines as unknown as Json,
     price: invoiceData.price as unknown as Json,
+    client_name: invoiceData.client_name || "",
+    client_nif: invoiceData.client_nif || "",
+    client_email: invoiceData.client_email || "",
+    client_address: invoiceData.client_address || "",
+    client_locality: invoiceData.client_locality || "",
+    client_postal_code: invoiceData.client_postal_code || "",
+    client_phone: invoiceData.client_phone || "",
   };
 
   // Step 1: Create the invoice
@@ -160,7 +169,9 @@ export const createInvoice = async (
         invoices_type:invoices_type_id (
           id,
           invoices,
-          percentage
+          percentage,
+          concept,
+          show_budgetlines
         ),
         taxes_type:taxes_type_id (
           id,
@@ -227,7 +238,9 @@ export const createInvoice = async (
         invoices_type:invoices_type_id (
           id,
           invoices,
-          percentage
+          percentage,
+          concept,
+          show_budgetlines
         ),
         taxes_type:taxes_type_id (
           id,

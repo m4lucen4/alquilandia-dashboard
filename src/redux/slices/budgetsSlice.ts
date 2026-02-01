@@ -1,11 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchBudgets } from "../actions/budgets";
+import { fetchBudgets, fetchBudgetById } from "../actions/budgets";
 import type { BudgetsState } from "@/types/budgets";
 
 const initialState: BudgetsState = {
   budgets: [],
   total: 0,
+  currentBudget: null,
   fetchBudgetsRequest: {
+    inProgress: false,
+    messages: "",
+    ok: false,
+  },
+  fetchBudgetByIdRequest: {
     inProgress: false,
     messages: "",
     ok: false,
@@ -18,6 +24,13 @@ const budgetsSlice = createSlice({
   reducers: {
     clearBudgetsErrors: (state) => {
       state.fetchBudgetsRequest = initialState.fetchBudgetsRequest;
+    },
+    clearBudgetByIdErrors: (state) => {
+      state.fetchBudgetByIdRequest = initialState.fetchBudgetByIdRequest;
+    },
+    clearCurrentBudget: (state) => {
+      state.currentBudget = null;
+      state.fetchBudgetByIdRequest = initialState.fetchBudgetByIdRequest;
     },
   },
   extraReducers: (builder) => {
@@ -45,10 +58,37 @@ const budgetsSlice = createSlice({
             (action.payload as string) || "Error al obtener presupuestos",
           ok: false,
         };
+      })
+      .addCase(fetchBudgetById.pending, (state) => {
+        state.fetchBudgetByIdRequest = {
+          inProgress: true,
+          messages: "",
+          ok: false,
+        };
+      })
+      .addCase(fetchBudgetById.fulfilled, (state, action) => {
+        state.currentBudget = action.payload;
+        state.fetchBudgetByIdRequest = {
+          inProgress: false,
+          messages: "",
+          ok: true,
+        };
+      })
+      .addCase(fetchBudgetById.rejected, (state, action) => {
+        state.fetchBudgetByIdRequest = {
+          inProgress: false,
+          messages:
+            (action.payload as string) || "Error al obtener el presupuesto",
+          ok: false,
+        };
       });
   },
 });
 
-export const { clearBudgetsErrors } = budgetsSlice.actions;
+export const {
+  clearBudgetsErrors,
+  clearBudgetByIdErrors,
+  clearCurrentBudget,
+} = budgetsSlice.actions;
 
 export default budgetsSlice.reducer;

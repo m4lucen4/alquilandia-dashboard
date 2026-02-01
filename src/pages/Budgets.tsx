@@ -117,6 +117,23 @@ export const Budgets: FC = () => {
       return;
     }
 
+    // Extract client data from budget
+    const clientData = {
+      client_name:
+        selectedBudget.user?.FullName ||
+        `${selectedBudget.user?.firstName || ""} ${selectedBudget.user?.lastName || ""}`.trim() ||
+        selectedBudget.client ||
+        "",
+      client_nif: selectedBudget.user?.dnif || "",
+      client_email: selectedBudget.user?.email || "",
+      client_address:
+        selectedBudget.user?.address || selectedBudget.address || "",
+      client_locality:
+        selectedBudget.user?.locality || selectedBudget.locality || "",
+      client_postal_code: selectedBudget.user?.zipCode || "",
+      client_phone: selectedBudget.user?.phone || selectedBudget.phone || "",
+    };
+
     const result = await dispatch(
       createInvoice({
         business_id: selectedBusinessId,
@@ -125,6 +142,7 @@ export const Budgets: FC = () => {
         budget_reference: selectedBudget.budgetReference,
         budgetlines: selectedBudget.budgetLines,
         price: selectedBudget.price,
+        ...clientData,
       }),
     );
 

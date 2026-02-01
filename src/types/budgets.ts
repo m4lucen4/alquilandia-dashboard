@@ -155,5 +155,7 @@ export interface BudgetsResponse {
 export interface BudgetsState {
   budgets: Budget[];
   total: number;
+  currentBudget: Budget | null;
   fetchBudgetsRequest: IRequest;
+  fetchBudgetByIdRequest: IRequest;
 }

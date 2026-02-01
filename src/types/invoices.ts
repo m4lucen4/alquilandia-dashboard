@@ -16,6 +16,13 @@ export interface Invoice {
   pdf_url?: string;
   created_at?: string;
   updated_at?: string;
+  client_name?: string;
+  client_nif?: string;
+  client_email?: string;
+  client_address?: string;
+  client_locality?: string;
+  client_postal_code?: string;
+  client_phone?: string;
   business?: {
     id: string;
     name: string;
@@ -30,6 +37,8 @@ export interface Invoice {
     id: string;
     invoices: string;
     percentage: number;
+    concept?: string;
+    show_budgetlines?: boolean;
   };
   taxes_type?: {
     id: string;
@@ -48,6 +57,13 @@ export interface CreateInvoiceData {
   budget_reference: number;
   budgetlines: BudgetLine[];
   price: Price;
+  client_name?: string;
+  client_nif?: string;
+  client_email?: string;
+  client_address?: string;
+  client_locality?: string;
+  client_postal_code?: string;
+  client_phone?: string;
 }
 
 /**
