@@ -52,7 +52,7 @@ export const Modal = ({
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-lg transform rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
+        className={`relative w-full max-w-2xl transform rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
         }`}
         role="dialog"

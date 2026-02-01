@@ -16,7 +16,7 @@ import { SearchBudgets } from "../components/budgets/SearchBudgets";
 import { BudgetsTable } from "../components/budgets/BudgetsTable";
 import type { Budget } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
-import { getInvoiceByBudgetReference } from "../services/invoicesService";
+import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
@@ -40,7 +40,7 @@ export const Budgets: FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
   const [selectedInvoicesTypeId, setSelectedInvoicesTypeId] =
@@ -164,13 +164,15 @@ export const Budgets: FC = () => {
   const handleViewInvoice = useCallback(async (budget: Budget) => {
     setLoadingInvoice(true);
     try {
-      const invoice = await getInvoiceByBudgetReference(budget.budgetReference);
-      if (invoice) {
-        setSelectedInvoice(invoice);
+      const invoices = await getInvoicesByBudgetReference(
+        budget.budgetReference,
+      );
+      if (invoices && invoices.length > 0) {
+        setSelectedInvoices(invoices);
         setIsViewInvoiceModalOpen(true);
       }
     } catch (error) {
-      console.error("Error loading invoice:", error);
+      console.error("Error loading invoices:", error);
     } finally {
       setLoadingInvoice(false);
     }
@@ -178,7 +180,7 @@ export const Budgets: FC = () => {
 
   const handleCloseViewInvoiceModal = useCallback(() => {
     setIsViewInvoiceModalOpen(false);
-    setSelectedInvoice(null);
+    setSelectedInvoices([]);
   }, []);
 
   const shouldShowError =
@@ -228,7 +230,7 @@ export const Budgets: FC = () => {
       <ModalInvoiceData
         isOpen={isViewInvoiceModalOpen}
         onClose={handleCloseViewInvoiceModal}
-        invoice={selectedInvoice}
+        invoices={selectedInvoices}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">

@@ -2,8 +2,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
   getAllInvoices,
   createInvoice as createInvoiceService,
+  createCorrectiveInvoice as createCorrectiveInvoiceService,
 } from "@/services/invoicesService";
-import type { CreateInvoiceData } from "@/types/invoices";
+import type {
+  CreateInvoiceData,
+  CreateCorrectiveInvoiceData,
+} from "@/types/invoices";
 
 /**
  * Fetches all invoices with business information
@@ -44,6 +48,28 @@ export const createInvoice = createAsyncThunk(
         error instanceof Error
           ? error.message
           : "Error desconocido al crear la factura";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+/**
+ * Creates a corrective invoice from an existing invoice
+ */
+export const createCorrectiveInvoice = createAsyncThunk(
+  "invoices/createCorrective",
+  async (
+    correctiveData: CreateCorrectiveInvoiceData,
+    { rejectWithValue },
+  ) => {
+    try {
+      const invoice = await createCorrectiveInvoiceService(correctiveData);
+      return invoice;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al crear la factura rectificativa";
       return rejectWithValue(errorMessage);
     }
   },

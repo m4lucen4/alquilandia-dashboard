@@ -23,6 +23,8 @@ export interface Invoice {
   client_locality?: string;
   client_postal_code?: string;
   client_phone?: string;
+  is_corrective?: boolean;
+  original_invoice_id?: string;
   business?: {
     id: string;
     name: string;
@@ -68,10 +70,18 @@ export interface CreateInvoiceData {
 }
 
 /**
+ * Data required to create a corrective invoice
+ */
+export interface CreateCorrectiveInvoiceData {
+  original_invoice_id: string;
+}
+
+/**
  * Redux state for invoices
  */
 export interface InvoicesState {
   invoices: Invoice[];
   fetchInvoicesRequest: IRequest;
   createInvoiceRequest: IRequest;
+  createCorrectiveInvoiceRequest: IRequest;
 }

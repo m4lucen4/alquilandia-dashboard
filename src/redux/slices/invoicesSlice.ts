@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { InvoicesState } from "@/types/invoices";
-import { fetchAllInvoices, createInvoice } from "../actions/invoices";
+import {
+  fetchAllInvoices,
+  createInvoice,
+  createCorrectiveInvoice,
+} from "../actions/invoices";
 
 const initialState: InvoicesState = {
   invoices: [],
@@ -10,6 +14,11 @@ const initialState: InvoicesState = {
     messages: "",
   },
   createInvoiceRequest: {
+    inProgress: false,
+    ok: false,
+    messages: "",
+  },
+  createCorrectiveInvoiceRequest: {
     inProgress: false,
     ok: false,
     messages: "",
@@ -25,9 +34,18 @@ const invoicesSlice = createSlice({
       state.fetchInvoicesRequest.ok = false;
       state.createInvoiceRequest.messages = "";
       state.createInvoiceRequest.ok = false;
+      state.createCorrectiveInvoiceRequest.messages = "";
+      state.createCorrectiveInvoiceRequest.ok = false;
     },
     resetCreateInvoiceRequest: (state) => {
       state.createInvoiceRequest = {
+        inProgress: false,
+        ok: false,
+        messages: "",
+      };
+    },
+    resetCreateCorrectiveInvoiceRequest: (state) => {
+      state.createCorrectiveInvoiceRequest = {
         inProgress: false,
         ok: false,
         messages: "",
@@ -70,10 +88,32 @@ const invoicesSlice = createSlice({
         state.createInvoiceRequest.ok = false;
         state.createInvoiceRequest.messages =
           (action.payload as string) || "Error al generar la factura";
+      })
+      // Create corrective invoice
+      .addCase(createCorrectiveInvoice.pending, (state) => {
+        state.createCorrectiveInvoiceRequest.inProgress = true;
+        state.createCorrectiveInvoiceRequest.ok = false;
+        state.createCorrectiveInvoiceRequest.messages = "";
+      })
+      .addCase(createCorrectiveInvoice.fulfilled, (state) => {
+        state.createCorrectiveInvoiceRequest.inProgress = false;
+        state.createCorrectiveInvoiceRequest.ok = true;
+        state.createCorrectiveInvoiceRequest.messages =
+          "Factura rectificativa generada exitosamente";
+      })
+      .addCase(createCorrectiveInvoice.rejected, (state, action) => {
+        state.createCorrectiveInvoiceRequest.inProgress = false;
+        state.createCorrectiveInvoiceRequest.ok = false;
+        state.createCorrectiveInvoiceRequest.messages =
+          (action.payload as string) ||
+          "Error al generar la factura rectificativa";
       });
   },
 });
 
-export const { clearInvoicesErrors, resetCreateInvoiceRequest } =
-  invoicesSlice.actions;
+export const {
+  clearInvoicesErrors,
+  resetCreateInvoiceRequest,
+  resetCreateCorrectiveInvoiceRequest,
+} = invoicesSlice.actions;
 export default invoicesSlice.reducer;

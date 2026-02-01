@@ -1,5 +1,9 @@
 import { supabase } from "@/config/supabase";
-import type { CreateInvoiceData, Invoice } from "@/types/invoices";
+import type {
+  CreateInvoiceData,
+  CreateCorrectiveInvoiceData,
+  Invoice,
+} from "@/types/invoices";
 import type { Json } from "@/types/supabase";
 import { generateInvoicePDF } from "./pdfService";
 
@@ -103,6 +107,60 @@ export const getInvoiceByBudgetReference = async (
   }
 
   return data as Invoice;
+};
+
+/**
+ * Gets all invoices by budget reference
+ *
+ * @param budgetReference - Budget reference number
+ * @returns Array of invoices
+ * @throws Error if fetch fails
+ */
+export const getInvoicesByBudgetReference = async (
+  budgetReference: number,
+): Promise<Invoice[]> => {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(
+      `
+      *,
+      business:business_id (
+        id,
+        name,
+        nif,
+        address,
+        locality,
+        province,
+        phone,
+        postal_code,
+        additional_data
+      ),
+      invoices_type:invoices_type_id (
+        id,
+        invoices,
+        percentage,
+        concept,
+        show_budgetlines
+      ),
+      taxes_type:taxes_type_id (
+        id,
+        name,
+        tax
+      )
+    `,
+    )
+    .eq("budget_reference", budgetReference)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching invoices by budget reference:", error);
+    throw new Error(
+      error.message ||
+        "No se pudieron cargar las facturas. Por favor, inténtelo de nuevo.",
+    );
+  }
+
+  return (data || []) as Invoice[];
 };
 
 /**
@@ -271,6 +329,246 @@ export const createInvoice = async (
     );
     // If PDF generation/upload fails, we still have the invoice created
     // Return it without PDF URL
+    return createdInvoice as Invoice;
+  }
+};
+
+/**
+ * Creates a corrective invoice from an existing invoice
+ * The corrective invoice will have the same data but with negative amounts
+ *
+ * @param correctiveData - Data with the original invoice ID
+ * @returns The created corrective invoice with PDF URL
+ * @throws Error if creation fails
+ */
+export const createCorrectiveInvoice = async (
+  correctiveData: CreateCorrectiveInvoiceData,
+): Promise<Invoice> => {
+  // Step 1: Get the original invoice with all its data
+  const { data: original, error: fetchError } = await supabase
+    .from("invoices")
+    .select(
+      `
+      *,
+      business:business_id (
+        id,
+        name,
+        nif,
+        address,
+        locality,
+        province,
+        phone,
+        postal_code,
+        additional_data
+      ),
+      invoices_type:invoices_type_id (
+        id,
+        invoices,
+        percentage,
+        concept,
+        show_budgetlines
+      ),
+      taxes_type:taxes_type_id (
+        id,
+        name,
+        tax
+      )
+    `,
+    )
+    .eq("id", correctiveData.original_invoice_id)
+    .single();
+
+  if (fetchError || !original) {
+    console.error("Error fetching original invoice:", fetchError);
+    throw new Error(
+      fetchError?.message ||
+        "No se pudo encontrar la factura original. Por favor, inténtelo de nuevo.",
+    );
+  }
+
+  const originalInvoiceData = original as Invoice;
+
+  // Step 2: Create budget lines with negative prices
+  const negativeBudgetlines = originalInvoiceData.budgetlines.map((line) => ({
+    ...line,
+    precioUd: -Math.abs(line.precioUd || 0),
+    totalPrice: -Math.abs(line.totalPrice || 0),
+    costetotal: -Math.abs(line.costetotal || 0),
+  }));
+
+  // Step 3: Create price object with negative values
+  const negativePrice = {
+    costSend: -Math.abs(originalInvoiceData.price?.costSend || 0),
+    subTotalWithExtras: -Math.abs(
+      originalInvoiceData.price?.subTotalWithExtras || 0,
+    ),
+    userDiscountPercentage:
+      originalInvoiceData.price?.userDiscountPercentage || 0,
+    userDiscount: -Math.abs(originalInvoiceData.price?.userDiscount || 0),
+    extras: -Math.abs(originalInvoiceData.price?.extras || 0),
+    total: -Math.abs(originalInvoiceData.price?.total || 0),
+    vat: -Math.abs(originalInvoiceData.price?.vat || 0),
+    packs: -Math.abs(originalInvoiceData.price?.packs || 0),
+    subTotal: -Math.abs(originalInvoiceData.price?.subTotal || 0),
+    withIVA: originalInvoiceData.price?.withIVA || false,
+    alreadyPaid: -Math.abs(originalInvoiceData.price?.alreadyPaid || 0),
+  };
+
+  // Step 4: Create the corrective invoice
+  const insertData = {
+    business_id: originalInvoiceData.business_id,
+    invoices_type_id: originalInvoiceData.invoices_type_id,
+    taxes_type_id: originalInvoiceData.taxes_type_id,
+    budget_reference: originalInvoiceData.budget_reference,
+    budgetlines: negativeBudgetlines as unknown as Json,
+    price: negativePrice as unknown as Json,
+    client_name: originalInvoiceData.client_name || "",
+    client_nif: originalInvoiceData.client_nif || "",
+    client_email: originalInvoiceData.client_email || "",
+    client_address: originalInvoiceData.client_address || "",
+    client_locality: originalInvoiceData.client_locality || "",
+    client_postal_code: originalInvoiceData.client_postal_code || "",
+    client_phone: originalInvoiceData.client_phone || "",
+    is_corrective: true,
+    original_invoice_id: correctiveData.original_invoice_id,
+  };
+
+  const { data: createdInvoice, error: createError } = (await supabase
+    .from("invoices")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .insert(insertData as any)
+    .select()
+    .single()) as { data: Invoice | null; error: { message?: string } | null };
+
+  if (createError || !createdInvoice) {
+    console.error("Error creating corrective invoice:", createError);
+    throw new Error(
+      createError?.message ||
+        "No se pudo crear la factura rectificativa. Por favor, inténtelo de nuevo.",
+    );
+  }
+
+  try {
+    // Get the complete invoice with all relations
+    const { data: fullInvoice, error: fetchFullError } = await supabase
+      .from("invoices")
+      .select(
+        `
+        *,
+        business:business_id (
+          id,
+          name,
+          nif,
+          address,
+          locality,
+          province,
+          phone,
+          postal_code,
+          additional_data
+        ),
+        invoices_type:invoices_type_id (
+          id,
+          invoices,
+          percentage,
+          concept,
+          show_budgetlines
+        ),
+        taxes_type:taxes_type_id (
+          id,
+          name,
+          tax
+        )
+      `,
+      )
+      .eq("id", createdInvoice.id as string)
+      .single();
+
+    if (fetchFullError || !fullInvoice) {
+      console.error("Error fetching full corrective invoice:", fetchFullError);
+      throw new Error(
+        "No se pudo obtener los datos completos de la factura rectificativa.",
+      );
+    }
+
+    // Generate PDF
+    const pdfBlob = await generateInvoicePDF(fullInvoice as Invoice);
+
+    // Upload PDF to Supabase Storage
+    const fileName = `invoice_corrective_${createdInvoice.id}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from("invoices-pdf")
+      .upload(fileName, pdfBlob, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading corrective PDF:", uploadError);
+      throw new Error(
+        `No se pudo subir el PDF: ${uploadError.message || "Error desconocido"}`,
+      );
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from("invoices-pdf")
+      .getPublicUrl(fileName);
+
+    const pdfUrl = urlData.publicUrl;
+
+    // Update invoice with PDF URL
+    const { data: updatedInvoice, error: updateError } = (await supabase
+      .from("invoices")
+      // @ts-expect-error - Supabase type inference bug
+      .update({ pdf_url: pdfUrl })
+      .eq("id", createdInvoice.id as string)
+      .select(
+        `
+        *,
+        business:business_id (
+          id,
+          name,
+          nif,
+          address,
+          locality,
+          province,
+          phone,
+          postal_code,
+          additional_data
+        ),
+        invoices_type:invoices_type_id (
+          id,
+          invoices,
+          percentage,
+          concept,
+          show_budgetlines
+        ),
+        taxes_type:taxes_type_id (
+          id,
+          name,
+          tax
+        )
+      `,
+      )
+      .single()) as {
+      data: Invoice | null;
+      error: { message?: string } | null;
+    };
+
+    if (updateError || !updatedInvoice) {
+      console.error(
+        "Error updating corrective invoice with PDF URL:",
+        updateError,
+      );
+      return { ...(fullInvoice as Invoice), pdf_url: pdfUrl } as Invoice;
+    }
+
+    return updatedInvoice as Invoice;
+  } catch (error) {
+    console.error(
+      "Error in corrective invoice creation process:",
+      error instanceof Error ? error.message : error,
+    );
     return createdInvoice as Invoice;
   }
 };

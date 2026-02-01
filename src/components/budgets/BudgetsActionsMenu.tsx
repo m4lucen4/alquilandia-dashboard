@@ -31,22 +31,22 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
         className="absolute right-0 bottom-full z-10 mb-2 w-56 origin-bottom-right rounded-md bg-white shadow-lg ring-1 ring-black/5 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
       >
         <div className="py-1">
-          {!hasInvoice ? (
-            <MenuItem>
-              {({ focus }) => (
-                <div className="px-2">
-                  <Button
-                    title="Generar factura"
-                    onClick={() => onGenerateInvoice(budget)}
-                    variant="ghost"
-                    size="sm"
-                    block
-                    className={focus ? "bg-gray-100" : ""}
-                  />
-                </div>
-              )}
-            </MenuItem>
-          ) : (
+          <MenuItem>
+            {({ focus }) => (
+              <div className="px-2">
+                <Button
+                  title={hasInvoice ? "Generar otra factura" : "Generar factura"}
+                  onClick={() => onGenerateInvoice(budget)}
+                  variant="ghost"
+                  size="sm"
+                  block
+                  className={focus ? "bg-gray-100" : ""}
+                />
+              </div>
+            )}
+          </MenuItem>
+
+          {hasInvoice && (
             <MenuItem>
               {({ focus }) => (
                 <div className="px-2">
