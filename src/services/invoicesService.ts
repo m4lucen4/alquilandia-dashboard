@@ -70,7 +70,8 @@ export const getInvoiceByBudgetReference = async (
         locality,
         province,
         phone,
-        postal_code
+        postal_code,
+        additional_data
       ),
       invoices_type:invoices_type_id (
         id,
@@ -164,7 +165,8 @@ export const createInvoice = async (
           locality,
           province,
           phone,
-          postal_code
+          postal_code,
+          additional_data
         ),
         invoices_type:invoices_type_id (
           id,
@@ -233,7 +235,8 @@ export const createInvoice = async (
           locality,
           province,
           phone,
-          postal_code
+          postal_code,
+          additional_data
         ),
         invoices_type:invoices_type_id (
           id,

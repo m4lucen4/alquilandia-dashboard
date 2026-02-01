@@ -22,6 +22,7 @@ export const BusinessForm: FC<BusinessFormProps> = ({
     province: business?.province ?? "",
     phone: business?.phone ?? "",
     postal_code: business?.postal_code ?? "",
+    additional_data: business?.additional_data ?? "",
   }));
 
   const [errors, setErrors] = useState<
@@ -34,7 +35,11 @@ export const BusinessForm: FC<BusinessFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Limpiar error del campo cuando el usuario empieza a escribir
@@ -132,6 +137,17 @@ export const BusinessForm: FC<BusinessFormProps> = ({
           disabled={isLoading}
         />
       </div>
+
+      <InputField
+        label="Datos adicionales"
+        name="additional_data"
+        value={formData.additional_data || ""}
+        onChange={handleChange}
+        error={errors.additional_data}
+        disabled={isLoading}
+        as="textarea"
+        rows={4}
+      />
 
       {/* Hidden submit button - form will be submitted by modal's accept button */}
       <button type="submit" className="hidden" />

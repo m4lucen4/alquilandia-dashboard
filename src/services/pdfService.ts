@@ -149,23 +149,19 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     // Budget Lines Table (only if show_budgetlines is true)
     if (invoice.invoices_type?.show_budgetlines !== false) {
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("LÍNEAS DE PRESUPUESTO", 20, yPosition);
       yPosition += 5;
 
       const tableData = invoice.budgetlines.map((line, index) => [
         (index + 1).toString(),
-        line.nombre || "-",
-        line.categoria || "-",
-        line.unidades?.toString() || "1",
+        line.elemento || "-",
+        line.units?.toString() || "1",
         formatCurrency(line.precioUd || 0),
         formatCurrency(line.totalPrice || 0),
       ]);
 
       autoTable(doc, {
         startY: yPosition,
-        head: [["#", "Nombre", "Categoría", "Unidades", "Precio Ud.", "Total"]],
+        head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -179,11 +175,10 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
         },
         columnStyles: {
           0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 50 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 20, halign: "center" },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 20, halign: "center" },
+          3: { cellWidth: 30, halign: "right" },
           4: { cellWidth: 30, halign: "right" },
-          5: { cellWidth: 30, halign: "right" },
         },
         margin: { left: 20, right: 20 },
       });
@@ -232,6 +227,16 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       yPosition += 5;
     }
 
+    // Gastos de transporte (always shown)
+    doc.text("Gastos de transporte:", summaryX, yPosition, { align: "right" });
+    doc.text(
+      formatCurrency(invoice.price?.costSend || 0),
+      pageWidth - 20,
+      yPosition,
+      { align: "right" },
+    );
+    yPosition += 5;
+
     // Descuento
     if (invoice.price?.userDiscount && invoice.price.userDiscount > 0) {
       doc.setTextColor(211, 47, 47); // Red color
@@ -263,15 +268,29 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     // Footer
     const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(128, 128, 128);
-    doc.text(
-      `Factura generada el ${new Date(invoice.created_at || "").toLocaleDateString("es-ES")}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: "center" },
-    );
+    let footerY = pageHeight - 10;
+
+    // Additional data from business (if exists)
+    if (invoice.business?.additional_data) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 100, 100);
+
+      const additionalDataLines = doc.splitTextToSize(
+        invoice.business.additional_data,
+        pageWidth - 40,
+      );
+
+      // Calculate starting position for additional data
+      const additionalDataHeight = additionalDataLines.length * 3;
+      footerY = pageHeight - 15 - additionalDataHeight;
+
+      doc.text(additionalDataLines, pageWidth / 2, footerY, {
+        align: "center",
+      });
+
+      footerY = pageHeight - 10;
+    }
 
     // Convert to Blob
     const pdfBlob = doc.output("blob");

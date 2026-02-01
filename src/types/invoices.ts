@@ -32,6 +32,7 @@ export interface Invoice {
     province?: string;
     phone?: string;
     postal_code?: string;
+    additional_data?: string;
   };
   invoices_type?: {
     id: string;

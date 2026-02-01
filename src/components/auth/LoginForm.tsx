@@ -18,12 +18,20 @@ export const LoginForm: FC<LoginFormProps> = ({
   const [passwordError, setPasswordError] = useState("");
   const [touched, setTouched] = useState({ email: false, password: false });
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEmailChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     setEmail(e.target.value);
     if (emailError) setEmailError("");
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     setPassword(e.target.value);
     if (passwordError) setPasswordError("");
   };

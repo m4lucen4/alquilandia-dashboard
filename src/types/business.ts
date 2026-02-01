@@ -14,6 +14,7 @@ export interface Business {
   province: string;
   phone: string;
   postal_code: string;
+  additional_data?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -26,6 +27,7 @@ export interface BusinessFormData {
   province: string;
   phone: string;
   postal_code: string;
+  additional_data?: string;
 }
 
 export interface BusinessInsert extends BusinessFormData {}

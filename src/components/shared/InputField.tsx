@@ -4,7 +4,11 @@ interface InputFieldProps {
   label: string;
   name: string;
   value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => void;
   type?: string;
   error?: string;
   placeholder?: string;
@@ -12,8 +16,14 @@ interface InputFieldProps {
   disabled?: boolean;
   autoComplete?: string;
   className?: string;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onBlur?:
+    | ((e: React.FocusEvent<HTMLInputElement>) => void)
+    | ((e: React.FocusEvent<HTMLTextAreaElement>) => void);
+  onKeyDown?:
+    | ((e: React.KeyboardEvent<HTMLInputElement>) => void)
+    | ((e: React.KeyboardEvent<HTMLTextAreaElement>) => void);
+  as?: "input" | "textarea";
+  rows?: number;
 }
 
 // Hoist static CSS classes outside component to avoid recalculation on every render
@@ -40,6 +50,8 @@ const InputField = ({
   className = "",
   onBlur,
   onKeyDown,
+  as = "input",
+  rows = 3,
 }: InputFieldProps) => {
   const inputId = `input-${name}`;
 
@@ -57,22 +69,40 @@ const InputField = ({
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <div className="mt-2">
-        <input
-          id={inputId}
-          name={name}
-          type={type}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          required={required}
-          disabled={disabled}
-          autoComplete={autoComplete}
-          className={inputClasses}
-          aria-invalid={error ? "true" : "false"}
-          aria-describedby={error ? `${inputId}-error` : undefined}
-        />
+        {as === "textarea" ? (
+          <textarea
+            id={inputId}
+            name={name}
+            value={value}
+            onChange={onChange as (e: React.ChangeEvent<HTMLTextAreaElement>) => void}
+            onBlur={onBlur as (e: React.FocusEvent<HTMLTextAreaElement>) => void}
+            onKeyDown={onKeyDown as (e: React.KeyboardEvent<HTMLTextAreaElement>) => void}
+            placeholder={placeholder}
+            required={required}
+            disabled={disabled}
+            rows={rows}
+            className={inputClasses}
+            aria-invalid={error ? "true" : "false"}
+            aria-describedby={error ? `${inputId}-error` : undefined}
+          />
+        ) : (
+          <input
+            id={inputId}
+            name={name}
+            type={type}
+            value={value}
+            onChange={onChange as (e: React.ChangeEvent<HTMLInputElement>) => void}
+            onBlur={onBlur as (e: React.FocusEvent<HTMLInputElement>) => void}
+            onKeyDown={onKeyDown as (e: React.KeyboardEvent<HTMLInputElement>) => void}
+            placeholder={placeholder}
+            required={required}
+            disabled={disabled}
+            autoComplete={autoComplete}
+            className={inputClasses}
+            aria-invalid={error ? "true" : "false"}
+            aria-describedby={error ? `${inputId}-error` : undefined}
+          />
+        )}
       </div>
       {error && (
         <p

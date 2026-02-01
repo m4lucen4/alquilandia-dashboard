@@ -31,8 +31,14 @@ export const InvoicesTypesForm: FC<InvoicesTypesFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    const type = "type" in e.target ? e.target.type : undefined;
+    const checked = "checked" in e.target ? e.target.checked : false;
 
     // Process value based on field type
     let processedValue: string | number | boolean = value;
