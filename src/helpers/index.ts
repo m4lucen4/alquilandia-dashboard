@@ -12,3 +12,6 @@ export { formatCurrency } from "./currency";
 
 // Helpers de estado de presupuestos
 export { getStatusBadgeConfig } from "./badgetsStatus";
+
+// Helpers de facturas
+export { formatInvoiceNumber } from "./invoices";

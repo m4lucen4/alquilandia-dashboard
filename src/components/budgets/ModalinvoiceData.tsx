@@ -2,7 +2,7 @@ import { type FC } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { Modal } from "../shared/Modal";
 import type { Invoice } from "../../types/invoices";
-import { formatCurrency } from "@/helpers";
+import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 
 interface ModalInvoiceDataProps {
   isOpen: boolean;
@@ -71,7 +71,7 @@ export const ModalInvoiceData: FC<ModalInvoiceDataProps> = ({
               {invoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50">
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                    #{invoice.invoice_number}
+                    {formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {invoice.business?.name || "-"}
@@ -100,7 +100,7 @@ export const ModalInvoiceData: FC<ModalInvoiceDataProps> = ({
                     {invoice.pdf_url ? (
                       <a
                         href={invoice.pdf_url}
-                        download={`factura_${invoice.invoice_number}.pdf`}
+                        download={`factura_${formatInvoiceNumber(invoice.invoice_number, invoice.created_at).replace("/", "_")}.pdf`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

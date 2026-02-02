@@ -24,7 +24,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { ModalCreateCorrectiveInvoice } from "@/components/invoices/ModalCreateCorrectiveInvoice";
 import type { Invoice } from "@/types/invoices";
 import { formatDate } from "@/helpers/dates";
-import { formatCurrency } from "@/helpers";
+import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 
 export const Invoices: FC = () => {
   const dispatch = useAppDispatch();
@@ -128,7 +128,10 @@ export const Invoices: FC = () => {
           return (
             <div className="flex items-center gap-2">
               <span className="font-medium text-gray-900">
-                #{info.getValue() as number}
+                {formatInvoiceNumber(
+                  info.getValue() as number,
+                  invoice.created_at,
+                )}
               </span>
               {invoice.is_corrective && (
                 <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
@@ -188,7 +191,7 @@ export const Invoices: FC = () => {
               {invoice.pdf_url ? (
                 <a
                   href={invoice.pdf_url}
-                  download={`factura_${invoice.invoice_number}.pdf`}
+                  download={`factura_${formatInvoiceNumber(invoice.invoice_number, invoice.created_at).replace("/", "_")}.pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

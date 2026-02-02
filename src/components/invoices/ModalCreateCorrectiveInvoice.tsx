@@ -1,7 +1,7 @@
 import { type FC, useState } from "react";
 import { Modal } from "../shared/Modal";
 import type { Invoice } from "@/types/invoices";
-import { formatCurrency } from "@/helpers";
+import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 
 interface ModalCreateCorrectiveInvoiceProps {
   isOpen: boolean;
@@ -40,7 +40,9 @@ export const ModalCreateCorrectiveInvoice: FC<
           <dl className="space-y-2">
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Nº Factura:</dt>
-              <dd className="text-gray-900">#{invoice.invoice_number}</dd>
+              <dd className="text-gray-900">
+                {formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}
+              </dd>
             </div>
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Nº Presupuesto:</dt>

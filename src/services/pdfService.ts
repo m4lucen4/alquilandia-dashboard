@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Invoice } from "@/types/invoices";
-import { formatCurrency } from "@/helpers";
+import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 import logoImage from "@/assets/logo.png";
 
 /**
@@ -38,7 +38,11 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
-    doc.text(`Nº Factura: ${invoice.invoice_number}`, 20, yPosition);
+    doc.text(
+      `Nº Factura: ${formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}`,
+      20,
+      yPosition,
+    );
     doc.text(
       `Fecha: ${new Date(invoice.created_at || "").toLocaleDateString("es-ES")}`,
       pageWidth - 20,
