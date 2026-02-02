@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, useState } from "react";
 import { Modal } from "../shared/Modal";
 import type { Invoice } from "@/types/invoices";
 import { formatCurrency } from "@/helpers";
@@ -6,7 +6,7 @@ import { formatCurrency } from "@/helpers";
 interface ModalCreateCorrectiveInvoiceProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason: string) => void;
   invoice: Invoice | null;
   isCreating: boolean;
 }
@@ -14,12 +14,18 @@ interface ModalCreateCorrectiveInvoiceProps {
 export const ModalCreateCorrectiveInvoice: FC<
   ModalCreateCorrectiveInvoiceProps
 > = ({ isOpen, onClose, onConfirm, invoice, isCreating }) => {
+  const [correctiveReason, setCorrectiveReason] = useState("");
+
   if (!isOpen || !invoice) return null;
+
+  const handleConfirm = () => {
+    onConfirm(correctiveReason);
+  };
 
   return (
     <Modal
       title="Crear Factura Rectificativa"
-      onAccept={onConfirm}
+      onAccept={handleConfirm}
       onClose={onClose}
       acceptDisabled={isCreating}
       acceptText={isCreating ? "Creando..." : "Crear Factura Rectificativa"}
@@ -53,6 +59,24 @@ export const ModalCreateCorrectiveInvoice: FC<
               </dd>
             </div>
           </dl>
+        </div>
+
+        <div>
+          <label
+            htmlFor="corrective-reason"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Motivo de la rectificación (opcional)
+          </label>
+          <textarea
+            id="corrective-reason"
+            rows={3}
+            value={correctiveReason}
+            onChange={(e) => setCorrectiveReason(e.target.value)}
+            placeholder="Escribe el motivo de la factura rectificativa..."
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={isCreating}
+          />
         </div>
 
         <div className="rounded-md bg-amber-50 p-4 ring-1 ring-amber-200">

@@ -25,6 +25,7 @@ export interface Invoice {
   client_phone?: string;
   is_corrective?: boolean;
   original_invoice_id?: string;
+  corrective_reason?: string;
   business?: {
     id: string;
     name: string;
@@ -47,6 +48,9 @@ export interface Invoice {
     id: string;
     name: string;
     tax: number;
+  };
+  original_invoice?: {
+    invoice_number: number;
   };
 }
 
@@ -74,6 +78,7 @@ export interface CreateInvoiceData {
  */
 export interface CreateCorrectiveInvoiceData {
   original_invoice_id: string;
+  corrective_reason?: string;
 }
 
 /**

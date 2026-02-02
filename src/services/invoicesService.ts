@@ -88,6 +88,9 @@ export const getInvoiceByBudgetReference = async (
         id,
         name,
         tax
+      ),
+      original_invoice:original_invoice_id (
+        invoice_number
       )
     `,
     )
@@ -146,6 +149,9 @@ export const getInvoicesByBudgetReference = async (
         id,
         name,
         tax
+      ),
+      original_invoice:original_invoice_id (
+        invoice_number
       )
     `,
     )
@@ -237,6 +243,9 @@ export const createInvoice = async (
           id,
           name,
           tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
         )
       `,
       )
@@ -307,6 +316,9 @@ export const createInvoice = async (
           id,
           name,
           tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
         )
       `,
       )
@@ -431,6 +443,7 @@ export const createCorrectiveInvoice = async (
     client_phone: originalInvoiceData.client_phone || "",
     is_corrective: true,
     original_invoice_id: correctiveData.original_invoice_id,
+    corrective_reason: correctiveData.corrective_reason || "",
   };
 
   const { data: createdInvoice, error: createError } = (await supabase
@@ -477,6 +490,9 @@ export const createCorrectiveInvoice = async (
           id,
           name,
           tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
         )
       `,
       )
@@ -547,6 +563,9 @@ export const createCorrectiveInvoice = async (
           id,
           name,
           tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
         )
       `,
       )

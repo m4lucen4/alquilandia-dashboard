@@ -124,6 +124,44 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     yPosition += boxHeight + 12;
 
+    // Corrective Invoice Notice (only for corrective invoices)
+    if (invoice.is_corrective) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(211, 47, 47);
+      doc.text("FACTURA RECTIFICATIVA", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      // Build corrective notice text
+      const originalInvoiceNumber =
+        invoice.original_invoice?.invoice_number || "N/A";
+      let correctiveNotice = `Factura rectificativa correspondiente a la factura ${originalInvoiceNumber}`;
+
+      if (
+        invoice.corrective_reason &&
+        invoice.corrective_reason.trim() !== ""
+      ) {
+        correctiveNotice += `\n${invoice.corrective_reason}`;
+      }
+
+      const correctiveLines = doc.splitTextToSize(
+        correctiveNotice,
+        pageWidth - 44,
+      );
+      const correctiveHeight = correctiveLines.length * 5 + 4;
+
+      doc.setFillColor(255, 235, 238);
+      doc.rect(20, yPosition, pageWidth - 40, correctiveHeight, "F");
+      doc.setDrawColor(244, 67, 54);
+      doc.rect(20, yPosition, pageWidth - 40, correctiveHeight, "S");
+
+      doc.text(correctiveLines, 24, yPosition + 5);
+      yPosition += correctiveHeight + 8;
+    }
+
     // Concept (if exists)
     if (invoice.invoices_type?.concept) {
       doc.setFontSize(9);
@@ -251,10 +289,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       yPosition += 5;
     }
 
-    // Total line
     yPosition += 2;
-    doc.setDrawColor(0, 0, 0);
-    doc.line(summaryX - 10, yPosition - 2, pageWidth - 20, yPosition - 2);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);

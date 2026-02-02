@@ -96,12 +96,13 @@ export const Invoices: FC = () => {
     dispatch(resetCreateCorrectiveInvoiceRequest());
   }, [dispatch]);
 
-  const handleCreateCorrective = useCallback(async () => {
+  const handleCreateCorrective = useCallback(async (reason: string) => {
     if (!selectedInvoiceForCorrective) return;
 
     const result = await dispatch(
       createCorrectiveInvoice({
         original_invoice_id: selectedInvoiceForCorrective.id,
+        corrective_reason: reason,
       }),
     );
 
