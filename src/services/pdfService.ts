@@ -19,6 +19,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     let yPosition = 20;
 
     // Logo (top left)
@@ -28,10 +29,56 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       console.error("Error adding logo to PDF:", error);
     }
 
-    // Header - FACTURA
-    // doc.setFontSize(24);
-    // doc.setTextColor(25, 118, 210);
-    // doc.text("FACTURA", pageWidth / 2, yPosition + 15, { align: "center" });
+    // Business data (top right, next to logo)
+    const businessAlignX = pageWidth - 20;
+    let businessY = yPosition;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 0, 0);
+    doc.text(invoice.business?.name || "-", businessAlignX, businessY, {
+      align: "right",
+    });
+    businessY += 5;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `NIF: ${invoice.business?.nif || "-"}`,
+      businessAlignX,
+      businessY,
+      { align: "right" },
+    );
+    businessY += 4;
+
+    const businessAddress = doc.splitTextToSize(
+      invoice.business?.address || "",
+      75,
+    );
+    businessAddress.forEach((line: string) => {
+      doc.text(line, businessAlignX, businessY, { align: "right" });
+      businessY += 4;
+    });
+
+    doc.text(
+      `${invoice.business?.postal_code || ""} ${invoice.business?.locality || ""}`.trim(),
+      businessAlignX,
+      businessY,
+      { align: "right" },
+    );
+    businessY += 4;
+    if (invoice.business?.province) {
+      doc.text(invoice.business.province, businessAlignX, businessY, {
+        align: "right",
+      });
+      businessY += 4;
+    }
+    doc.text(
+      `Tel: ${invoice.business?.phone || ""}`,
+      businessAlignX,
+      businessY,
+      { align: "right" },
+    );
+
     yPosition += 35;
 
     // Invoice and Budget Reference
@@ -55,76 +102,40 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     doc.text(`Nº Presupuesto: ${invoice.budget_reference}`, 20, yPosition);
     yPosition += 12;
 
-    // Fiscal Data - Two columns (Vendor and Client)
-    const columnWidth = (pageWidth - 50) / 2;
-    const boxHeight = 38;
-
-    doc.setFillColor(245, 245, 245);
-    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "F");
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
-
-    let vendorY = yPosition + 8;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text(invoice.business?.name || "-", 24, vendorY);
-    vendorY += 5;
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(`NIF: ${invoice.business?.nif || "-"}`, 24, vendorY);
-    vendorY += 4;
-
-    const businessAddress = doc.splitTextToSize(
-      invoice.business?.address || "",
-      columnWidth - 8,
-    );
-    doc.text(businessAddress, 24, vendorY);
-    vendorY += businessAddress.length * 4;
-
-    doc.text(
-      `${invoice.business?.postal_code || ""} ${invoice.business?.locality || ""}`,
-      24,
-      vendorY,
-    );
-    vendorY += 4;
-    doc.text(invoice.business?.province || "", 24, vendorY);
-    vendorY += 4;
-    doc.text(`Tel: ${invoice.business?.phone || ""}`, 24, vendorY);
-
-    // CLIENT - Right Column
-    const clientX = 20 + columnWidth + 10;
+    // Client data
+    const columnWidth = pageWidth - 40;
+    const boxHeight = 30;
 
     doc.setFillColor(232, 245, 233);
-    doc.rect(clientX, yPosition + 2, columnWidth, boxHeight, "F");
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "F");
     doc.setDrawColor(129, 199, 132);
-    doc.rect(clientX, yPosition + 2, columnWidth, boxHeight, "S");
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
 
     let clientY = yPosition + 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(invoice.client_name || "-", clientX + 4, clientY);
+    doc.text(invoice.client_name || "-", 24, clientY);
     clientY += 5;
 
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text(`NIF: ${invoice.client_nif || "-"}`, clientX + 4, clientY);
+    doc.text(`NIF: ${invoice.client_nif || "-"}`, 24, clientY);
     clientY += 4;
 
     const clientAddress = doc.splitTextToSize(
       invoice.client_address || "",
       columnWidth - 8,
     );
-    doc.text(clientAddress, clientX + 4, clientY);
+    doc.text(clientAddress, 24, clientY);
     clientY += clientAddress.length * 4;
 
     doc.text(
       `${invoice.client_postal_code || ""} ${invoice.client_locality || ""}`,
-      clientX + 4,
+      24,
       clientY,
     );
     clientY += 4;
-    doc.text(`Tel: ${invoice.client_phone || ""}`, clientX + 4, clientY);
+    doc.text(`Tel: ${invoice.client_phone || ""}`, 24, clientY);
 
     yPosition += boxHeight + 12;
 
@@ -226,12 +237,18 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
           3: { cellWidth: 30, halign: "right" },
           4: { cellWidth: 30, halign: "right" },
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: 20, right: 20, bottom: 45 },
       });
 
       // Get Y position after table
       // @ts-expect-error - autoTable adds finalY to doc
       yPosition = doc.lastAutoTable.finalY + 10;
+
+      // Page break if price summary wouldn't fit before footer
+      if (yPosition > pageHeight - 50) {
+        doc.addPage();
+        yPosition = 20;
+      }
     } else {
       // If budget lines are not shown, add some spacing
       yPosition += 5;
@@ -310,7 +327,6 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     );
 
     // Footer
-    const pageHeight = doc.internal.pageSize.getHeight();
     let footerY = pageHeight - 10;
 
     // Additional data from business (if exists)
