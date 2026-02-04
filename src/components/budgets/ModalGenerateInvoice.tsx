@@ -21,6 +21,8 @@ interface ModalGenerateInvoiceProps {
   setSelectedInvoicesTypeId: (value: string) => void;
   selectedTaxesTypeId: string;
   setSelectedTaxesTypeId: (value: string) => void;
+  invoiceTo: "titular" | "empresa";
+  setInvoiceTo: (value: "titular" | "empresa") => void;
   isGenerating: boolean;
 }
 
@@ -38,6 +40,8 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
   setSelectedInvoicesTypeId,
   selectedTaxesTypeId,
   setSelectedTaxesTypeId,
+  invoiceTo,
+  setInvoiceTo,
   isGenerating,
 }) => {
   // Memoize options to avoid recreating on every render
@@ -97,6 +101,40 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
             #{selectedBudget.budgetReference}
           </span>
         </p>
+
+        {selectedBudget.user?.company?.name && selectedBudget.user?.company?.nif && (
+          <div>
+            <label className="block text-sm font-medium text-gray-900">
+              Factura a nombre de
+            </label>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="invoiceTo"
+                  checked={invoiceTo === "titular"}
+                  onChange={() => setInvoiceTo("titular")}
+                  disabled={isGenerating}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-700">Titular</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="invoiceTo"
+                  checked={invoiceTo === "empresa"}
+                  onChange={() => setInvoiceTo("empresa")}
+                  disabled={isGenerating}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  {selectedBudget.user.company.name}
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
 
         {!showBusinessSelect && selectedBusinessId ? (
           <div className="mb-4">

@@ -1,5 +1,14 @@
 import type { IRequest } from "./auth";
 
+export interface Company {
+  address: string;
+  locality: string;
+  name: string;
+  nif: string;
+  population: string;
+  zipCode: string;
+}
+
 // User information
 export interface User {
   id: string;
@@ -23,7 +32,7 @@ export interface User {
   FullName: string;
   googleId: string;
   appleId: string;
-  company: string | null;
+  company: Company | null;
   isDeleted: boolean;
   deletedAt: string;
   problematic: boolean;

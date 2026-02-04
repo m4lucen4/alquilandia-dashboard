@@ -46,6 +46,7 @@ export const Budgets: FC = () => {
   const [selectedInvoicesTypeId, setSelectedInvoicesTypeId] =
     useState<string>("");
   const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
+  const [invoiceTo, setInvoiceTo] = useState<"titular" | "empresa">("titular");
 
   const {
     budgetNumber,
@@ -105,6 +106,7 @@ export const Budgets: FC = () => {
     setSelectedBusinessId("");
     setSelectedInvoicesTypeId("");
     setSelectedTaxesTypeId("");
+    setInvoiceTo("titular");
     dispatch(resetCreateInvoiceRequest());
   }, [dispatch]);
 
@@ -119,21 +121,34 @@ export const Budgets: FC = () => {
     }
 
     // Extract client data from budget
-    const clientData = {
-      client_name:
-        selectedBudget.user?.FullName ||
-        `${selectedBudget.user?.firstName || ""} ${selectedBudget.user?.lastName || ""}`.trim() ||
-        selectedBudget.client ||
-        "",
-      client_nif: selectedBudget.user?.dnif || "",
-      client_email: selectedBudget.user?.email || "",
-      client_address:
-        selectedBudget.user?.address || selectedBudget.address || "",
-      client_locality:
-        selectedBudget.user?.locality || selectedBudget.locality || "",
-      client_postal_code: selectedBudget.user?.zipCode || "",
-      client_phone: selectedBudget.user?.phone || selectedBudget.phone || "",
-    };
+    const clientData =
+      invoiceTo === "empresa" && selectedBudget.user?.company
+        ? {
+            client_name: selectedBudget.user.company.name,
+            client_nif: selectedBudget.user.company.nif,
+            client_email: selectedBudget.user?.email || "",
+            client_address: selectedBudget.user.company.address,
+            client_locality: selectedBudget.user.company.locality,
+            client_postal_code: selectedBudget.user.company.zipCode,
+            client_phone:
+              selectedBudget.user?.phone || selectedBudget.phone || "",
+          }
+        : {
+            client_name:
+              selectedBudget.user?.FullName ||
+              `${selectedBudget.user?.firstName || ""} ${selectedBudget.user?.lastName || ""}`.trim() ||
+              selectedBudget.client ||
+              "",
+            client_nif: selectedBudget.user?.dnif || "",
+            client_email: selectedBudget.user?.email || "",
+            client_address:
+              selectedBudget.user?.address || selectedBudget.address || "",
+            client_locality:
+              selectedBudget.user?.locality || selectedBudget.locality || "",
+            client_postal_code: selectedBudget.user?.zipCode || "",
+            client_phone:
+              selectedBudget.user?.phone || selectedBudget.phone || "",
+          };
 
     const result = await dispatch(
       createInvoice({
@@ -157,6 +172,7 @@ export const Budgets: FC = () => {
     selectedBusinessId,
     selectedInvoicesTypeId,
     selectedTaxesTypeId,
+    invoiceTo,
     dispatch,
     handleCloseModal,
     navigate,
@@ -225,6 +241,8 @@ export const Budgets: FC = () => {
         setSelectedInvoicesTypeId={setSelectedInvoicesTypeId}
         selectedTaxesTypeId={selectedTaxesTypeId}
         setSelectedTaxesTypeId={setSelectedTaxesTypeId}
+        invoiceTo={invoiceTo}
+        setInvoiceTo={setInvoiceTo}
         isGenerating={createInvoiceRequest.inProgress}
       />
 
