@@ -1,7 +1,11 @@
-import { supabase } from '@/config/supabase';
-import type { Business, BusinessInsert, BusinessUpdate } from '@/types/business';
+import { supabase } from "@/config/supabase";
+import type {
+  Business,
+  BusinessInsert,
+  BusinessUpdate,
+} from "@/types/business";
 
-const TABLE_NAME = 'business';
+const TABLE_NAME = "business";
 
 /**
  * Obtiene todas las empresas
@@ -9,11 +13,11 @@ const TABLE_NAME = 'business';
 export const getAllBusiness = async (): Promise<Business[]> => {
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('Error fetching business:', error);
+    console.error("Error fetching business:", error);
     throw new Error(error.message);
   }
 
@@ -26,12 +30,12 @@ export const getAllBusiness = async (): Promise<Business[]> => {
 export const getBusinessById = async (id: string): Promise<Business | null> => {
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .select('*')
-    .eq('id', id)
+    .select("*")
+    .eq("id", id)
     .single();
 
   if (error) {
-    console.error('Error fetching business by id:', error);
+    console.error("Error fetching business by id:", error);
     throw new Error(error.message);
   }
 
@@ -41,7 +45,16 @@ export const getBusinessById = async (id: string): Promise<Business | null> => {
 /**
  * Crea una nueva empresa
  */
-export const createBusiness = async (business: BusinessInsert): Promise<Business> => {
+export const createBusiness = async (
+  business: BusinessInsert,
+): Promise<Business> => {
+  if (business.is_default) {
+    await supabase
+      .from(TABLE_NAME)
+      .update({ is_default: false } as never)
+      .eq("is_default", true);
+  }
+
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .insert(business as never)
@@ -49,12 +62,12 @@ export const createBusiness = async (business: BusinessInsert): Promise<Business
     .single();
 
   if (error) {
-    console.error('Error creating business:', error);
+    console.error("Error creating business:", error);
     throw new Error(error.message);
   }
 
   if (!data) {
-    throw new Error('No data returned when creating business');
+    throw new Error("No data returned when creating business");
   }
 
   return data;
@@ -65,22 +78,30 @@ export const createBusiness = async (business: BusinessInsert): Promise<Business
  */
 export const updateBusiness = async (
   id: string,
-  updates: BusinessUpdate
+  updates: BusinessUpdate,
 ): Promise<Business> => {
+  if (updates.is_default) {
+    await supabase
+      .from(TABLE_NAME)
+      .update({ is_default: false } as never)
+      .eq("is_default", true)
+      .neq("id", id);
+  }
+
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .update({ ...updates, updated_at: new Date().toISOString() } as never)
-    .eq('id', id)
+    .eq("id", id)
     .select()
     .single();
 
   if (error) {
-    console.error('Error updating business:', error);
+    console.error("Error updating business:", error);
     throw new Error(error.message);
   }
 
   if (!data) {
-    throw new Error('No data returned when updating business');
+    throw new Error("No data returned when updating business");
   }
 
   return data;
@@ -90,10 +111,10 @@ export const updateBusiness = async (
  * Elimina una empresa
  */
 export const deleteBusiness = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
+  const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
 
   if (error) {
-    console.error('Error deleting business:', error);
+    console.error("Error deleting business:", error);
     throw new Error(error.message);
   }
 };

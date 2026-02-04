@@ -85,6 +85,11 @@ const businessSlice = createSlice({
         };
       })
       .addCase(createBusiness.fulfilled, (state, action) => {
+        if (action.payload.is_default) {
+          state.businesses.forEach((b) => {
+            b.is_default = false;
+          });
+        }
         state.businesses.unshift(action.payload); // Agregar al inicio
         state.createBusinessRequest = {
           inProgress: false,
@@ -113,6 +118,13 @@ const businessSlice = createSlice({
         );
         if (index !== -1) {
           state.businesses[index] = action.payload;
+        }
+        if (action.payload.is_default) {
+          state.businesses.forEach((b, i) => {
+            if (i !== index) {
+              b.is_default = false;
+            }
+          });
         }
         state.updateBusinessRequest = {
           inProgress: false,

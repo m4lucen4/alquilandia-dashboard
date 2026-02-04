@@ -15,6 +15,7 @@ export interface Business {
   phone: string;
   postal_code: string;
   additional_data?: string;
+  is_default?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -28,6 +29,7 @@ export interface BusinessFormData {
   phone: string;
   postal_code: string;
   additional_data?: string;
+  is_default?: boolean;
 }
 
 export interface BusinessInsert extends BusinessFormData {}

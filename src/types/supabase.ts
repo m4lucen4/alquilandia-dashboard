@@ -31,6 +31,8 @@ export interface Database {
           province: string;
           phone: string;
           postal_code: string;
+          additional_data: string | null;
+          is_default: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -43,6 +45,8 @@ export interface Database {
           province: string;
           phone: string;
           postal_code: string;
+          additional_data?: string | null;
+          is_default?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -55,6 +59,8 @@ export interface Database {
           province?: string;
           phone?: string;
           postal_code?: string;
+          additional_data?: string | null;
+          is_default?: boolean;
           updated_at?: string;
         };
       };

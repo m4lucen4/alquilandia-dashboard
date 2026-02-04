@@ -23,6 +23,7 @@ export const BusinessForm: FC<BusinessFormProps> = ({
     phone: business?.phone ?? "",
     postal_code: business?.postal_code ?? "",
     additional_data: business?.additional_data ?? "",
+    is_default: business?.is_default ?? false,
   }));
 
   const [errors, setErrors] = useState<
@@ -46,6 +47,10 @@ export const BusinessForm: FC<BusinessFormProps> = ({
     if (errors[name as keyof BusinessFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.checked }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -148,6 +153,18 @@ export const BusinessForm: FC<BusinessFormProps> = ({
         as="textarea"
         rows={4}
       />
+
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          name="is_default"
+          checked={formData.is_default}
+          onChange={handleCheckboxChange}
+          disabled={isLoading}
+          className="h-4 w-4 rounded accent-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <span className="text-sm text-gray-700">Empresa principal</span>
+      </label>
 
       {/* Hidden submit button - form will be submitted by modal's accept button */}
       <button type="submit" className="hidden" />
