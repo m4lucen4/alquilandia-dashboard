@@ -166,8 +166,15 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       yPosition += correctiveHeight + 8;
     }
 
-    // Concept (if exists)
-    if (invoice.invoices_type?.concept) {
+    // Concept + Additional data
+    const conceptText = [
+      invoice.invoices_type?.concept,
+      invoice.additional_data,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (conceptText) {
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.text("CONCEPTO", 20, yPosition);
@@ -175,10 +182,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
       doc.setFont("helvetica", "normal");
       doc.setFillColor(255, 248, 225);
-      const conceptLines = doc.splitTextToSize(
-        invoice.invoices_type.concept,
-        pageWidth - 44,
-      );
+      const conceptLines = doc.splitTextToSize(conceptText, pageWidth - 44);
       const conceptHeight = conceptLines.length * 5 + 4;
 
       doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "F");

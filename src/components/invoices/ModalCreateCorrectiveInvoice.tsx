@@ -41,7 +41,10 @@ export const ModalCreateCorrectiveInvoice: FC<
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Nº Factura:</dt>
               <dd className="text-gray-900">
-                {formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}
+                {formatInvoiceNumber(
+                  invoice.invoice_number,
+                  invoice.created_at,
+                )}
               </dd>
             </div>
             <div className="flex justify-between text-sm">
@@ -50,9 +53,7 @@ export const ModalCreateCorrectiveInvoice: FC<
             </div>
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Empresa:</dt>
-              <dd className="text-gray-900">
-                {invoice.business?.name || "-"}
-              </dd>
+              <dd className="text-gray-900">{invoice.business?.name || "-"}</dd>
             </div>
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Total:</dt>
@@ -83,7 +84,7 @@ export const ModalCreateCorrectiveInvoice: FC<
 
         <div className="rounded-md bg-amber-50 p-4 ring-1 ring-amber-200">
           <div className="flex">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <svg
                 className="h-5 w-5 text-amber-400"
                 viewBox="0 0 20 20"
@@ -100,8 +101,9 @@ export const ModalCreateCorrectiveInvoice: FC<
               <h3 className="text-sm font-medium text-amber-800">Atención</h3>
               <div className="mt-2 text-sm text-amber-700">
                 <p>
-                  La factura rectificativa tendrá el <strong>mismo importe</strong> que la
-                  factura original pero con valores <strong>negativos</strong> (devolución).
+                  La factura rectificativa tendrá el{" "}
+                  <strong>mismo importe</strong> que la factura original pero
+                  con valores <strong>negativos</strong> (devolución).
                 </p>
               </div>
             </div>

@@ -118,6 +118,7 @@ export interface Database {
           invoice_number: number;
           budgetlines: Json;
           price: Json;
+          additional_data: string | null;
           pdf_url: string | null;
           created_at: string;
           updated_at: string;
@@ -131,6 +132,7 @@ export interface Database {
           invoice_number?: number;
           budgetlines: Json;
           price: Json;
+          additional_data?: string | null;
           pdf_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -144,6 +146,7 @@ export interface Database {
           invoice_number?: number;
           budgetlines?: Json;
           price?: Json;
+          additional_data?: string | null;
           pdf_url?: string | null;
           updated_at?: string;
         };

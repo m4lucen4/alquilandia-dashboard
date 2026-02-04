@@ -23,6 +23,7 @@ export interface Invoice {
   client_locality?: string;
   client_postal_code?: string;
   client_phone?: string;
+  additional_data?: string;
   is_corrective?: boolean;
   original_invoice_id?: string;
   corrective_reason?: string;
@@ -71,6 +72,7 @@ export interface CreateInvoiceData {
   client_locality?: string;
   client_postal_code?: string;
   client_phone?: string;
+  additional_data?: string;
 }
 
 /**

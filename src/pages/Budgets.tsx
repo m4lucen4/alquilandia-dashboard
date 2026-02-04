@@ -47,6 +47,7 @@ export const Budgets: FC = () => {
     useState<string>("");
   const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
   const [invoiceTo, setInvoiceTo] = useState<"titular" | "empresa">("titular");
+  const [additionalData, setAdditionalData] = useState<string>("");
 
   const {
     budgetNumber,
@@ -107,6 +108,7 @@ export const Budgets: FC = () => {
     setSelectedInvoicesTypeId("");
     setSelectedTaxesTypeId("");
     setInvoiceTo("titular");
+    setAdditionalData("");
     dispatch(resetCreateInvoiceRequest());
   }, [dispatch]);
 
@@ -159,6 +161,7 @@ export const Budgets: FC = () => {
         budgetlines: selectedBudget.budgetLines,
         price: selectedBudget.price,
         ...clientData,
+        additional_data: additionalData || undefined,
       }),
     );
 
@@ -173,6 +176,7 @@ export const Budgets: FC = () => {
     selectedInvoicesTypeId,
     selectedTaxesTypeId,
     invoiceTo,
+    additionalData,
     dispatch,
     handleCloseModal,
     navigate,
@@ -243,6 +247,8 @@ export const Budgets: FC = () => {
         setSelectedTaxesTypeId={setSelectedTaxesTypeId}
         invoiceTo={invoiceTo}
         setInvoiceTo={setInvoiceTo}
+        additionalData={additionalData}
+        setAdditionalData={setAdditionalData}
         isGenerating={createInvoiceRequest.inProgress}
       />
 

@@ -23,6 +23,8 @@ interface ModalGenerateInvoiceProps {
   setSelectedTaxesTypeId: (value: string) => void;
   invoiceTo: "titular" | "empresa";
   setInvoiceTo: (value: "titular" | "empresa") => void;
+  additionalData: string;
+  setAdditionalData: (value: string) => void;
   isGenerating: boolean;
 }
 
@@ -42,6 +44,8 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
   setSelectedTaxesTypeId,
   invoiceTo,
   setInvoiceTo,
+  additionalData,
+  setAdditionalData,
   isGenerating,
 }) => {
   // Memoize options to avoid recreating on every render
@@ -196,6 +200,24 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
           disabled={isGenerating}
           emptyMessage="No hay tipos de impuesto disponibles. Crea uno en Ajustes."
         />
+
+        <div>
+          <label
+            htmlFor="additional-data"
+            className="block text-sm font-medium text-gray-900"
+          >
+            Datos adicionales (opcional)
+          </label>
+          <textarea
+            id="additional-data"
+            rows={3}
+            value={additionalData}
+            onChange={(e) => setAdditionalData(e.target.value)}
+            placeholder="Información adicional que aparecerá en la factura..."
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+            disabled={isGenerating}
+          />
+        </div>
 
         {isGenerating && (
           <div className="mt-4 flex items-center justify-center">
