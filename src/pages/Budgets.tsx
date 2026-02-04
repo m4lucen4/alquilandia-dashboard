@@ -152,14 +152,50 @@ export const Budgets: FC = () => {
               selectedBudget.user?.phone || selectedBudget.phone || "",
           };
 
+    // Apply invoice type percentage and recalculate IVA
+    const invoiceType = invoicesTypes.find(
+      (t) => t.id === selectedInvoicesTypeId,
+    );
+    const taxType = taxesTypes.find((t) => t.id === selectedTaxesTypeId);
+    const factor = (invoiceType?.percentage ?? 100) / 100;
+    const taxRate = taxType?.tax ?? 0;
+    const round = (n: number) => Math.round(n * 100) / 100;
+
+    const originalPrice = selectedBudget.price;
+    const adjSubTotal = round(originalPrice.subTotal * factor);
+    const adjExtras = round(originalPrice.extras * factor);
+    const adjCostSend = round(originalPrice.costSend * factor);
+    const adjUserDiscount = round(originalPrice.userDiscount * factor);
+    const vatBase = adjSubTotal + adjExtras + adjCostSend - adjUserDiscount;
+    const adjVat = round(vatBase * (taxRate / 100));
+
+    const adjustedPrice = {
+      ...originalPrice,
+      subTotal: adjSubTotal,
+      extras: adjExtras,
+      subTotalWithExtras: round(originalPrice.subTotalWithExtras * factor),
+      costSend: adjCostSend,
+      userDiscount: adjUserDiscount,
+      packs: round(originalPrice.packs * factor),
+      vat: adjVat,
+      total: round(vatBase + adjVat),
+    };
+
+    const adjustedBudgetLines = selectedBudget.budgetLines.map((line) => ({
+      ...line,
+      precioUd: round(line.precioUd * factor),
+      totalPrice: round(line.totalPrice * factor),
+      costetotal: round(line.costetotal * factor),
+    }));
+
     const result = await dispatch(
       createInvoice({
         business_id: selectedBusinessId,
         invoices_type_id: selectedInvoicesTypeId,
         taxes_type_id: selectedTaxesTypeId,
         budget_reference: selectedBudget.budgetReference,
-        budgetlines: selectedBudget.budgetLines,
-        price: selectedBudget.price,
+        budgetlines: adjustedBudgetLines,
+        price: adjustedPrice,
         ...clientData,
         additional_data: additionalData || undefined,
       }),
@@ -175,6 +211,8 @@ export const Budgets: FC = () => {
     selectedBusinessId,
     selectedInvoicesTypeId,
     selectedTaxesTypeId,
+    invoicesTypes,
+    taxesTypes,
     invoiceTo,
     additionalData,
     dispatch,
