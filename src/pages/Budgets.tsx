@@ -47,12 +47,13 @@ export const Budgets: FC = () => {
     useState<string>("");
   const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
 
-  // Hook personalizado para la lógica de búsqueda
   const {
     budgetNumber,
     setBudgetNumber,
     clientName,
     setClientName,
+    phone,
+    setPhone,
     appliedFilters,
     handleSearch,
     handleClearFilters,
@@ -245,6 +246,8 @@ export const Budgets: FC = () => {
           setBudgetNumber={setBudgetNumber}
           clientName={clientName}
           setClientName={setClientName}
+          phone={phone}
+          setPhone={setPhone}
           onSearch={() => {
             handleSearch();
             setPageIndex(0);

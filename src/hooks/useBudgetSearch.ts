@@ -5,9 +5,12 @@ interface UseBudgetSearchReturn {
   setBudgetNumber: (value: string) => void;
   clientName: string;
   setClientName: (value: string) => void;
+  phone: string;
+  setPhone: (value: string) => void;
   appliedFilters: {
     budgetNumber: string;
     clientName: string;
+    phone: string;
   };
   handleSearch: () => void;
   handleClearFilters: () => void;
@@ -22,11 +25,13 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
   // Search input states
   const [budgetNumber, setBudgetNumber] = useState("");
   const [clientName, setClientName] = useState("");
+  const [phone, setPhone] = useState("");
 
   // Applied filters state
   const [appliedFilters, setAppliedFilters] = useState({
     budgetNumber: "",
     clientName: "",
+    phone: "",
   });
 
   /**
@@ -43,6 +48,10 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
       filters.push(`client=${encodeURIComponent(appliedFilters.clientName)}`);
     }
 
+    if (appliedFilters.phone) {
+      filters.push(`phone=${encodeURIComponent(appliedFilters.phone)}`);
+    }
+
     return filters.join("&");
   }, [appliedFilters]);
 
@@ -53,8 +62,9 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setAppliedFilters({
       budgetNumber: budgetNumber.trim(),
       clientName: clientName.trim(),
+      phone: phone.trim(),
     });
-  }, [budgetNumber, clientName]);
+  }, [budgetNumber, clientName, phone]);
 
   /**
    * Clears all search inputs and applied filters
@@ -62,9 +72,11 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
   const handleClearFilters = useCallback(() => {
     setBudgetNumber("");
     setClientName("");
+    setPhone("");
     setAppliedFilters({
       budgetNumber: "",
       clientName: "",
+      phone: "",
     });
   }, []);
 
@@ -73,6 +85,8 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setBudgetNumber,
     clientName,
     setClientName,
+    phone,
+    setPhone,
     appliedFilters,
     handleSearch,
     handleClearFilters,

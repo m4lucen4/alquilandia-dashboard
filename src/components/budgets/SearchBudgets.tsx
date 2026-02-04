@@ -7,11 +7,14 @@ interface SearchBudgetsProps {
   setBudgetNumber: (value: string) => void;
   clientName: string;
   setClientName: (value: string) => void;
+  phone: string;
+  setPhone: (value: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
   appliedFilters: {
     budgetNumber: string;
     clientName: string;
+    phone: string;
   };
   isLoading?: boolean;
 }
@@ -21,6 +24,8 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
   setBudgetNumber,
   clientName,
   setClientName,
+  phone,
+  setPhone,
   onSearch,
   onClearFilters,
   appliedFilters,
@@ -57,8 +62,19 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
           disabled={isLoading}
         />
 
+        {/* Input Teléfono */}
+        <InputField
+          label="Teléfono"
+          name="phone"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Teléfono"
+          disabled={isLoading}
+        />
+
         {/* Botones */}
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
+        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
           <Button
             title="Buscar"
             onClick={onSearch}
@@ -81,7 +97,9 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
       </div>
 
       {/* Indicador de filtros activos */}
-      {(appliedFilters.budgetNumber || appliedFilters.clientName) && (
+      {(appliedFilters.budgetNumber ||
+        appliedFilters.clientName ||
+        appliedFilters.phone) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600">Filtros activos:</span>
           {appliedFilters.budgetNumber && (
@@ -92,6 +110,11 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
           {appliedFilters.clientName && (
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
               Cliente: {appliedFilters.clientName}
+            </span>
+          )}
+          {appliedFilters.phone && (
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+              Teléfono: {appliedFilters.phone}
             </span>
           )}
         </div>
