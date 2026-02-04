@@ -25,6 +25,13 @@ export const getAllInvoices = async (
       business:business_id (
         id,
         name
+      ),
+      invoices_type:invoices_type_id (
+        id,
+        invoices,
+        percentage,
+        concept,
+        show_budgetlines
       )
     `,
   );

@@ -5,10 +5,7 @@ import {
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
-import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchAllInvoices,
@@ -19,20 +16,17 @@ import {
   clearInvoicesErrors,
   resetCreateCorrectiveInvoiceRequest,
 } from "@/redux/slices/invoicesSlice";
-import { Alert } from "@/components/shared/Alert";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ModalCreateCorrectiveInvoice } from "@/components/invoices/ModalCreateCorrectiveInvoice";
+import { AlertInvoices } from "@/components/invoices/AlertInvoices";
 import type { Invoice } from "@/types/invoices";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 
 export const Invoices: FC = () => {
   const dispatch = useAppDispatch();
-  const {
-    invoices,
-    fetchInvoicesRequest,
-    createCorrectiveInvoiceRequest,
-  } = useAppSelector((state) => state.invoices);
+  const { invoices, fetchInvoicesRequest, createCorrectiveInvoiceRequest } =
+    useAppSelector((state) => state.invoices);
   const { businesses } = useAppSelector((state) => state.business);
 
   // Filter states
@@ -96,27 +90,35 @@ export const Invoices: FC = () => {
     dispatch(resetCreateCorrectiveInvoiceRequest());
   }, [dispatch]);
 
-  const handleCreateCorrective = useCallback(async (reason: string) => {
-    if (!selectedInvoiceForCorrective) return;
+  const handleCreateCorrective = useCallback(
+    async (reason: string) => {
+      if (!selectedInvoiceForCorrective) return;
 
-    const result = await dispatch(
-      createCorrectiveInvoice({
-        original_invoice_id: selectedInvoiceForCorrective.id,
-        corrective_reason: reason,
-      }),
-    );
-
-    if (createCorrectiveInvoice.fulfilled.match(result)) {
-      handleCloseCorrectiveModal();
-      // Refresh invoices list
-      dispatch(
-        fetchAllInvoices({
-          businessId: appliedFilters.businessId || undefined,
-          budgetReference: appliedFilters.budgetNumber || undefined,
+      const result = await dispatch(
+        createCorrectiveInvoice({
+          original_invoice_id: selectedInvoiceForCorrective.id,
+          corrective_reason: reason,
         }),
       );
-    }
-  }, [selectedInvoiceForCorrective, dispatch, appliedFilters, handleCloseCorrectiveModal]);
+
+      if (createCorrectiveInvoice.fulfilled.match(result)) {
+        handleCloseCorrectiveModal();
+        // Refresh invoices list
+        dispatch(
+          fetchAllInvoices({
+            businessId: appliedFilters.businessId || undefined,
+            budgetReference: appliedFilters.budgetNumber || undefined,
+          }),
+        );
+      }
+    },
+    [
+      selectedInvoiceForCorrective,
+      dispatch,
+      appliedFilters,
+      handleCloseCorrectiveModal,
+    ],
+  );
 
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
@@ -125,6 +127,8 @@ export const Invoices: FC = () => {
         header: "Nº Factura",
         cell: (info) => {
           const invoice = info.row.original;
+          const invoiceTypeName = invoice.invoices_type?.invoices;
+
           return (
             <div className="flex items-center gap-2">
               <span className="font-medium text-gray-900">
@@ -133,10 +137,16 @@ export const Invoices: FC = () => {
                   invoice.created_at,
                 )}
               </span>
-              {invoice.is_corrective && (
+              {invoice.is_corrective ? (
                 <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
                   Rectificativa
                 </span>
+              ) : (
+                invoiceTypeName && (
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                    {invoiceTypeName}
+                  </span>
+                )
               )}
             </div>
           );
@@ -227,33 +237,13 @@ export const Invoices: FC = () => {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const shouldShowError =
-    fetchInvoicesRequest.messages &&
-    !fetchInvoicesRequest.inProgress &&
-    !fetchInvoicesRequest.ok;
-
   return (
     <>
-      {shouldShowError && (
-        <Alert
-          title="Error al cargar facturas"
-          description={fetchInvoicesRequest.messages}
-          onClose={handleCloseAlert}
-        />
-      )}
-
-      {createCorrectiveInvoiceRequest.messages &&
-        !createCorrectiveInvoiceRequest.inProgress && (
-          <Alert
-            title={
-              createCorrectiveInvoiceRequest.ok
-                ? "Factura rectificativa creada"
-                : "Error al crear factura rectificativa"
-            }
-            description={createCorrectiveInvoiceRequest.messages}
-            onClose={handleCloseAlert}
-          />
-        )}
+      <AlertInvoices
+        fetchInvoicesRequest={fetchInvoicesRequest}
+        createCorrectiveInvoiceRequest={createCorrectiveInvoiceRequest}
+        onClose={handleCloseAlert}
+      />
 
       <ModalCreateCorrectiveInvoice
         isOpen={isCorrectiveModalOpen}
