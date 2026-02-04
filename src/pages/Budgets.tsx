@@ -271,6 +271,10 @@ export const Budgets: FC = () => {
           onPageChange={setPageIndex}
           onGenerateInvoice={(budget) => {
             setSelectedBudget(budget);
+            const defaultBusiness = businesses.find((b) => b.is_default);
+            if (defaultBusiness) {
+              setSelectedBusinessId(defaultBusiness.id);
+            }
             setIsModalOpen(true);
           }}
           onViewInvoice={handleViewInvoice}

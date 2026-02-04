@@ -1,10 +1,11 @@
-import { type FC, useMemo } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Modal } from "../shared/Modal";
 import SelectField from "../shared/SelectField";
 import type { Budget } from "../../types/budgets";
 import type { Business } from "../../types/business";
 import type { InvoicesType } from "../../types/invoicesTypes";
 import type { TaxesType } from "../../types/taxesTypes";
+import Button from "../shared/Button";
 
 interface ModalGenerateInvoiceProps {
   isOpen: boolean;
@@ -67,6 +68,14 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
     [taxesTypes],
   );
 
+  const [showBusinessSelect, setShowBusinessSelect] = useState(false);
+
+  // Reset state when modal closes
+  const handleClose = () => {
+    setShowBusinessSelect(false);
+    onClose();
+  };
+
   // Early return after all hooks have been called
   if (!isOpen || !selectedBudget) return null;
 
@@ -77,7 +86,7 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
     <Modal
       title="Generar Factura"
       onAccept={onGenerate}
-      onClose={onClose}
+      onClose={handleClose}
       acceptDisabled={!isFormValid || isGenerating}
     >
       <div className="space-y-4">
@@ -89,18 +98,41 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
           </span>
         </p>
 
-        <SelectField
-          label="Empresa"
-          name="business"
-          value={selectedBusinessId}
-          onChange={(e) => setSelectedBusinessId(e.target.value)}
-          options={businessOptions}
-          placeholder="Selecciona una empresa"
-          required
-          disabled={isGenerating}
-          emptyMessage="No hay empresas disponibles. Crea una empresa en Ajustes."
-          className="mb-4"
-        />
+        {!showBusinessSelect && selectedBusinessId ? (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-900">
+              Empresa<span className="text-red-500 ml-1">*</span>
+            </label>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-sm text-gray-900">
+                {
+                  businessOptions.find((o) => o.value === selectedBusinessId)
+                    ?.label
+                }
+              </span>
+              <Button
+                onClick={() => setShowBusinessSelect(true)}
+                disabled={isGenerating}
+                className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                title="Cambiar empresa"
+                variant="ghost"
+              />
+            </div>
+          </div>
+        ) : (
+          <SelectField
+            label="Empresa"
+            name="business"
+            value={selectedBusinessId}
+            onChange={(e) => setSelectedBusinessId(e.target.value)}
+            options={businessOptions}
+            placeholder="Selecciona una empresa"
+            required
+            disabled={isGenerating}
+            emptyMessage="No hay empresas disponibles. Crea una empresa en Ajustes."
+            className="mb-4"
+          />
+        )}
 
         <SelectField
           label="Tipo de Factura"
