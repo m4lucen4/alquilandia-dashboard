@@ -71,16 +71,17 @@ export const ModalInvoiceData: FC<ModalInvoiceDataProps> = ({
               {invoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50">
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                    {formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}
+                    {formatInvoiceNumber(
+                      invoice.invoice_number,
+                      invoice.created_at,
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {invoice.business?.name || "-"}
                   </td>
                   <td
                     className={`whitespace-nowrap px-4 py-3 text-right text-sm font-semibold ${
-                      invoice.is_corrective
-                        ? "text-red-600"
-                        : "text-gray-900"
+                      invoice.is_corrective ? "text-red-600" : "text-gray-900"
                     }`}
                   >
                     {formatCurrency(invoice.price?.total || 0)}
@@ -92,7 +93,7 @@ export const ModalInvoiceData: FC<ModalInvoiceDataProps> = ({
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                        Normal
+                        {invoice.invoices_type?.invoices || "Normal"}
                       </span>
                     )}
                   </td>

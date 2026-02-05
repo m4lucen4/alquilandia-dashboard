@@ -1,6 +1,8 @@
 import { type FC } from "react";
 import Button from "../shared/Button";
 import InputField from "../shared/InputField";
+import SelectField from "../shared/SelectField";
+import { getStatusBadgeConfig } from "@/helpers";
 
 interface SearchBudgetsProps {
   budgetNumber: string;
@@ -9,12 +11,15 @@ interface SearchBudgetsProps {
   setClientName: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
+  status: string;
+  setStatus: (value: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
   appliedFilters: {
     budgetNumber: string;
     clientName: string;
     phone: string;
+    status: string;
   };
   isLoading?: boolean;
 }
@@ -26,6 +31,8 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
   setClientName,
   phone,
   setPhone,
+  status,
+  setStatus,
   onSearch,
   onClearFilters,
   appliedFilters,
@@ -37,9 +44,18 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
     }
   };
 
+  const statusOptions = [
+    { value: "PAID_PENDING", label: "Pendiente" },
+    { value: "PAID25", label: "Pagado 25%" },
+    { value: "PAID", label: "Pagado" },
+    { value: "RESERVED", label: "Reservado" },
+    { value: "REJECTED", label: "Rechazado" },
+    { value: "CANCELLED", label: "Cancelado" },
+  ];
+
   return (
     <div className="mt-6 rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {/* Input Número de Presupuesto */}
         <InputField
           label="Nº Presupuesto"
@@ -73,6 +89,17 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
           disabled={isLoading}
         />
 
+        {/* Select Estado */}
+        <SelectField
+          label="Estado"
+          name="status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          options={statusOptions}
+          placeholder="Todos los estados"
+          disabled={isLoading}
+        />
+
         {/* Botones */}
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
           <Button
@@ -99,7 +126,8 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
       {/* Indicador de filtros activos */}
       {(appliedFilters.budgetNumber ||
         appliedFilters.clientName ||
-        appliedFilters.phone) && (
+        appliedFilters.phone ||
+        appliedFilters.status) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600">Filtros activos:</span>
           {appliedFilters.budgetNumber && (
@@ -115,6 +143,15 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
           {appliedFilters.phone && (
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
               Teléfono: {appliedFilters.phone}
+            </span>
+          )}
+          {appliedFilters.status && (
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                getStatusBadgeConfig(appliedFilters.status).className
+              }`}
+            >
+              {getStatusBadgeConfig(appliedFilters.status).label}
             </span>
           )}
         </div>

@@ -47,6 +47,12 @@ const getDefaultHeaders = (): HeadersInit => {
  * Maneja errores de la API de forma centralizada
  */
 const handleApiError = async (response: Response): Promise<never> => {
+  // Token expirado o sesión inválida: limpiar estado persistido y redirigir a login
+  if (response.status === 401) {
+    localStorage.removeItem("persist:auth");
+    window.location.replace("/login");
+  }
+
   let errorData: unknown;
 
   try {

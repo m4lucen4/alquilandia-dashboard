@@ -7,10 +7,13 @@ interface UseBudgetSearchReturn {
   setClientName: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
+  status: string;
+  setStatus: (value: string) => void;
   appliedFilters: {
     budgetNumber: string;
     clientName: string;
     phone: string;
+    status: string;
   };
   handleSearch: () => void;
   handleClearFilters: () => void;
@@ -26,12 +29,14 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
   const [budgetNumber, setBudgetNumber] = useState("");
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
+  const [status, setStatus] = useState("");
 
   // Applied filters state
   const [appliedFilters, setAppliedFilters] = useState({
     budgetNumber: "",
     clientName: "",
     phone: "",
+    status: "",
   });
 
   /**
@@ -52,6 +57,10 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
       filters.push(`phone=${encodeURIComponent(appliedFilters.phone)}`);
     }
 
+    if (appliedFilters.status) {
+      filters.push(`status=${encodeURIComponent(appliedFilters.status)}`);
+    }
+
     return filters.join("&");
   }, [appliedFilters]);
 
@@ -63,8 +72,9 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
       budgetNumber: budgetNumber.trim(),
       clientName: clientName.trim(),
       phone: phone.trim(),
+      status: status.trim(),
     });
-  }, [budgetNumber, clientName, phone]);
+  }, [budgetNumber, clientName, phone, status]);
 
   /**
    * Clears all search inputs and applied filters
@@ -73,10 +83,12 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setBudgetNumber("");
     setClientName("");
     setPhone("");
+    setStatus("");
     setAppliedFilters({
       budgetNumber: "",
       clientName: "",
       phone: "",
+      status: "",
     });
   }, []);
 
@@ -87,6 +99,8 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setClientName,
     phone,
     setPhone,
+    status,
+    setStatus,
     appliedFilters,
     handleSearch,
     handleClearFilters,

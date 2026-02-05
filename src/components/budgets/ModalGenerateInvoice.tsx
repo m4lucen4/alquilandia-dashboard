@@ -1,4 +1,4 @@
-import { type FC, useMemo, useState } from "react";
+import { type FC, useMemo, useState, useEffect } from "react";
 import { Modal } from "../shared/Modal";
 import SelectField from "../shared/SelectField";
 import type { Budget } from "../../types/budgets";
@@ -78,6 +78,17 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
 
   const [showBusinessSelect, setShowBusinessSelect] = useState(false);
 
+  // Set default invoiceTo to 'empresa' when modal opens with company data
+  useEffect(() => {
+    if (
+      isOpen &&
+      selectedBudget?.user?.company?.name &&
+      selectedBudget?.user?.company?.nif
+    ) {
+      setInvoiceTo("empresa");
+    }
+  }, [isOpen, selectedBudget, setInvoiceTo]);
+
   // Reset state when modal closes
   const handleClose = () => {
     setShowBusinessSelect(false);
@@ -106,39 +117,40 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
           </span>
         </p>
 
-        {selectedBudget.user?.company?.name && selectedBudget.user?.company?.nif && (
-          <div>
-            <label className="block text-sm font-medium text-gray-900">
-              Factura a nombre de
-            </label>
-            <div className="mt-2 flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="invoiceTo"
-                  checked={invoiceTo === "titular"}
-                  onChange={() => setInvoiceTo("titular")}
-                  disabled={isGenerating}
-                  className="accent-blue-600"
-                />
-                <span className="text-sm text-gray-700">Titular</span>
+        {selectedBudget.user?.company?.name &&
+          selectedBudget.user?.company?.nif && (
+            <div>
+              <label className="block text-sm font-medium text-gray-900">
+                Factura a nombre de
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="invoiceTo"
-                  checked={invoiceTo === "empresa"}
-                  onChange={() => setInvoiceTo("empresa")}
-                  disabled={isGenerating}
-                  className="accent-blue-600"
-                />
-                <span className="text-sm text-gray-700">
-                  {selectedBudget.user.company.name}
-                </span>
-              </label>
+              <div className="mt-2 flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="invoiceTo"
+                    checked={invoiceTo === "titular"}
+                    onChange={() => setInvoiceTo("titular")}
+                    disabled={isGenerating}
+                    className="accent-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Titular</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="invoiceTo"
+                    checked={invoiceTo === "empresa"}
+                    onChange={() => setInvoiceTo("empresa")}
+                    disabled={isGenerating}
+                    className="accent-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {selectedBudget.user.company.name}
+                  </span>
+                </label>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {!showBusinessSelect && selectedBusinessId ? (
           <div className="mb-4">

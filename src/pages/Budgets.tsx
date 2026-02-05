@@ -56,6 +56,8 @@ export const Budgets: FC = () => {
     setClientName,
     phone,
     setPhone,
+    status,
+    setStatus,
     appliedFilters,
     handleSearch,
     handleClearFilters,
@@ -310,6 +312,8 @@ export const Budgets: FC = () => {
           setClientName={setClientName}
           phone={phone}
           setPhone={setPhone}
+          status={status}
+          setStatus={setStatus}
           onSearch={() => {
             handleSearch();
             setPageIndex(0);
