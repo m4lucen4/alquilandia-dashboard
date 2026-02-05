@@ -39,6 +39,7 @@ export const Invoices: FC = () => {
     handleBusinessChange,
     handleBudgetNumberChange,
     handlePageChange,
+    handlePageSizeChange,
   } = useInvoiceSearch();
 
   // IDs of invoices that already have a corrective (fetched without pagination)
@@ -144,6 +145,7 @@ export const Invoices: FC = () => {
           isLoading={fetchInvoicesRequest.inProgress}
           rectifiedIds={rectifiedIds}
           onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
           onOpenCorrectiveModal={handleOpenCorrectiveModal}
         />
       </div>

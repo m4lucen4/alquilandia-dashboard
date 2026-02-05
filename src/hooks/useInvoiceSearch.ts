@@ -3,8 +3,6 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchAllInvoices } from "@/redux/actions/invoices";
 import { fetchAllBusiness } from "@/redux/actions/business";
 
-const PAGE_SIZE = 5;
-
 export const useInvoiceSearch = () => {
   const dispatch = useAppDispatch();
   const { businesses } = useAppSelector((state) => state.business);
@@ -16,6 +14,7 @@ export const useInvoiceSearch = () => {
 
   // Pagination state
   const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
   // Applied filters state (triggers actual search)
   const [appliedFilters, setAppliedFilters] = useState({
@@ -30,17 +29,17 @@ export const useInvoiceSearch = () => {
     }
   }, [dispatch, businesses.length]);
 
-  // Fetch invoices when applied filters or page changes
+  // Fetch invoices when applied filters, page, or page size changes
   useEffect(() => {
     dispatch(
       fetchAllInvoices({
         businessId: appliedFilters.businessId || undefined,
         budgetReference: appliedFilters.budgetNumber || undefined,
         page: pageIndex,
-        pageSize: PAGE_SIZE,
+        pageSize,
       }),
     );
-  }, [dispatch, appliedFilters, pageIndex]);
+  }, [dispatch, appliedFilters, pageIndex, pageSize]);
 
   // Handle search action (apply current filter values and reset to page 1)
   const handleSearch = useCallback(() => {
@@ -77,6 +76,12 @@ export const useInvoiceSearch = () => {
     setPageIndex(newPage);
   }, []);
 
+  // Handle page size change (reset to first page)
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPageIndex(0);
+  }, []);
+
   return {
     // Filter states
     selectedBusinessId,
@@ -85,7 +90,7 @@ export const useInvoiceSearch = () => {
 
     // Pagination
     pageIndex,
-    pageSize: PAGE_SIZE,
+    pageSize,
 
     // Data
     businesses,
@@ -97,5 +102,6 @@ export const useInvoiceSearch = () => {
     handleBusinessChange,
     handleBudgetNumberChange,
     handlePageChange,
+    handlePageSizeChange,
   };
 };

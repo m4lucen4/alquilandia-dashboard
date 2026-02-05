@@ -14,6 +14,7 @@ interface InvoicesTableProps {
   isLoading: boolean;
   rectifiedIds: Set<string>;
   onPageChange: (pageIndex: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onOpenCorrectiveModal: (invoice: Invoice) => void;
 }
 
@@ -25,6 +26,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
   isLoading,
   rectifiedIds,
   onPageChange,
+  onPageSizeChange,
   onOpenCorrectiveModal,
 }) => {
   const columns = useMemo<ColumnDef<Invoice>[]>(
@@ -154,6 +156,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
         pageSize,
         total,
         onPageChange,
+        onPageSizeChange,
       }}
     />
   );

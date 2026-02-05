@@ -5,7 +5,7 @@ import {
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { Pagination } from "@/components/budgets/Pagination";
+import { Pagination } from "@/components/shared/Pagination";
 
 interface TableProps<TData> {
   data: TData[];
@@ -18,6 +18,7 @@ interface TableProps<TData> {
     pageSize: number;
     total: number;
     onPageChange: (pageIndex: number) => void;
+    onPageSizeChange: (pageSize: number) => void;
   };
 }
 
@@ -133,6 +134,7 @@ export const Table = <TData,>({
               totalItems={pagination.total}
               onPageChange={pagination.onPageChange}
               canPreviousPage={table.getCanPreviousPage()}
+              onPageSizeChange={pagination.onPageSizeChange}
               canNextPage={table.getCanNextPage()}
             />
           )}

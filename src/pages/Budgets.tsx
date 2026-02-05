@@ -36,7 +36,7 @@ export const Budgets: FC = () => {
   );
 
   const [pageIndex, setPageIndex] = useState(0);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -93,7 +93,7 @@ export const Budgets: FC = () => {
       }),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIndex, appliedFilters]);
+  }, [pageIndex, pageSize, appliedFilters]);
 
   const handleCloseAlert = useCallback(() => {
     dispatch(clearBudgetsErrors());
@@ -244,6 +244,11 @@ export const Budgets: FC = () => {
     setSelectedInvoices([]);
   }, []);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPageIndex(0);
+  }, []);
+
   const shouldShowError =
     fetchBudgetsRequest.messages &&
     !fetchBudgetsRequest.inProgress &&
@@ -335,6 +340,7 @@ export const Budgets: FC = () => {
           loadingInvoice={loadingInvoice}
           budgetHasInvoice={budgetHasInvoice}
           onPageChange={setPageIndex}
+          onPageSizeChange={handlePageSizeChange}
           onGenerateInvoice={(budget) => {
             setSelectedBudget(budget);
             const defaultBusiness = businesses.find((b) => b.is_default);
