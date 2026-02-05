@@ -25,6 +25,16 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
   onPageChange,
   onOpenCorrectiveModal,
 }) => {
+  const rectifiedIds = useMemo(
+    () =>
+      new Set(
+        invoices
+          .filter((inv) => inv.is_corrective && inv.original_invoice_id)
+          .map((inv) => inv.original_invoice_id as string),
+      ),
+    [invoices],
+  );
+
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
       {
@@ -52,6 +62,11 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
                     {invoiceTypeName}
                   </span>
                 )
+              )}
+              {rectifiedIds.has(invoice.id) && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  Rectificada
+                </span>
               )}
             </div>
           );
@@ -118,8 +133,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
                 <span className="text-xs text-gray-400">Sin PDF</span>
               )}
 
-              {/* Corrective invoice button - only show if not already corrective */}
-              {!invoice.is_corrective && (
+              {!invoice.is_corrective && !rectifiedIds.has(invoice.id) && (
                 <button
                   onClick={() => onOpenCorrectiveModal(invoice)}
                   className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
@@ -133,7 +147,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
         },
       },
     ],
-    [onOpenCorrectiveModal],
+    [onOpenCorrectiveModal, rectifiedIds],
   );
 
   return (
