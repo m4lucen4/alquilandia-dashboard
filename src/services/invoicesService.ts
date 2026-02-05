@@ -12,13 +12,17 @@ import { generateInvoicePDF } from "./pdfService";
  *
  * @param businessId - Optional business ID to filter by
  * @param budgetReference - Optional budget reference to filter by
- * @returns Array of invoices with business details
+ * @param page - Optional page number (0-indexed)
+ * @param pageSize - Optional page size
+ * @returns Object with invoices array and total count
  * @throws Error if fetch fails
  */
 export const getAllInvoices = async (
   businessId?: string,
   budgetReference?: string,
-): Promise<Invoice[]> => {
+  page?: number,
+  pageSize?: number,
+): Promise<{ invoices: Invoice[]; total: number }> => {
   let query = supabase.from("invoices").select(
     `
       *,
@@ -34,6 +38,7 @@ export const getAllInvoices = async (
         show_budgetlines
       )
     `,
+    { count: "exact" },
   );
 
   // Apply filters if provided
@@ -45,7 +50,16 @@ export const getAllInvoices = async (
     query = query.eq("budget_reference", budgetReference);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false });
+  // Apply pagination if provided
+  if (page !== undefined && pageSize !== undefined) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+  }
+
+  const { data, error, count } = await query.order("created_at", {
+    ascending: false,
+  });
 
   if (error) {
     console.error("Error fetching invoices:", error);
@@ -55,7 +69,10 @@ export const getAllInvoices = async (
     );
   }
 
-  return (data || []) as Invoice[];
+  return {
+    invoices: (data || []) as Invoice[],
+    total: count || 0,
+  };
 };
 
 /**

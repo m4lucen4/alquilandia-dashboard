@@ -8,13 +8,21 @@ import { Table } from "@/components/shared/Table";
 
 interface InvoicesTableProps {
   invoices: Invoice[];
+  total: number;
+  pageIndex: number;
+  pageSize: number;
   isLoading: boolean;
+  onPageChange: (pageIndex: number) => void;
   onOpenCorrectiveModal: (invoice: Invoice) => void;
 }
 
 export const InvoicesTable: FC<InvoicesTableProps> = ({
   invoices,
+  total,
+  pageIndex,
+  pageSize,
   isLoading,
+  onPageChange,
   onOpenCorrectiveModal,
 }) => {
   const columns = useMemo<ColumnDef<Invoice>[]>(
@@ -135,6 +143,12 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
       isLoading={isLoading}
       loadingMessage="Cargando facturas..."
       emptyMessage="No se encontraron facturas"
+      pagination={{
+        pageIndex,
+        pageSize,
+        total,
+        onPageChange,
+      }}
     />
   );
 };

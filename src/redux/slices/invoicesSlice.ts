@@ -8,6 +8,7 @@ import {
 
 const initialState: InvoicesState = {
   invoices: [],
+  total: 0,
   fetchInvoicesRequest: {
     inProgress: false,
     ok: false,
@@ -64,7 +65,8 @@ const invoicesSlice = createSlice({
         state.fetchInvoicesRequest.inProgress = false;
         state.fetchInvoicesRequest.ok = true;
         state.fetchInvoicesRequest.messages = "";
-        state.invoices = action.payload;
+        state.invoices = action.payload.invoices;
+        state.total = action.payload.total;
       })
       .addCase(fetchAllInvoices.rejected, (state, action) => {
         state.fetchInvoicesRequest.inProgress = false;

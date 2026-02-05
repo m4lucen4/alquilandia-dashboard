@@ -15,15 +15,24 @@ import type {
 export const fetchAllInvoices = createAsyncThunk(
   "invoices/fetchAll",
   async (
-    filters: { businessId?: string; budgetReference?: string } | undefined,
+    filters:
+      | {
+          businessId?: string;
+          budgetReference?: string;
+          page?: number;
+          pageSize?: number;
+        }
+      | undefined,
     { rejectWithValue },
   ) => {
     try {
-      const invoices = await getAllInvoices(
+      const { invoices, total } = await getAllInvoices(
         filters?.businessId,
         filters?.budgetReference,
+        filters?.page,
+        filters?.pageSize,
       );
-      return invoices;
+      return { invoices, total };
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -58,10 +67,7 @@ export const createInvoice = createAsyncThunk(
  */
 export const createCorrectiveInvoice = createAsyncThunk(
   "invoices/createCorrective",
-  async (
-    correctiveData: CreateCorrectiveInvoiceData,
-    { rejectWithValue },
-  ) => {
+  async (correctiveData: CreateCorrectiveInvoiceData, { rejectWithValue }) => {
     try {
       const invoice = await createCorrectiveInvoiceService(correctiveData);
       return invoice;

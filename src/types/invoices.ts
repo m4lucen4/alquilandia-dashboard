@@ -88,6 +88,7 @@ export interface CreateCorrectiveInvoiceData {
  */
 export interface InvoicesState {
   invoices: Invoice[];
+  total: number;
   fetchInvoicesRequest: IRequest;
   createInvoiceRequest: IRequest;
   createCorrectiveInvoiceRequest: IRequest;

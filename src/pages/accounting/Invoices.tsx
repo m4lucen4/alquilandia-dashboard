@@ -18,8 +18,12 @@ import type { Invoice } from "@/types/invoices";
 
 export const Invoices: FC = () => {
   const dispatch = useAppDispatch();
-  const { invoices, fetchInvoicesRequest, createCorrectiveInvoiceRequest } =
-    useAppSelector((state) => state.invoices);
+  const {
+    invoices,
+    total,
+    fetchInvoicesRequest,
+    createCorrectiveInvoiceRequest,
+  } = useAppSelector((state) => state.invoices);
 
   const {
     selectedBusinessId,
@@ -27,10 +31,13 @@ export const Invoices: FC = () => {
     appliedFilters,
     businesses,
     isLoading,
+    pageIndex,
+    pageSize,
     handleSearch,
     handleClearFilters,
     handleBusinessChange,
     handleBudgetNumberChange,
+    handlePageChange,
   } = useInvoiceSearch();
 
   // Corrective invoice modal states
@@ -71,6 +78,8 @@ export const Invoices: FC = () => {
           fetchAllInvoices({
             businessId: appliedFilters.businessId || undefined,
             budgetReference: appliedFilters.budgetNumber || undefined,
+            page: pageIndex,
+            pageSize,
           }),
         );
       }
@@ -79,6 +88,8 @@ export const Invoices: FC = () => {
       selectedInvoiceForCorrective,
       dispatch,
       appliedFilters,
+      pageIndex,
+      pageSize,
       handleCloseCorrectiveModal,
     ],
   );
@@ -118,7 +129,11 @@ export const Invoices: FC = () => {
         {/* Tabla de facturas */}
         <InvoicesTable
           invoices={invoices}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
           isLoading={fetchInvoicesRequest.inProgress}
+          onPageChange={handlePageChange}
           onOpenCorrectiveModal={handleOpenCorrectiveModal}
         />
       </div>
