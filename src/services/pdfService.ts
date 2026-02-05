@@ -269,15 +269,6 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     );
     yPosition += 5;
 
-    // IVA
-    if (invoice.price?.vat !== undefined) {
-      doc.text("IVA:", summaryX, yPosition, { align: "right" });
-      doc.text(formatCurrency(invoice.price.vat), pageWidth - 20, yPosition, {
-        align: "right",
-      });
-      yPosition += 5;
-    }
-
     // Extras
     if (invoice.price?.extras && invoice.price.extras > 0) {
       doc.text("Extras:", summaryX, yPosition, { align: "right" });
@@ -311,6 +302,15 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
         { align: "right" },
       );
       doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+    }
+
+    // IVA
+    if (invoice.price?.vat !== undefined) {
+      doc.text(`IVA (${invoice.taxes_type?.tax ?? 0}%):`, summaryX, yPosition, { align: "right" });
+      doc.text(formatCurrency(invoice.price.vat), pageWidth - 20, yPosition, {
+        align: "right",
+      });
       yPosition += 5;
     }
 

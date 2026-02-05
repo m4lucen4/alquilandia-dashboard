@@ -12,6 +12,7 @@ interface InvoicesTableProps {
   pageIndex: number;
   pageSize: number;
   isLoading: boolean;
+  rectifiedIds: Set<string>;
   onPageChange: (pageIndex: number) => void;
   onOpenCorrectiveModal: (invoice: Invoice) => void;
 }
@@ -22,19 +23,10 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
   pageIndex,
   pageSize,
   isLoading,
+  rectifiedIds,
   onPageChange,
   onOpenCorrectiveModal,
 }) => {
-  const rectifiedIds = useMemo(
-    () =>
-      new Set(
-        invoices
-          .filter((inv) => inv.is_corrective && inv.original_invoice_id)
-          .map((inv) => inv.original_invoice_id as string),
-      ),
-    [invoices],
-  );
-
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
       {

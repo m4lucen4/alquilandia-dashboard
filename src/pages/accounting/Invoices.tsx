@@ -1,4 +1,4 @@
-import { type FC, useState, useCallback } from "react";
+import { type FC, useState, useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchAllInvoices,
@@ -14,6 +14,7 @@ import { AlertInvoices } from "@/components/invoices/AlertInvoices";
 import { SearchInvoices } from "@/components/invoices/SearchInvoices";
 import { InvoicesTable } from "@/components/invoices/InvoicesTable";
 import { useInvoiceSearch } from "@/hooks/useInvoiceSearch";
+import { getRectifiedInvoiceIds } from "@/services/invoicesService";
 import type { Invoice } from "@/types/invoices";
 
 export const Invoices: FC = () => {
@@ -39,6 +40,13 @@ export const Invoices: FC = () => {
     handleBudgetNumberChange,
     handlePageChange,
   } = useInvoiceSearch();
+
+  // IDs of invoices that already have a corrective (fetched without pagination)
+  const [rectifiedIds, setRectifiedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    getRectifiedInvoiceIds().then((ids) => setRectifiedIds(new Set(ids)));
+  }, []);
 
   // Corrective invoice modal states
   const [isCorrectiveModalOpen, setIsCorrectiveModalOpen] = useState(false);
@@ -73,7 +81,7 @@ export const Invoices: FC = () => {
 
       if (createCorrectiveInvoice.fulfilled.match(result)) {
         handleCloseCorrectiveModal();
-        // Refresh invoices list
+        // Refresh invoices list and rectified IDs
         dispatch(
           fetchAllInvoices({
             businessId: appliedFilters.businessId || undefined,
@@ -82,6 +90,7 @@ export const Invoices: FC = () => {
             pageSize,
           }),
         );
+        getRectifiedInvoiceIds().then((ids) => setRectifiedIds(new Set(ids)));
       }
     },
     [
@@ -133,6 +142,7 @@ export const Invoices: FC = () => {
           pageIndex={pageIndex}
           pageSize={pageSize}
           isLoading={fetchInvoicesRequest.inProgress}
+          rectifiedIds={rectifiedIds}
           onPageChange={handlePageChange}
           onOpenCorrectiveModal={handleOpenCorrectiveModal}
         />

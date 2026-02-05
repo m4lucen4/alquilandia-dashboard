@@ -616,3 +616,25 @@ export const createCorrectiveInvoice = async (
     return createdInvoice as Invoice;
   }
 };
+
+/**
+ * Gets all original invoice IDs that have a corrective invoice.
+ * Used to mark invoices as rectified regardless of pagination.
+ *
+ * @returns Array of original invoice IDs that have been rectified
+ */
+export const getRectifiedInvoiceIds = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("original_invoice_id")
+    .eq("is_corrective", true);
+
+  if (error) {
+    console.error("Error fetching rectified invoice IDs:", error);
+    return [];
+  }
+
+  return ((data as { original_invoice_id: string | null }[] | null) || [])
+    .map((row) => row.original_invoice_id)
+    .filter((id): id is string => Boolean(id));
+};
