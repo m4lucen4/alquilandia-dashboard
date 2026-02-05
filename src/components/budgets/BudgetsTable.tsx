@@ -1,16 +1,11 @@
 import { type FC, useMemo } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from "@tanstack/react-table";
+import { type ColumnDef } from "@tanstack/react-table";
 import { DocumentCheckIcon } from "@heroicons/react/24/outline";
 import type { Budget } from "../../types/budgets";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
 import { BudgetsActionsMenu } from "./BudgetsActionsMenu";
-import { Pagination } from "./Pagination";
+import { Table } from "@/components/shared/Table";
 
 interface BudgetsTableProps {
   budgets: Budget[];
@@ -122,110 +117,19 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
     [budgetHasInvoice, loadingInvoice, onGenerateInvoice, onViewInvoice],
   );
 
-  const table = useReactTable({
-    data: budgets,
-    columns,
-    pageCount: Math.ceil(total / pageSize),
-    state: {
-      pagination: {
+  return (
+    <Table
+      data={budgets}
+      columns={columns}
+      isLoading={isLoading}
+      loadingMessage="Cargando presupuestos..."
+      emptyMessage="No se encontraron presupuestos"
+      pagination={{
         pageIndex,
         pageSize,
-      },
-    },
-    onPaginationChange: (updater) => {
-      const newPagination =
-        typeof updater === "function"
-          ? updater({ pageIndex, pageSize })
-          : updater;
-      onPageChange(newPagination.pageIndex);
-    },
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-  });
-
-  return (
-    <div className="mt-8 flow-root">
-      <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <div className="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-300">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        scope="col"
-                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {isLoading ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-3 py-12 text-center text-sm text-gray-500"
-                    >
-                      <div className="flex items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                        <span className="ml-3">Cargando presupuestos...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : budgets.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-3 py-12 text-center text-sm text-gray-500"
-                    >
-                      No se encontraron presupuestos
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="whitespace-nowrap px-3 py-4 text-sm"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Paginación */}
-          {budgets.length > 0 && (
-            <Pagination
-              currentPage={pageIndex}
-              totalPages={table.getPageCount()}
-              pageSize={pageSize}
-              totalItems={total}
-              onPageChange={onPageChange}
-              canPreviousPage={table.getCanPreviousPage()}
-              canNextPage={table.getCanNextPage()}
-            />
-          )}
-        </div>
-      </div>
-    </div>
+        total,
+        onPageChange,
+      }}
+    />
   );
 };
