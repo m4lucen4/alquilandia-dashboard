@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo, useState, useCallback } from "react";
+import { type FC, useMemo, useState, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,7 +11,6 @@ import {
   fetchAllInvoices,
   createCorrectiveInvoice,
 } from "@/redux/actions/invoices";
-import { fetchAllBusiness } from "@/redux/actions/business";
 import {
   clearInvoicesErrors,
   resetCreateCorrectiveInvoiceRequest,
@@ -19,6 +18,8 @@ import {
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ModalCreateCorrectiveInvoice } from "@/components/invoices/ModalCreateCorrectiveInvoice";
 import { AlertInvoices } from "@/components/invoices/AlertInvoices";
+import { SearchInvoices } from "@/components/invoices/SearchInvoices";
+import { useInvoiceSearch } from "@/hooks/useInvoiceSearch";
 import type { Invoice } from "@/types/invoices";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
@@ -27,56 +28,26 @@ export const Invoices: FC = () => {
   const dispatch = useAppDispatch();
   const { invoices, fetchInvoicesRequest, createCorrectiveInvoiceRequest } =
     useAppSelector((state) => state.invoices);
-  const { businesses } = useAppSelector((state) => state.business);
 
-  // Filter states
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
-  const [budgetNumber, setBudgetNumber] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState({
-    businessId: "",
-    budgetNumber: "",
-  });
+  const {
+    selectedBusinessId,
+    budgetNumber,
+    appliedFilters,
+    businesses,
+    isLoading,
+    handleSearch,
+    handleClearFilters,
+    handleBusinessChange,
+    handleBudgetNumberChange,
+  } = useInvoiceSearch();
 
   // Corrective invoice modal states
   const [isCorrectiveModalOpen, setIsCorrectiveModalOpen] = useState(false);
   const [selectedInvoiceForCorrective, setSelectedInvoiceForCorrective] =
     useState<Invoice | null>(null);
 
-  // Load businesses on mount
-  useEffect(() => {
-    if (businesses.length === 0) {
-      dispatch(fetchAllBusiness());
-    }
-  }, [dispatch, businesses.length]);
-
-  // Load invoices when filters change
-  useEffect(() => {
-    dispatch(
-      fetchAllInvoices({
-        businessId: appliedFilters.businessId || undefined,
-        budgetReference: appliedFilters.budgetNumber || undefined,
-      }),
-    );
-  }, [dispatch, appliedFilters]);
-
   const handleCloseAlert = () => {
     dispatch(clearInvoicesErrors());
-  };
-
-  const handleSearch = () => {
-    setAppliedFilters({
-      businessId: selectedBusinessId,
-      budgetNumber: budgetNumber.trim(),
-    });
-  };
-
-  const handleClearFilters = () => {
-    setSelectedBusinessId("");
-    setBudgetNumber("");
-    setAppliedFilters({
-      businessId: "",
-      budgetNumber: "",
-    });
   };
 
   const handleOpenCorrectiveModal = useCallback((invoice: Invoice) => {
@@ -257,94 +228,17 @@ export const Invoices: FC = () => {
         <PageHeader title="Facturas" description="Gestiona tus facturas" />
 
         {/* Filtros */}
-        <div className="mt-6 rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Select Empresa */}
-            <div>
-              <label
-                htmlFor="business-filter"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Empresa
-              </label>
-              <select
-                id="business-filter"
-                value={selectedBusinessId}
-                onChange={(e) => setSelectedBusinessId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Todas las empresas</option>
-                {businesses.map((business) => (
-                  <option key={business.id} value={business.id}>
-                    {business.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Input Número de Presupuesto */}
-            <div>
-              <label
-                htmlFor="budgetNumber"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Nº Presupuesto
-              </label>
-              <input
-                type="text"
-                id="budgetNumber"
-                value={budgetNumber}
-                onChange={(e) => setBudgetNumber(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                placeholder="Ej: 12345"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Botones */}
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
-              <button
-                type="button"
-                onClick={handleSearch}
-                disabled={fetchInvoicesRequest.inProgress}
-                className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                Buscar
-              </button>
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                disabled={fetchInvoicesRequest.inProgress}
-                className="flex-1 rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                Limpiar
-              </button>
-            </div>
-          </div>
-
-          {/* Indicador de filtros activos */}
-          {(appliedFilters.businessId || appliedFilters.budgetNumber) && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600">Filtros activos:</span>
-              {appliedFilters.businessId && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                  Empresa:{" "}
-                  {businesses.find((b) => b.id === appliedFilters.businessId)
-                    ?.name || appliedFilters.businessId}
-                </span>
-              )}
-              {appliedFilters.budgetNumber && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                  Nº {appliedFilters.budgetNumber}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <SearchInvoices
+          selectedBusinessId={selectedBusinessId}
+          budgetNumber={budgetNumber}
+          appliedFilters={appliedFilters}
+          businesses={businesses}
+          isLoading={isLoading}
+          onBusinessChange={handleBusinessChange}
+          onBudgetNumberChange={handleBudgetNumberChange}
+          onSearch={handleSearch}
+          onClearFilters={handleClearFilters}
+        />
 
         <div className="mt-8 flow-root">
           <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
