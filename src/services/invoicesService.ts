@@ -57,7 +57,7 @@ export const getAllInvoices = async (
     query = query.range(from, to);
   }
 
-  const { data, error, count } = await query.order("created_at", {
+  const { data, error, count } = await query.order("invoice_number", {
     ascending: false,
   });
 
