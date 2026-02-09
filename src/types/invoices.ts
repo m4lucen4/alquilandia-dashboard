@@ -73,6 +73,7 @@ export interface CreateInvoiceData {
   client_postal_code?: string;
   client_phone?: string;
   additional_data?: string;
+  created_at?: string;
 }
 
 /**

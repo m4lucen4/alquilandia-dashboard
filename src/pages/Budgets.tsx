@@ -48,6 +48,7 @@ export const Budgets: FC = () => {
   const [selectedTaxesTypeId, setSelectedTaxesTypeId] = useState<string>("");
   const [invoiceTo, setInvoiceTo] = useState<"titular" | "empresa">("titular");
   const [additionalData, setAdditionalData] = useState<string>("");
+  const [createdAt, setCreatedAt] = useState<string>("");
 
   const {
     budgetNumber,
@@ -111,6 +112,7 @@ export const Budgets: FC = () => {
     setSelectedTaxesTypeId("");
     setInvoiceTo("titular");
     setAdditionalData("");
+    setCreatedAt("");
     dispatch(resetCreateInvoiceRequest());
   }, [dispatch]);
 
@@ -200,6 +202,9 @@ export const Budgets: FC = () => {
         price: adjustedPrice,
         ...clientData,
         additional_data: additionalData || undefined,
+        created_at: createdAt
+          ? new Date(createdAt).toISOString()
+          : new Date().toISOString(),
       }),
     );
 
@@ -217,6 +222,7 @@ export const Budgets: FC = () => {
     taxesTypes,
     invoiceTo,
     additionalData,
+    createdAt,
     dispatch,
     handleCloseModal,
     navigate,
@@ -294,6 +300,8 @@ export const Budgets: FC = () => {
         setInvoiceTo={setInvoiceTo}
         additionalData={additionalData}
         setAdditionalData={setAdditionalData}
+        createdAt={createdAt}
+        setCreatedAt={setCreatedAt}
         isGenerating={createInvoiceRequest.inProgress}
       />
 
@@ -347,6 +355,9 @@ export const Budgets: FC = () => {
             if (defaultBusiness) {
               setSelectedBusinessId(defaultBusiness.id);
             }
+            // Set today's date as default
+            const today = new Date().toISOString().split("T")[0];
+            setCreatedAt(today);
             setIsModalOpen(true);
           }}
           onViewInvoice={handleViewInvoice}

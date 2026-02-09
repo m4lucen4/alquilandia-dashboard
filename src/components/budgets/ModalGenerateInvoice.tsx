@@ -25,6 +25,8 @@ interface ModalGenerateInvoiceProps {
   setInvoiceTo: (value: "titular" | "empresa") => void;
   additionalData: string;
   setAdditionalData: (value: string) => void;
+  createdAt: string;
+  setCreatedAt: (value: string) => void;
   isGenerating: boolean;
 }
 
@@ -46,6 +48,8 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
   setInvoiceTo,
   additionalData,
   setAdditionalData,
+  createdAt,
+  setCreatedAt,
   isGenerating,
 }) => {
   // Memoize options to avoid recreating on every render
@@ -99,7 +103,10 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
   if (!isOpen || !selectedBudget) return null;
 
   const isFormValid =
-    selectedBusinessId && selectedInvoicesTypeId && selectedTaxesTypeId;
+    selectedBusinessId &&
+    selectedInvoicesTypeId &&
+    selectedTaxesTypeId &&
+    createdAt;
 
   return (
     <Modal
@@ -152,41 +159,73 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
             </div>
           )}
 
-        {!showBusinessSelect && selectedBusinessId ? (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-900">
-              Empresa<span className="text-red-500 ml-1">*</span>
-            </label>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-sm text-gray-900">
-                {
-                  businessOptions.find((o) => o.value === selectedBusinessId)
-                    ?.label
-                }
-              </span>
-              <Button
-                onClick={() => setShowBusinessSelect(true)}
-                disabled={isGenerating}
-                className="text-sm text-blue-600 hover:underline disabled:opacity-50"
-                title="Cambiar empresa"
-                variant="ghost"
-              />
+        <div className="mb-4 flex gap-4">
+          {!showBusinessSelect && selectedBusinessId ? (
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-900">
+                Empresa<span className="text-red-500 ml-1">*</span>
+              </label>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-gray-900">
+                  {
+                    businessOptions.find((o) => o.value === selectedBusinessId)
+                      ?.label
+                  }
+                </span>
+                <Button
+                  onClick={() => setShowBusinessSelect(true)}
+                  disabled={isGenerating}
+                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                  title="Cambiar empresa"
+                  variant="ghost"
+                />
+              </div>
             </div>
+          ) : (
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
+                Empresa<span className="text-red-500 ml-1">*</span>
+              </label>
+              <select
+                name="business"
+                value={selectedBusinessId}
+                onChange={(e) => setSelectedBusinessId(e.target.value)}
+                disabled={isGenerating}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+              >
+                <option value="">Selecciona una empresa</option>
+                {businessOptions.length === 0 ? (
+                  <option disabled>
+                    No hay empresas disponibles. Crea una empresa en Ajustes.
+                  </option>
+                ) : (
+                  businessOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
+
+          <div className="flex-1">
+            <label
+              htmlFor="created-at"
+              className="block text-sm font-medium text-gray-900 mb-1"
+            >
+              Fecha de creación<span className="text-red-500 ml-1">*</span>
+            </label>
+            <input
+              type="date"
+              id="created-at"
+              value={createdAt}
+              onChange={(e) => setCreatedAt(e.target.value)}
+              disabled={isGenerating}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+            />
           </div>
-        ) : (
-          <SelectField
-            label="Empresa"
-            name="business"
-            value={selectedBusinessId}
-            onChange={(e) => setSelectedBusinessId(e.target.value)}
-            options={businessOptions}
-            placeholder="Selecciona una empresa"
-            required
-            disabled={isGenerating}
-            emptyMessage="No hay empresas disponibles. Crea una empresa en Ajustes."
-            className="mb-4"
-          />
-        )}
+        </div>
 
         <SelectField
           label="Tipo de Factura"

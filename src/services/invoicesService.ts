@@ -219,6 +219,7 @@ export const createInvoice = async (
     client_postal_code: invoiceData.client_postal_code || "",
     client_phone: invoiceData.client_phone || "",
     additional_data: invoiceData.additional_data || "",
+    ...(invoiceData.created_at && { created_at: invoiceData.created_at }),
   };
 
   // Step 1: Create the invoice
