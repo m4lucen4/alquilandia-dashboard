@@ -2,6 +2,7 @@ import { type FC } from "react";
 import Button from "../shared/Button";
 import InputField from "../shared/InputField";
 import SelectField from "../shared/SelectField";
+import DateRangeField from "../shared/DateRangeField";
 import { getStatusBadgeConfig } from "@/helpers";
 
 interface SearchBudgetsProps {
@@ -13,6 +14,14 @@ interface SearchBudgetsProps {
   setPhone: (value: string) => void;
   status: string;
   setStatus: (value: string) => void;
+  eventDateFrom: string;
+  setEventDateFrom: (value: string) => void;
+  eventDateTo: string;
+  setEventDateTo: (value: string) => void;
+  creationDateFrom: string;
+  setCreationDateFrom: (value: string) => void;
+  creationDateTo: string;
+  setCreationDateTo: (value: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
   appliedFilters: {
@@ -20,9 +29,22 @@ interface SearchBudgetsProps {
     clientName: string;
     phone: string;
     status: string;
+    eventDateFrom: string;
+    eventDateTo: string;
+    creationDateFrom: string;
+    creationDateTo: string;
   };
   isLoading?: boolean;
 }
+
+/**
+ * Formats a date string (YYYY-MM-DD) to a readable format (DD/MM/YYYY)
+ */
+const formatDateForDisplay = (dateString: string): string => {
+  if (!dateString) return "";
+  const [year, month, day] = dateString.split("-");
+  return `${day}/${month}/${year}`;
+};
 
 export const SearchBudgets: FC<SearchBudgetsProps> = ({
   budgetNumber,
@@ -33,6 +55,14 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
   setPhone,
   status,
   setStatus,
+  eventDateFrom,
+  setEventDateFrom,
+  eventDateTo,
+  setEventDateTo,
+  creationDateFrom,
+  setCreationDateFrom,
+  creationDateTo,
+  setCreationDateTo,
   onSearch,
   onClearFilters,
   appliedFilters,
@@ -55,6 +85,7 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
 
   return (
     <div className="mt-6 rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
+      {/* Primera fila: Filtros principales */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {/* Input Número de Presupuesto */}
         <InputField
@@ -101,7 +132,7 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
         />
 
         {/* Botones */}
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
+        <div className="flex items-end gap-2">
           <Button
             title="Buscar"
             onClick={onSearch}
@@ -123,11 +154,42 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
         </div>
       </div>
 
+      {/* Segunda fila: Rangos de fecha */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Date Range: Fecha del Evento */}
+        <DateRangeField
+          label="Fecha del Evento"
+          nameFrom="eventDateFrom"
+          nameTo="eventDateTo"
+          valueFrom={eventDateFrom}
+          valueTo={eventDateTo}
+          onChangeFrom={(e) => setEventDateFrom(e.target.value)}
+          onChangeTo={(e) => setEventDateTo(e.target.value)}
+          disabled={isLoading}
+        />
+
+        {/* Date Range: Fecha de Creación */}
+        <DateRangeField
+          label="Fecha de Creación"
+          nameFrom="creationDateFrom"
+          nameTo="creationDateTo"
+          valueFrom={creationDateFrom}
+          valueTo={creationDateTo}
+          onChangeFrom={(e) => setCreationDateFrom(e.target.value)}
+          onChangeTo={(e) => setCreationDateTo(e.target.value)}
+          disabled={isLoading}
+        />
+      </div>
+
       {/* Indicador de filtros activos */}
       {(appliedFilters.budgetNumber ||
         appliedFilters.clientName ||
         appliedFilters.phone ||
-        appliedFilters.status) && (
+        appliedFilters.status ||
+        appliedFilters.eventDateFrom ||
+        appliedFilters.eventDateTo ||
+        appliedFilters.creationDateFrom ||
+        appliedFilters.creationDateTo) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600">Filtros activos:</span>
           {appliedFilters.budgetNumber && (
@@ -152,6 +214,31 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
               }`}
             >
               {getStatusBadgeConfig(appliedFilters.status).label}
+            </span>
+          )}
+          {(appliedFilters.eventDateFrom || appliedFilters.eventDateTo) && (
+            <span className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800">
+              Evento:{" "}
+              {appliedFilters.eventDateFrom
+                ? formatDateForDisplay(appliedFilters.eventDateFrom)
+                : "..."}
+              {" - "}
+              {appliedFilters.eventDateTo
+                ? formatDateForDisplay(appliedFilters.eventDateTo)
+                : "..."}
+            </span>
+          )}
+          {(appliedFilters.creationDateFrom ||
+            appliedFilters.creationDateTo) && (
+            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+              Creación:{" "}
+              {appliedFilters.creationDateFrom
+                ? formatDateForDisplay(appliedFilters.creationDateFrom)
+                : "..."}
+              {" - "}
+              {appliedFilters.creationDateTo
+                ? formatDateForDisplay(appliedFilters.creationDateTo)
+                : "..."}
             </span>
           )}
         </div>

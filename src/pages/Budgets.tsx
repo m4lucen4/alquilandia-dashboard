@@ -59,6 +59,14 @@ export const Budgets: FC = () => {
     setPhone,
     status,
     setStatus,
+    eventDateFrom,
+    setEventDateFrom,
+    eventDateTo,
+    setEventDateTo,
+    creationDateFrom,
+    setCreationDateFrom,
+    creationDateTo,
+    setCreationDateTo,
     appliedFilters,
     handleSearch,
     handleClearFilters,
@@ -327,6 +335,14 @@ export const Budgets: FC = () => {
           setPhone={setPhone}
           status={status}
           setStatus={setStatus}
+          eventDateFrom={eventDateFrom}
+          setEventDateFrom={setEventDateFrom}
+          eventDateTo={eventDateTo}
+          setEventDateTo={setEventDateTo}
+          creationDateFrom={creationDateFrom}
+          setCreationDateFrom={setCreationDateFrom}
+          creationDateTo={creationDateTo}
+          setCreationDateTo={setCreationDateTo}
           onSearch={() => {
             handleSearch();
             setPageIndex(0);
