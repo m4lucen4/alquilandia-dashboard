@@ -28,7 +28,8 @@ export const getAllInvoices = async (
       *,
       business:business_id (
         id,
-        name
+        name,
+        is_default
       ),
       invoices_type:invoices_type_id (
         id,
@@ -50,16 +51,8 @@ export const getAllInvoices = async (
     query = query.eq("budget_reference", budgetReference);
   }
 
-  // Apply pagination if provided
-  if (page !== undefined && pageSize !== undefined) {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
-  }
-
-  const { data, error, count } = await query.order("invoice_number", {
-    ascending: false,
-  });
+  // Fetch all data without pagination to sort globally
+  const { data, error, count } = await query;
 
   if (error) {
     console.error("Error fetching invoices:", error);
@@ -69,8 +62,30 @@ export const getAllInvoices = async (
     );
   }
 
+  // Sort client-side: first by business.is_default (true first), then by invoice_number (descending)
+  const sortedInvoices = ((data || []) as Invoice[]).sort((a, b) => {
+    // First, sort by is_default (true comes first)
+    const aIsDefault = a.business?.is_default ?? false;
+    const bIsDefault = b.business?.is_default ?? false;
+
+    if (aIsDefault !== bIsDefault) {
+      return bIsDefault ? 1 : -1; // true (1) comes before false (0)
+    }
+
+    // Then, sort by invoice_number (descending)
+    return (b.invoice_number || 0) - (a.invoice_number || 0);
+  });
+
+  // Apply pagination after sorting
+  let paginatedInvoices = sortedInvoices;
+  if (page !== undefined && pageSize !== undefined) {
+    const from = page * pageSize;
+    const to = from + pageSize;
+    paginatedInvoices = sortedInvoices.slice(from, to);
+  }
+
   return {
-    invoices: (data || []) as Invoice[],
+    invoices: paginatedInvoices,
     total: count || 0,
   };
 };

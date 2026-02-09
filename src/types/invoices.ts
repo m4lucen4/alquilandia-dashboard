@@ -37,6 +37,7 @@ export interface Invoice {
     phone?: string;
     postal_code?: string;
     additional_data?: string;
+    is_default?: boolean;
   };
   invoices_type?: {
     id: string;
