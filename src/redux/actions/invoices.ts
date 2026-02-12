@@ -3,10 +3,12 @@ import {
   getAllInvoices,
   createInvoice as createInvoiceService,
   createCorrectiveInvoice as createCorrectiveInvoiceService,
+  updateInvoice as updateInvoiceService,
 } from "@/services/invoicesService";
 import type {
   CreateInvoiceData,
   CreateCorrectiveInvoiceData,
+  UpdateInvoiceData,
 } from "@/types/invoices";
 
 /**
@@ -57,6 +59,28 @@ export const createInvoice = createAsyncThunk(
         error instanceof Error
           ? error.message
           : "Error desconocido al crear la factura";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+/**
+ * Updates an existing invoice
+ */
+export const updateInvoice = createAsyncThunk(
+  "invoices/update",
+  async (
+    { invoiceId, data }: { invoiceId: string; data: UpdateInvoiceData },
+    { rejectWithValue },
+  ) => {
+    try {
+      const invoice = await updateInvoiceService(invoiceId, data);
+      return invoice;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al actualizar la factura";
       return rejectWithValue(errorMessage);
     }
   },

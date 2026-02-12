@@ -5,54 +5,46 @@ import type { IRequest } from "@/types/auth";
 interface AlertInvoicesProps {
   fetchInvoicesRequest: IRequest;
   createCorrectiveInvoiceRequest: IRequest;
+  updateInvoiceRequest: IRequest;
   onClose: () => void;
 }
 
 export const AlertInvoices: FC<AlertInvoicesProps> = ({
   fetchInvoicesRequest,
   createCorrectiveInvoiceRequest,
+  updateInvoiceRequest,
   onClose,
 }) => {
+  const hasError = (req: IRequest) =>
+    req.messages && !req.inProgress && !req.ok;
+
   const shouldShowError =
-    (fetchInvoicesRequest.messages &&
-      !fetchInvoicesRequest.inProgress &&
-      !fetchInvoicesRequest.ok) ||
-    (createCorrectiveInvoiceRequest.messages &&
-      !createCorrectiveInvoiceRequest.inProgress &&
-      !createCorrectiveInvoiceRequest.ok);
+    hasError(fetchInvoicesRequest) ||
+    hasError(createCorrectiveInvoiceRequest) ||
+    hasError(updateInvoiceRequest);
 
   const getErrorTitle = () => {
-    if (
-      fetchInvoicesRequest.messages &&
-      !fetchInvoicesRequest.inProgress &&
-      !fetchInvoicesRequest.ok
-    ) {
+    if (hasError(fetchInvoicesRequest)) {
       return "Error al cargar facturas";
     }
-    if (
-      createCorrectiveInvoiceRequest.messages &&
-      !createCorrectiveInvoiceRequest.inProgress &&
-      !createCorrectiveInvoiceRequest.ok
-    ) {
+    if (hasError(createCorrectiveInvoiceRequest)) {
       return "Error al crear factura rectificativa";
+    }
+    if (hasError(updateInvoiceRequest)) {
+      return "Error al actualizar factura";
     }
     return "Error";
   };
 
   const getErrorMessage = () => {
-    if (
-      fetchInvoicesRequest.messages &&
-      !fetchInvoicesRequest.inProgress &&
-      !fetchInvoicesRequest.ok
-    ) {
+    if (hasError(fetchInvoicesRequest)) {
       return fetchInvoicesRequest.messages;
     }
-    if (
-      createCorrectiveInvoiceRequest.messages &&
-      !createCorrectiveInvoiceRequest.inProgress &&
-      !createCorrectiveInvoiceRequest.ok
-    ) {
+    if (hasError(createCorrectiveInvoiceRequest)) {
       return createCorrectiveInvoiceRequest.messages;
+    }
+    if (hasError(updateInvoiceRequest)) {
+      return updateInvoiceRequest.messages;
     }
     return "";
   };

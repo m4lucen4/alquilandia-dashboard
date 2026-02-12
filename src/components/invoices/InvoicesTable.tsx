@@ -1,6 +1,10 @@
 import { type FC, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowDownTrayIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  PencilSquareIcon,
+} from "@heroicons/react/24/outline";
 import type { Invoice } from "@/types/invoices";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
@@ -16,6 +20,7 @@ interface InvoicesTableProps {
   onPageChange: (pageIndex: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onOpenCorrectiveModal: (invoice: Invoice) => void;
+  onEditInvoice: (invoice: Invoice) => void;
 }
 
 export const InvoicesTable: FC<InvoicesTableProps> = ({
@@ -28,6 +33,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
   onPageChange,
   onPageSizeChange,
   onOpenCorrectiveModal,
+  onEditInvoice,
 }) => {
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
@@ -127,6 +133,16 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
                 <span className="text-xs text-gray-400">Sin PDF</span>
               )}
 
+              {!invoice.is_corrective && (
+                <button
+                  onClick={() => onEditInvoice(invoice)}
+                  className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  title="Editar factura"
+                >
+                  <PencilSquareIcon className="h-4 w-4" />
+                </button>
+              )}
+
               {!invoice.is_corrective && !rectifiedIds.has(invoice.id) && (
                 <button
                   onClick={() => onOpenCorrectiveModal(invoice)}
@@ -141,7 +157,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
         },
       },
     ],
-    [onOpenCorrectiveModal, rectifiedIds],
+    [onOpenCorrectiveModal, onEditInvoice, rectifiedIds],
   );
 
   return (

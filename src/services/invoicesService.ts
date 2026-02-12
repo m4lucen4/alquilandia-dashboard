@@ -2,6 +2,7 @@ import { supabase } from "@/config/supabase";
 import type {
   CreateInvoiceData,
   CreateCorrectiveInvoiceData,
+  UpdateInvoiceData,
   Invoice,
 } from "@/types/invoices";
 import type { Json } from "@/types/supabase";
@@ -630,6 +631,194 @@ export const createCorrectiveInvoice = async (
       error instanceof Error ? error.message : error,
     );
     return createdInvoice as Invoice;
+  }
+};
+
+/**
+ * Updates an existing invoice in Supabase with PDF regeneration
+ *
+ * @param invoiceId - ID of the invoice to update
+ * @param data - Updated invoice data
+ * @returns The updated invoice with new PDF URL
+ * @throws Error if update fails
+ */
+export const updateInvoice = async (
+  invoiceId: string,
+  data: UpdateInvoiceData,
+): Promise<Invoice> => {
+  try {
+    // Step 1: First, fetch the current invoice with all relations to generate the PDF
+    const { data: currentInvoice, error: fetchError } = await supabase
+      .from("invoices")
+      .select(
+        `
+        *,
+        business:business_id (
+          id,
+          name,
+          nif,
+          address,
+          locality,
+          province,
+          phone,
+          postal_code,
+          additional_data
+        ),
+        invoices_type:invoices_type_id (
+          id,
+          invoices,
+          percentage,
+          concept,
+          show_budgetlines
+        ),
+        taxes_type:taxes_type_id (
+          id,
+          name,
+          tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
+        )
+      `,
+      )
+      .eq("id", invoiceId)
+      .single();
+
+    if (fetchError || !currentInvoice) {
+      console.error("Error fetching invoice:", fetchError);
+      throw new Error("No se pudo obtener la factura.");
+    }
+
+    // Step 2: Generate new PDF with updated data
+    const invoiceForPdf = {
+      ...currentInvoice,
+      business_id: data.business_id,
+      invoices_type_id: data.invoices_type_id,
+      taxes_type_id: data.taxes_type_id,
+      budgetlines: data.budgetlines,
+      price: data.price,
+      client_name: data.client_name || "",
+      client_nif: data.client_nif || "",
+      client_email: data.client_email || "",
+      client_address: data.client_address || "",
+      client_locality: data.client_locality || "",
+      client_postal_code: data.client_postal_code || "",
+      client_phone: data.client_phone || "",
+      additional_data: data.additional_data || "",
+      ...(data.created_at && { created_at: data.created_at }),
+    } as Invoice;
+
+    const pdfBlob = await generateInvoicePDF(invoiceForPdf);
+
+    // Step 3: Delete the old PDF if it exists
+    const fileName = `invoice_${invoiceId}.pdf`;
+    const { error: deleteError } = await supabase.storage
+      .from("invoices-pdf")
+      .remove([fileName]);
+
+    // We don't throw an error if deletion fails (file might not exist)
+    if (deleteError) {
+      console.log("Note: Could not delete old PDF (might not exist):", deleteError.message);
+    }
+
+    // Step 4: Upload the new PDF
+    const { error: uploadError } = await supabase.storage
+      .from("invoices-pdf")
+      .upload(fileName, pdfBlob, {
+        contentType: "application/pdf",
+        cacheControl: "3600",
+      });
+
+    if (uploadError) {
+      console.error("Error uploading updated PDF:", uploadError);
+      throw new Error(
+        `No se pudo subir el PDF: ${uploadError.message || "Error desconocido"}`,
+      );
+    }
+
+    // Step 5: Get public URL with cache busting timestamp
+    const { data: urlData } = supabase.storage
+      .from("invoices-pdf")
+      .getPublicUrl(fileName);
+
+    // Add timestamp to force cache refresh
+    const pdfUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+    // Step 6: Update the invoice with all data including the PDF URL in a single operation
+    const updateData = {
+      business_id: data.business_id,
+      invoices_type_id: data.invoices_type_id,
+      taxes_type_id: data.taxes_type_id,
+      budgetlines: data.budgetlines as unknown as Json,
+      price: data.price as unknown as Json,
+      client_name: data.client_name || "",
+      client_nif: data.client_nif || "",
+      client_email: data.client_email || "",
+      client_address: data.client_address || "",
+      client_locality: data.client_locality || "",
+      client_postal_code: data.client_postal_code || "",
+      client_phone: data.client_phone || "",
+      additional_data: data.additional_data || "",
+      pdf_url: pdfUrl,
+      ...(data.created_at && { created_at: data.created_at }),
+    };
+
+    const { data: updatedInvoice, error: updateError } = (await supabase
+      .from("invoices")
+      // @ts-expect-error - Supabase type inference bug
+      .update(updateData)
+      .eq("id", invoiceId)
+      .select(
+        `
+        *,
+        business:business_id (
+          id,
+          name,
+          nif,
+          address,
+          locality,
+          province,
+          phone,
+          postal_code,
+          additional_data
+        ),
+        invoices_type:invoices_type_id (
+          id,
+          invoices,
+          percentage,
+          concept,
+          show_budgetlines
+        ),
+        taxes_type:taxes_type_id (
+          id,
+          name,
+          tax
+        ),
+        original_invoice:original_invoice_id (
+          invoice_number
+        )
+      `,
+      )
+      .single()) as {
+      data: Invoice | null;
+      error: { message?: string } | null;
+    };
+
+    if (updateError || !updatedInvoice) {
+      console.error("Error updating invoice:", updateError);
+      throw new Error(
+        updateError?.message ||
+          "No se pudo actualizar la factura. Por favor, inténtelo de nuevo.",
+      );
+    }
+
+    return updatedInvoice as Invoice;
+  } catch (error) {
+    console.error(
+      "Error in invoice update process:",
+      error instanceof Error ? error.message : error,
+    );
+    throw error;
   }
 };
 

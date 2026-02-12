@@ -78,6 +78,26 @@ export interface CreateInvoiceData {
 }
 
 /**
+ * Data required to update an existing invoice
+ */
+export interface UpdateInvoiceData {
+  business_id: string;
+  invoices_type_id: string;
+  taxes_type_id: string;
+  budgetlines: BudgetLine[];
+  price: Price;
+  client_name?: string;
+  client_nif?: string;
+  client_email?: string;
+  client_address?: string;
+  client_locality?: string;
+  client_postal_code?: string;
+  client_phone?: string;
+  additional_data?: string;
+  created_at?: string;
+}
+
+/**
  * Data required to create a corrective invoice
  */
 export interface CreateCorrectiveInvoiceData {
@@ -94,4 +114,5 @@ export interface InvoicesState {
   fetchInvoicesRequest: IRequest;
   createInvoiceRequest: IRequest;
   createCorrectiveInvoiceRequest: IRequest;
+  updateInvoiceRequest: IRequest;
 }

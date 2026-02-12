@@ -4,6 +4,7 @@ import {
   fetchAllInvoices,
   createInvoice,
   createCorrectiveInvoice,
+  updateInvoice,
 } from "../actions/invoices";
 
 const initialState: InvoicesState = {
@@ -24,6 +25,11 @@ const initialState: InvoicesState = {
     ok: false,
     messages: "",
   },
+  updateInvoiceRequest: {
+    inProgress: false,
+    ok: false,
+    messages: "",
+  },
 };
 
 const invoicesSlice = createSlice({
@@ -37,6 +43,8 @@ const invoicesSlice = createSlice({
       state.createInvoiceRequest.ok = false;
       state.createCorrectiveInvoiceRequest.messages = "";
       state.createCorrectiveInvoiceRequest.ok = false;
+      state.updateInvoiceRequest.messages = "";
+      state.updateInvoiceRequest.ok = false;
     },
     resetCreateInvoiceRequest: (state) => {
       state.createInvoiceRequest = {
@@ -47,6 +55,13 @@ const invoicesSlice = createSlice({
     },
     resetCreateCorrectiveInvoiceRequest: (state) => {
       state.createCorrectiveInvoiceRequest = {
+        inProgress: false,
+        ok: false,
+        messages: "",
+      };
+    },
+    resetUpdateInvoiceRequest: (state) => {
+      state.updateInvoiceRequest = {
         inProgress: false,
         ok: false,
         messages: "",
@@ -109,6 +124,24 @@ const invoicesSlice = createSlice({
         state.createCorrectiveInvoiceRequest.messages =
           (action.payload as string) ||
           "Error al generar la factura rectificativa";
+      })
+      // Update invoice
+      .addCase(updateInvoice.pending, (state) => {
+        state.updateInvoiceRequest.inProgress = true;
+        state.updateInvoiceRequest.ok = false;
+        state.updateInvoiceRequest.messages = "";
+      })
+      .addCase(updateInvoice.fulfilled, (state) => {
+        state.updateInvoiceRequest.inProgress = false;
+        state.updateInvoiceRequest.ok = true;
+        state.updateInvoiceRequest.messages =
+          "Factura actualizada exitosamente";
+      })
+      .addCase(updateInvoice.rejected, (state, action) => {
+        state.updateInvoiceRequest.inProgress = false;
+        state.updateInvoiceRequest.ok = false;
+        state.updateInvoiceRequest.messages =
+          (action.payload as string) || "Error al actualizar la factura";
       });
   },
 });
@@ -117,5 +150,6 @@ export const {
   clearInvoicesErrors,
   resetCreateInvoiceRequest,
   resetCreateCorrectiveInvoiceRequest,
+  resetUpdateInvoiceRequest,
 } = invoicesSlice.actions;
 export default invoicesSlice.reducer;

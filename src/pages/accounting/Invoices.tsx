@@ -3,13 +3,18 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchAllInvoices,
   createCorrectiveInvoice,
+  updateInvoice,
 } from "@/redux/actions/invoices";
 import {
   clearInvoicesErrors,
   resetCreateCorrectiveInvoiceRequest,
+  resetUpdateInvoiceRequest,
 } from "@/redux/slices/invoicesSlice";
+import { fetchAllInvoicesTypes } from "@/redux/actions/invoicesTypes";
+import { fetchAllTaxesTypes } from "@/redux/actions/taxesTypes";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ModalCreateCorrectiveInvoice } from "@/components/invoices/ModalCreateCorrectiveInvoice";
+import { ModalEditInvoice } from "@/components/invoices/ModalEditInvoice";
 import { AlertInvoices } from "@/components/invoices/AlertInvoices";
 import { SearchInvoices } from "@/components/invoices/SearchInvoices";
 import { InvoicesTable } from "@/components/invoices/InvoicesTable";
@@ -24,7 +29,11 @@ export const Invoices: FC = () => {
     total,
     fetchInvoicesRequest,
     createCorrectiveInvoiceRequest,
+    updateInvoiceRequest,
   } = useAppSelector((state) => state.invoices);
+
+  const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
+  const { taxesTypes } = useAppSelector((state) => state.taxesTypes);
 
   const {
     selectedBusinessId,
@@ -49,15 +58,36 @@ export const Invoices: FC = () => {
     getRectifiedInvoiceIds().then((ids) => setRectifiedIds(new Set(ids)));
   }, []);
 
+  // Load invoicesTypes and taxesTypes on mount if not already loaded
+  useEffect(() => {
+    if (invoicesTypes.length === 0) {
+      dispatch(fetchAllInvoicesTypes());
+    }
+    if (taxesTypes.length === 0) {
+      dispatch(fetchAllTaxesTypes());
+    }
+  }, [dispatch, invoicesTypes.length, taxesTypes.length]);
+
   // Corrective invoice modal states
   const [isCorrectiveModalOpen, setIsCorrectiveModalOpen] = useState(false);
   const [selectedInvoiceForCorrective, setSelectedInvoiceForCorrective] =
     useState<Invoice | null>(null);
 
+  // Edit invoice modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] =
+    useState<Invoice | null>(null);
+  const [editBusinessId, setEditBusinessId] = useState("");
+  const [editInvoicesTypeId, setEditInvoicesTypeId] = useState("");
+  const [editTaxesTypeId, setEditTaxesTypeId] = useState("");
+  const [editAdditionalData, setEditAdditionalData] = useState("");
+  const [editCreatedAt, setEditCreatedAt] = useState("");
+
   const handleCloseAlert = () => {
     dispatch(clearInvoicesErrors());
   };
 
+  // --- Corrective modal handlers ---
   const handleOpenCorrectiveModal = useCallback((invoice: Invoice) => {
     setSelectedInvoiceForCorrective(invoice);
     setIsCorrectiveModalOpen(true);
@@ -104,11 +134,146 @@ export const Invoices: FC = () => {
     ],
   );
 
+  // --- Edit modal handlers ---
+  const handleOpenEditModal = useCallback((invoice: Invoice) => {
+    setSelectedInvoiceForEdit(invoice);
+    setEditBusinessId(invoice.business_id);
+    setEditInvoicesTypeId(invoice.invoices_type_id);
+    setEditTaxesTypeId(invoice.taxes_type_id);
+    setEditAdditionalData(invoice.additional_data || "");
+    setEditCreatedAt(
+      invoice.created_at ? invoice.created_at.split("T")[0] : "",
+    );
+    setIsEditModalOpen(true);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setSelectedInvoiceForEdit(null);
+    setEditBusinessId("");
+    setEditInvoicesTypeId("");
+    setEditTaxesTypeId("");
+    setEditAdditionalData("");
+    setEditCreatedAt("");
+    dispatch(resetUpdateInvoiceRequest());
+  }, [dispatch]);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!selectedInvoiceForEdit) return;
+
+    const invoice = selectedInvoiceForEdit;
+
+    // Determine current and new invoice types
+    const currentInvoiceType = invoicesTypes.find(
+      (t) => t.id === invoice.invoices_type_id,
+    );
+    const newInvoiceType = invoicesTypes.find(
+      (t) => t.id === editInvoicesTypeId,
+    );
+    const newTaxType = taxesTypes.find((t) => t.id === editTaxesTypeId);
+
+    if (!newInvoiceType || !newTaxType) return;
+
+    // Start with current values
+    let adjustedPrice = { ...invoice.price };
+    let adjustedBudgetlines = [...invoice.budgetlines];
+
+    // If invoice type percentage changed, recalculate prices
+    const currentPercentage = currentInvoiceType?.percentage ?? 100;
+    const newPercentage = newInvoiceType.percentage;
+
+    if (currentPercentage !== newPercentage && currentPercentage !== 0) {
+      const ratio = newPercentage / currentPercentage;
+
+      adjustedPrice = {
+        ...adjustedPrice,
+        subTotal: Math.round(invoice.price.subTotal * ratio * 100) / 100,
+        extras: Math.round(invoice.price.extras * ratio * 100) / 100,
+        costSend: Math.round(invoice.price.costSend * ratio * 100) / 100,
+        userDiscount:
+          Math.round(invoice.price.userDiscount * ratio * 100) / 100,
+        packs: Math.round(invoice.price.packs * ratio * 100) / 100,
+        subTotalWithExtras:
+          Math.round(invoice.price.subTotalWithExtras * ratio * 100) / 100,
+        alreadyPaid: Math.round(invoice.price.alreadyPaid * ratio * 100) / 100,
+      };
+
+      adjustedBudgetlines = invoice.budgetlines.map((line) => ({
+        ...line,
+        precioUd: Math.round(line.precioUd * ratio * 100) / 100,
+        totalPrice: Math.round(line.totalPrice * ratio * 100) / 100,
+        costetotal: Math.round(line.costetotal * ratio * 100) / 100,
+      }));
+    }
+
+    // Recalculate VAT with the new tax rate
+    const vatBase =
+      adjustedPrice.subTotal +
+      adjustedPrice.extras +
+      adjustedPrice.costSend -
+      adjustedPrice.userDiscount;
+    adjustedPrice.vat =
+      Math.round(vatBase * (newTaxType.tax / 100) * 100) / 100;
+    adjustedPrice.total = Math.round((vatBase + adjustedPrice.vat) * 100) / 100;
+
+    const result = await dispatch(
+      updateInvoice({
+        invoiceId: invoice.id,
+        data: {
+          business_id: editBusinessId,
+          invoices_type_id: editInvoicesTypeId,
+          taxes_type_id: editTaxesTypeId,
+          budgetlines: adjustedBudgetlines,
+          price: adjustedPrice,
+          client_name: invoice.client_name,
+          client_nif: invoice.client_nif,
+          client_email: invoice.client_email,
+          client_address: invoice.client_address,
+          client_locality: invoice.client_locality,
+          client_postal_code: invoice.client_postal_code,
+          client_phone: invoice.client_phone,
+          additional_data: editAdditionalData,
+          created_at: editCreatedAt
+            ? new Date(editCreatedAt).toISOString()
+            : undefined,
+        },
+      }),
+    );
+
+    if (updateInvoice.fulfilled.match(result)) {
+      handleCloseEditModal();
+      // Refresh invoices list
+      dispatch(
+        fetchAllInvoices({
+          businessId: appliedFilters.businessId || undefined,
+          budgetReference: appliedFilters.budgetNumber || undefined,
+          page: pageIndex,
+          pageSize,
+        }),
+      );
+    }
+  }, [
+    selectedInvoiceForEdit,
+    invoicesTypes,
+    taxesTypes,
+    editBusinessId,
+    editInvoicesTypeId,
+    editTaxesTypeId,
+    editAdditionalData,
+    editCreatedAt,
+    dispatch,
+    appliedFilters,
+    pageIndex,
+    pageSize,
+    handleCloseEditModal,
+  ]);
+
   return (
     <>
       <AlertInvoices
         fetchInvoicesRequest={fetchInvoicesRequest}
         createCorrectiveInvoiceRequest={createCorrectiveInvoiceRequest}
+        updateInvoiceRequest={updateInvoiceRequest}
         onClose={handleCloseAlert}
       />
 
@@ -118,6 +283,26 @@ export const Invoices: FC = () => {
         onConfirm={handleCreateCorrective}
         invoice={selectedInvoiceForCorrective}
         isCreating={createCorrectiveInvoiceRequest.inProgress}
+      />
+
+      <ModalEditInvoice
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveEdit}
+        invoice={selectedInvoiceForEdit}
+        businesses={businesses}
+        invoicesTypes={invoicesTypes}
+        taxesTypes={taxesTypes}
+        selectedBusinessId={editBusinessId}
+        selectedInvoicesTypeId={editInvoicesTypeId}
+        setSelectedInvoicesTypeId={setEditInvoicesTypeId}
+        selectedTaxesTypeId={editTaxesTypeId}
+        setSelectedTaxesTypeId={setEditTaxesTypeId}
+        additionalData={editAdditionalData}
+        setAdditionalData={setEditAdditionalData}
+        createdAt={editCreatedAt}
+        setCreatedAt={setEditCreatedAt}
+        isUpdating={updateInvoiceRequest.inProgress}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
@@ -147,6 +332,7 @@ export const Invoices: FC = () => {
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
           onOpenCorrectiveModal={handleOpenCorrectiveModal}
+          onEditInvoice={handleOpenEditModal}
         />
       </div>
     </>
