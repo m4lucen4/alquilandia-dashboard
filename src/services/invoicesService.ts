@@ -691,7 +691,7 @@ export const updateInvoice = async (
 
     // Step 2: Generate new PDF with updated data
     const invoiceForPdf = {
-      ...currentInvoice,
+      ...(currentInvoice as Invoice),
       business_id: data.business_id,
       invoices_type_id: data.invoices_type_id,
       taxes_type_id: data.taxes_type_id,
@@ -718,7 +718,10 @@ export const updateInvoice = async (
 
     // We don't throw an error if deletion fails (file might not exist)
     if (deleteError) {
-      console.log("Note: Could not delete old PDF (might not exist):", deleteError.message);
+      console.log(
+        "Note: Could not delete old PDF (might not exist):",
+        deleteError.message,
+      );
     }
 
     // Step 4: Upload the new PDF
