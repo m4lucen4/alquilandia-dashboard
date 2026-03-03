@@ -152,6 +152,7 @@ export interface Budget {
   receiptDate: string;
   afiliatedPhone: string;
   budgetLines: BudgetLine[];
+  totalCouponDiscount: number;
 }
 
 // API Response

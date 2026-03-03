@@ -6,6 +6,7 @@ import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
 import { BudgetsActionsMenu } from "./BudgetsActionsMenu";
 import { Table } from "@/components/shared/Table";
+import { calculateBudgetTotal } from "@/helpers/budgets";
 
 interface BudgetsTableProps {
   budgets: Budget[];
@@ -19,6 +20,7 @@ interface BudgetsTableProps {
   onPageSizeChange: (pageSize: number) => void;
   onGenerateInvoice: (budget: Budget) => void;
   onViewInvoice: (budget: Budget) => void;
+  onViewBudget: (budget: Budget) => void;
 }
 
 export const BudgetsTable: FC<BudgetsTableProps> = ({
@@ -33,6 +35,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
   onPageSizeChange,
   onGenerateInvoice,
   onViewInvoice,
+  onViewBudget,
 }) => {
   const columns = useMemo<ColumnDef<Budget>[]>(
     () => [
@@ -92,9 +95,10 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
         header: "Total",
         cell: (info) => {
           const budget = info.row.original;
+          const { total } = calculateBudgetTotal(budget);
           return (
             <span className="font-semibold text-gray-900">
-              {formatCurrency(budget.price?.total || 0)}
+              {formatCurrency(total)}
             </span>
           );
         },
@@ -111,12 +115,19 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
               loadingInvoice={loadingInvoice}
               onGenerateInvoice={onGenerateInvoice}
               onViewInvoice={onViewInvoice}
+              onViewBudget={onViewBudget}
             />
           );
         },
       },
     ],
-    [budgetHasInvoice, loadingInvoice, onGenerateInvoice, onViewInvoice],
+    [
+      budgetHasInvoice,
+      loadingInvoice,
+      onGenerateInvoice,
+      onViewInvoice,
+      onViewBudget,
+    ],
   );
 
   return (

@@ -19,8 +19,14 @@ import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
+import {
+  getClientDataFromBudget,
+  calculateAdjustedPrice,
+  adjustBudgetLines,
+} from "../helpers/budgets";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
 import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
+import { ModalBudgetData } from "../components/budgets/ModalBudgetData";
 
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
@@ -39,7 +45,10 @@ export const Budgets: FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
+  const [isViewBudgetModalOpen, setIsViewBudgetModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [selectedBudgetToView, setSelectedBudgetToView] =
+    useState<Budget | null>(null);
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
@@ -135,34 +144,7 @@ export const Budgets: FC = () => {
     }
 
     // Extract client data from budget
-    const clientData =
-      invoiceTo === "empresa" && selectedBudget.user?.company
-        ? {
-            client_name: selectedBudget.user.company.name,
-            client_nif: selectedBudget.user.company.nif,
-            client_email: selectedBudget.user?.email || "",
-            client_address: selectedBudget.user.company.address,
-            client_locality: selectedBudget.user.company.locality,
-            client_postal_code: selectedBudget.user.company.zipCode,
-            client_phone:
-              selectedBudget.user?.phone || selectedBudget.phone || "",
-          }
-        : {
-            client_name:
-              selectedBudget.user?.FullName ||
-              `${selectedBudget.user?.firstName || ""} ${selectedBudget.user?.lastName || ""}`.trim() ||
-              selectedBudget.client ||
-              "",
-            client_nif: selectedBudget.user?.dnif || "",
-            client_email: selectedBudget.user?.email || "",
-            client_address:
-              selectedBudget.user?.address || selectedBudget.address || "",
-            client_locality:
-              selectedBudget.user?.locality || selectedBudget.locality || "",
-            client_postal_code: selectedBudget.user?.zipCode || "",
-            client_phone:
-              selectedBudget.user?.phone || selectedBudget.phone || "",
-          };
+    const clientData = getClientDataFromBudget(selectedBudget, invoiceTo);
 
     // Apply invoice type percentage and recalculate IVA
     const invoiceType = invoicesTypes.find(
@@ -171,34 +153,16 @@ export const Budgets: FC = () => {
     const taxType = taxesTypes.find((t) => t.id === selectedTaxesTypeId);
     const factor = (invoiceType?.percentage ?? 100) / 100;
     const taxRate = taxType?.tax ?? 0;
-    const round = (n: number) => Math.round(n * 100) / 100;
 
-    const originalPrice = selectedBudget.price;
-    const adjSubTotal = round(originalPrice.subTotal * factor);
-    const adjExtras = round(originalPrice.extras * factor);
-    const adjCostSend = round(originalPrice.costSend * factor);
-    const adjUserDiscount = round(originalPrice.userDiscount * factor);
-    const vatBase = adjSubTotal + adjExtras + adjCostSend - adjUserDiscount;
-    const adjVat = round(vatBase * (taxRate / 100));
-
-    const adjustedPrice = {
-      ...originalPrice,
-      subTotal: adjSubTotal,
-      extras: adjExtras,
-      subTotalWithExtras: round(originalPrice.subTotalWithExtras * factor),
-      costSend: adjCostSend,
-      userDiscount: adjUserDiscount,
-      packs: round(originalPrice.packs * factor),
-      vat: adjVat,
-      total: round(vatBase + adjVat),
-    };
-
-    const adjustedBudgetLines = selectedBudget.budgetLines.map((line) => ({
-      ...line,
-      precioUd: round(line.precioUd * factor),
-      totalPrice: round(line.totalPrice * factor),
-      costetotal: round(line.costetotal * factor),
-    }));
+    const adjustedPrice = calculateAdjustedPrice(
+      selectedBudget.price,
+      factor,
+      taxRate,
+    );
+    const adjustedBudgetLines = adjustBudgetLines(
+      selectedBudget.budgetLines,
+      factor,
+    );
 
     const result = await dispatch(
       createInvoice({
@@ -235,6 +199,16 @@ export const Budgets: FC = () => {
     handleCloseModal,
     navigate,
   ]);
+
+  const handleViewBudget = useCallback((budget: Budget) => {
+    setSelectedBudgetToView(budget);
+    setIsViewBudgetModalOpen(true);
+  }, []);
+
+  const handleCloseViewBudgetModal = useCallback(() => {
+    setIsViewBudgetModalOpen(false);
+    setSelectedBudgetToView(null);
+  }, []);
 
   const handleViewInvoice = useCallback(async (budget: Budget) => {
     setLoadingInvoice(true);
@@ -319,6 +293,12 @@ export const Budgets: FC = () => {
         invoices={selectedInvoices}
       />
 
+      <ModalBudgetData
+        isOpen={isViewBudgetModalOpen}
+        onClose={handleCloseViewBudgetModal}
+        budget={selectedBudgetToView}
+      />
+
       <div className="px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="Presupuestos"
@@ -377,6 +357,7 @@ export const Budgets: FC = () => {
             setIsModalOpen(true);
           }}
           onViewInvoice={handleViewInvoice}
+          onViewBudget={handleViewBudget}
         />
       </div>
     </>
