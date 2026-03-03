@@ -58,8 +58,7 @@ const defaultMockReturn = {
   handlePasswordChange: vi.fn(),
   handleProfileSubmit: vi.fn((e: React.FormEvent) => e.preventDefault()),
   submitPassword: vi.fn(),
-  handleClearUpdateProfileRequest: vi.fn(),
-  handleClearChangePasswordRequest: vi.fn(),
+  handleClearAllRequests: vi.fn(),
 };
 
 describe("Profile", () => {
@@ -157,7 +156,9 @@ describe("Profile", () => {
 
     render(<Profile />);
 
-    expect(screen.getByText("Perfil actualizado")).toBeInTheDocument();
+    expect(
+      screen.getByText("Acción realizada correctamente"),
+    ).toBeInTheDocument();
   });
 
   it("should show error alert when profile update fails", () => {
@@ -173,7 +174,7 @@ describe("Profile", () => {
     render(<Profile />);
 
     expect(
-      screen.getByText("Error al actualizar el perfil"),
+      screen.getByText("Se ha producido un error al realizar la solicitud"),
     ).toBeInTheDocument();
   });
 
@@ -190,7 +191,7 @@ describe("Profile", () => {
     render(<Profile />);
 
     expect(
-      screen.getByText("Error al cambiar la contraseña"),
+      screen.getByText("Se ha producido un error al realizar la solicitud"),
     ).toBeInTheDocument();
   });
 

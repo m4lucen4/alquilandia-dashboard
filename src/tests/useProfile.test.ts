@@ -253,25 +253,11 @@ describe("useProfile", () => {
     expect(mockDispatch).toHaveBeenCalledWith(mockAction);
   });
 
-  it("should dispatch clearUpdateProfileRequest", () => {
+  it("should dispatch both clear actions and reset password data when handleClearAllRequests is called", () => {
     vi.spyOn(profileSlice, "clearUpdateProfileRequest").mockReturnValue({
       type: "profile/clearUpdateProfileRequest",
       payload: undefined,
     });
-
-    const { result } = renderHook(() => useProfile());
-
-    act(() => {
-      result.current.handleClearUpdateProfileRequest();
-    });
-
-    expect(mockDispatch).toHaveBeenCalledWith({
-      type: "profile/clearUpdateProfileRequest",
-      payload: undefined,
-    });
-  });
-
-  it("should dispatch clearChangePasswordRequest and reset password data", () => {
     vi.spyOn(profileSlice, "clearChangePasswordRequest").mockReturnValue({
       type: "profile/clearChangePasswordRequest",
       payload: undefined,
@@ -286,9 +272,13 @@ describe("useProfile", () => {
     });
 
     act(() => {
-      result.current.handleClearChangePasswordRequest();
+      result.current.handleClearAllRequests();
     });
 
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: "profile/clearUpdateProfileRequest",
+      payload: undefined,
+    });
     expect(mockDispatch).toHaveBeenCalledWith({
       type: "profile/clearChangePasswordRequest",
       payload: undefined,
