@@ -6,6 +6,7 @@ import Accounting from "@/pages/accounting/Accounting";
 import Invoices from "@/pages/accounting/Invoices";
 import { Budgets } from "@/pages/Budgets";
 import { Settings } from "@/pages/Settings";
+import { Profile } from "@/pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import PublicRoute from "./PublicRoute";
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
           {
             path: "budgets",
             element: <Budgets />,
+          },
+          {
+            path: "profile",
+            element: <Profile />,
           },
         ],
       },

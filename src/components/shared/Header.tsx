@@ -48,7 +48,7 @@ const navigation: NavigationItem[] = [
 ];
 
 const userNavigation: UserNavigationItem[] = [
-  { name: "Perfil", href: "#", action: null },
+  { name: "Perfil", href: "/profile", action: null },
   { name: "Ajustes plataforma", href: "/settings", action: null },
   { name: "Cerrar sesión", href: "#", action: "logout" },
 ];

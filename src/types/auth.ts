@@ -1,3 +1,12 @@
+export interface Company {
+  name: string;
+  nif: string;
+  address: string;
+  population: string;
+  locality: string;
+  zipCode: string;
+}
+
 export interface IRequest {
   inProgress: boolean;
   messages: string;
@@ -26,7 +35,7 @@ export interface CurrentUser {
   FullName: string;
   googleId: string;
   appleId: string;
-  company: string | null;
+  company: Company | null;
   isDeleted: boolean;
   deletedAt: string;
   problematic: boolean;

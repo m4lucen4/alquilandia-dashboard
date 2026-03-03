@@ -4,7 +4,7 @@ import XMarkIcon from "@heroicons/react/24/outline/XMarkIcon";
 
 interface AlertProps {
   title: string;
-  description: string;
+  description?: string;
   onClose?: () => void;
 }
 
@@ -68,12 +68,14 @@ export const Alert: FC<AlertProps> = ({ title, description, onClose }) => {
           >
             {title}
           </h3>
-          <p
-            id="alert-description"
-            className="text-sm leading-relaxed text-gray-600 sm:text-base"
-          >
-            {description}
-          </p>
+          {description && (
+            <p
+              id="alert-description"
+              className="text-sm leading-relaxed text-gray-600 sm:text-base"
+            >
+              {description}
+            </p>
+          )}
         </div>
 
         {/* Footer */}

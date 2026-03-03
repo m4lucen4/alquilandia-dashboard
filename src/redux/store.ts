@@ -7,6 +7,7 @@ import businessReducer from "./slices/businessSlice";
 import taxesTypesReducer from "./slices/taxesTypesSlice";
 import invoicesTypesReducer from "./slices/invoicesTypesSlice";
 import invoicesReducer from "./slices/invoicesSlice";
+import profileReducer from "./slices/profileSlice";
 
 const persistConfig = {
   key: "auth",
@@ -23,6 +24,7 @@ export const store = configureStore({
     taxesTypes: taxesTypesReducer,
     invoicesTypes: invoicesTypesReducer,
     invoices: invoicesReducer,
+    profile: profileReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
