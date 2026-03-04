@@ -24,7 +24,9 @@ import {
   calculateAdjustedPrice,
   adjustBudgetLines,
 } from "../helpers/budgets";
+import { generateBudgetPDF } from "../services/pdfService";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
+import { ModalGenerateBudgetPdf } from "../components/budgets/ModalGenerateBudgetPdf";
 import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
 import { ModalBudgetData } from "../components/budgets/ModalBudgetData";
 
@@ -58,6 +60,18 @@ export const Budgets: FC = () => {
   const [invoiceTo, setInvoiceTo] = useState<"titular" | "empresa">("titular");
   const [additionalData, setAdditionalData] = useState<string>("");
   const [createdAt, setCreatedAt] = useState<string>("");
+
+  // Generate budget PDF modal states
+  const [isBudgetPdfModalOpen, setIsBudgetPdfModalOpen] = useState(false);
+  const [selectedBudgetForPdf, setSelectedBudgetForPdf] =
+    useState<Budget | null>(null);
+  const [pdfBusinessId, setPdfBusinessId] = useState<string>("");
+  const [pdfInvoiceTo, setPdfInvoiceTo] = useState<"titular" | "empresa">(
+    "titular",
+  );
+  const [pdfDate, setPdfDate] = useState<string>("");
+  const [pdfIncludeVAT, setPdfIncludeVAT] = useState<boolean>(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
 
   const {
     budgetNumber,
@@ -200,6 +214,72 @@ export const Budgets: FC = () => {
     navigate,
   ]);
 
+  const handleOpenBudgetPdfModal = useCallback(
+    (budget: Budget) => {
+      setSelectedBudgetForPdf(budget);
+      const defaultBusiness = businesses.find((b) => b.is_default);
+      if (defaultBusiness) {
+        setPdfBusinessId(defaultBusiness.id);
+      }
+      setPdfDate(new Date().toISOString().split("T")[0]);
+      setPdfIncludeVAT(true);
+      setIsBudgetPdfModalOpen(true);
+    },
+    [businesses],
+  );
+
+  const handleCloseBudgetPdfModal = useCallback(() => {
+    setIsBudgetPdfModalOpen(false);
+    setSelectedBudgetForPdf(null);
+    setPdfBusinessId("");
+    setPdfInvoiceTo("titular");
+    setPdfDate("");
+    setPdfIncludeVAT(true);
+  }, []);
+
+  const handleGenerateBudgetPdf = useCallback(async () => {
+    if (!selectedBudgetForPdf || !pdfBusinessId || !pdfDate) return;
+
+    const business = businesses.find((b) => b.id === pdfBusinessId);
+    if (!business) return;
+
+    setIsGeneratingPdf(true);
+    try {
+      const clientData = getClientDataFromBudget(
+        selectedBudgetForPdf,
+        pdfInvoiceTo,
+      );
+      const pdfBlob = await generateBudgetPDF(
+        selectedBudgetForPdf,
+        business,
+        clientData,
+        pdfIncludeVAT,
+        pdfDate,
+      );
+
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `presupuesto_${selectedBudgetForPdf.budgetReference}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      handleCloseBudgetPdfModal();
+    } catch (error) {
+      console.error("Error generating budget PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [
+    selectedBudgetForPdf,
+    pdfBusinessId,
+    pdfDate,
+    pdfInvoiceTo,
+    pdfIncludeVAT,
+    businesses,
+    handleCloseBudgetPdfModal,
+  ]);
+
   const handleViewBudget = useCallback((budget: Budget) => {
     setSelectedBudgetToView(budget);
     setIsViewBudgetModalOpen(true);
@@ -263,6 +343,23 @@ export const Budgets: FC = () => {
           onClose={handleCloseInvoiceAlert}
         />
       )}
+
+      <ModalGenerateBudgetPdf
+        isOpen={isBudgetPdfModalOpen}
+        onClose={handleCloseBudgetPdfModal}
+        onGenerate={handleGenerateBudgetPdf}
+        selectedBudget={selectedBudgetForPdf}
+        businesses={businesses}
+        selectedBusinessId={pdfBusinessId}
+        setSelectedBusinessId={setPdfBusinessId}
+        invoiceTo={pdfInvoiceTo}
+        setInvoiceTo={setPdfInvoiceTo}
+        date={pdfDate}
+        setDate={setPdfDate}
+        includeVAT={pdfIncludeVAT}
+        setIncludeVAT={setPdfIncludeVAT}
+        isGenerating={isGeneratingPdf}
+      />
 
       <ModalGenerateInvoice
         isOpen={isModalOpen}
@@ -358,6 +455,7 @@ export const Budgets: FC = () => {
           }}
           onViewInvoice={handleViewInvoice}
           onViewBudget={handleViewBudget}
+          onGenerateBudgetPdf={handleOpenBudgetPdfModal}
         />
       </div>
     </>
