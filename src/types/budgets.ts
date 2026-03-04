@@ -169,3 +169,37 @@ export interface BudgetsState {
   fetchBudgetsRequest: IRequest;
   fetchBudgetByIdRequest: IRequest;
 }
+
+export interface AppliedFiltersType {
+  budgetNumber: string;
+  clientName: string;
+  phone: string;
+  status: string;
+  eventDateFrom: string;
+  eventDateTo: string;
+  creationDateFrom: string;
+  creationDateTo: string;
+}
+
+export interface SearchBudgetsProps {
+  budgetNumber: string;
+  setBudgetNumber: (value: string) => void;
+  clientName: string;
+  setClientName: (value: string) => void;
+  phone: string;
+  setPhone: (value: string) => void;
+  status: string;
+  setStatus: (value: string) => void;
+  eventDateFrom: string;
+  setEventDateFrom: (value: string) => void;
+  eventDateTo: string;
+  setEventDateTo: (value: string) => void;
+  creationDateFrom: string;
+  setCreationDateFrom: (value: string) => void;
+  creationDateTo: string;
+  setCreationDateTo: (value: string) => void;
+  onSearch: () => void;
+  onClearFilters: () => void;
+  appliedFilters: AppliedFiltersType;
+  isLoading?: boolean;
+}

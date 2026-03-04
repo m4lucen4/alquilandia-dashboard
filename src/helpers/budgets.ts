@@ -88,3 +88,12 @@ export function calculateBudgetTotal(budget: Budget): {
   const iva = round(base * 0.21);
   return { base, iva, total: round(base + iva) };
 }
+
+/**
+ * Formats a date string (YYYY-MM-DD) to a readable format (DD/MM/YYYY)
+ */
+export const formatDateForDisplay = (dateString: string): string => {
+  if (!dateString) return "";
+  const [year, month, day] = dateString.split("-");
+  return `${day}/${month}/${year}`;
+};

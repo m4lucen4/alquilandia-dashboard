@@ -454,12 +454,20 @@ export const generateBudgetPDF = async (
     doc.setFont("helvetica", "bold");
     doc.text(`PRESUPUESTO Nº: ${budget.budgetReference}`, 20, yPosition);
     doc.text(
-      `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
+      `Fecha del evento: ${new Date(budget.eventDate).toLocaleDateString("es-ES")}`,
       pageWidth - 20,
       yPosition,
       { align: "right" },
     );
-    yPosition += 12;
+    yPosition += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
+      20,
+      yPosition,
+    );
+    yPosition += 8;
 
     // Client data box
     const columnWidth = pageWidth - 40;
