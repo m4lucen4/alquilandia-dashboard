@@ -235,6 +235,7 @@ export const createInvoice = async (
     client_postal_code: invoiceData.client_postal_code || "",
     client_phone: invoiceData.client_phone || "",
     additional_data: invoiceData.additional_data || "",
+    coupon_discount: invoiceData.coupon_discount || 0,
     ...(invoiceData.created_at && { created_at: invoiceData.created_at }),
   };
 
@@ -762,6 +763,7 @@ export const updateInvoice = async (
       client_postal_code: data.client_postal_code || "",
       client_phone: data.client_phone || "",
       additional_data: data.additional_data || "",
+      coupon_discount: data.coupon_discount ?? 0,
       pdf_url: pdfUrl,
       ...(data.created_at && { created_at: data.created_at }),
     };

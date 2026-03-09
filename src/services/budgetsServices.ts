@@ -39,3 +39,17 @@ export const getBudgetById = async (budgetId: string): Promise<Budget> => {
   const data: Budget = await response.json();
   return data;
 };
+
+/**
+ * Obtiene un presupuesto por su número de referencia
+ * @param budgetReference - Número de referencia del presupuesto
+ * @returns Promise con el presupuesto o null si no se encuentra
+ */
+export const getBudgetByReference = async (
+  budgetReference: number,
+): Promise<Budget | null> => {
+  const url = `/budgets/paginated?pageSize=1&pageToFetch=1&budgetReference=${budgetReference}`;
+  const response = await apiClient(url);
+  const data: BudgetsResponse = await response.json();
+  return data.budgets?.[0] ?? null;
+};

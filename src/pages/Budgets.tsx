@@ -172,6 +172,7 @@ export const Budgets: FC = () => {
       selectedBudget.price,
       factor,
       taxRate,
+      selectedBudget.totalCouponDiscount || 0,
     );
     const adjustedBudgetLines = adjustBudgetLines(
       selectedBudget.budgetLines,
@@ -188,6 +189,7 @@ export const Budgets: FC = () => {
         price: adjustedPrice,
         ...clientData,
         additional_data: additionalData || undefined,
+        coupon_discount: selectedBudget.totalCouponDiscount || 0,
         created_at: createdAt
           ? new Date(createdAt).toISOString()
           : new Date().toISOString(),

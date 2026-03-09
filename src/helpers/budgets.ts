@@ -37,12 +37,15 @@ export function calculateAdjustedPrice(
   originalPrice: Price,
   factor: number,
   taxRate: number,
+  couponDiscount: number = 0,
 ): Price {
   const adjSubTotal = round(originalPrice.subTotal * factor);
   const adjExtras = round(originalPrice.extras * factor);
   const adjCostSend = round(originalPrice.costSend * factor);
   const adjUserDiscount = round(originalPrice.userDiscount * factor);
-  const vatBase = adjSubTotal + adjExtras + adjCostSend - adjUserDiscount;
+  const adjCouponDiscount = round(couponDiscount * factor);
+  const totalDiscount = round(adjUserDiscount + adjCouponDiscount);
+  const vatBase = adjSubTotal + adjExtras + adjCostSend - totalDiscount;
   const adjVat = round(vatBase * (taxRate / 100));
 
   return {
@@ -51,7 +54,7 @@ export function calculateAdjustedPrice(
     extras: adjExtras,
     subTotalWithExtras: round(originalPrice.subTotalWithExtras * factor),
     costSend: adjCostSend,
-    userDiscount: adjUserDiscount,
+    userDiscount: totalDiscount,
     packs: round(originalPrice.packs * factor),
     vat: adjVat,
     total: round(vatBase + adjVat),

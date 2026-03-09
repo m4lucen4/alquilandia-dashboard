@@ -20,6 +20,7 @@ import { SearchInvoices } from "@/components/invoices/SearchInvoices";
 import { InvoicesTable } from "@/components/invoices/InvoicesTable";
 import { useInvoiceSearch } from "@/hooks/useInvoiceSearch";
 import { getRectifiedInvoiceIds } from "@/services/invoicesService";
+import { getBudgetByReference } from "@/services/budgetsServices";
 import type { Invoice } from "@/types/invoices";
 
 export const Invoices: FC = () => {
@@ -82,6 +83,7 @@ export const Invoices: FC = () => {
   const [editTaxesTypeId, setEditTaxesTypeId] = useState("");
   const [editAdditionalData, setEditAdditionalData] = useState("");
   const [editCreatedAt, setEditCreatedAt] = useState("");
+  const [editCouponDiscount, setEditCouponDiscount] = useState(0);
 
   const handleCloseAlert = () => {
     dispatch(clearInvoicesErrors());
@@ -135,7 +137,7 @@ export const Invoices: FC = () => {
   );
 
   // --- Edit modal handlers ---
-  const handleOpenEditModal = useCallback((invoice: Invoice) => {
+  const handleOpenEditModal = useCallback(async (invoice: Invoice) => {
     setSelectedInvoiceForEdit(invoice);
     setEditBusinessId(invoice.business_id);
     setEditInvoicesTypeId(invoice.invoices_type_id);
@@ -144,6 +146,20 @@ export const Invoices: FC = () => {
     setEditCreatedAt(
       invoice.created_at ? invoice.created_at.split("T")[0] : "",
     );
+
+    // For old invoices (coupon_discount not stored), fetch it from the original budget
+    // TODO: Remove this when all invoices have coupon_discount
+    if (!invoice.coupon_discount && invoice.budget_reference) {
+      try {
+        const budget = await getBudgetByReference(invoice.budget_reference);
+        setEditCouponDiscount(budget?.totalCouponDiscount || 0);
+      } catch {
+        setEditCouponDiscount(0);
+      }
+    } else {
+      setEditCouponDiscount(invoice.coupon_discount || 0);
+    }
+
     setIsEditModalOpen(true);
   }, []);
 
@@ -155,6 +171,7 @@ export const Invoices: FC = () => {
     setEditTaxesTypeId("");
     setEditAdditionalData("");
     setEditCreatedAt("");
+    setEditCouponDiscount(0);
     dispatch(resetUpdateInvoiceRequest());
   }, [dispatch]);
 
@@ -206,15 +223,30 @@ export const Invoices: FC = () => {
       }));
     }
 
-    // Recalculate VAT with the new tax rate
+    // Recalculate VAT with the new tax rate.
+    // For new invoices: coupon is already folded into userDiscount — no extra subtraction.
+    // For old invoices: coupon was NOT in userDiscount, so we subtract editCouponDiscount
+    // (fetched from the original budget) scaled to the new invoice type percentage.
+    const isOldInvoice = !invoice.coupon_discount && editCouponDiscount > 0;
+    const scaledCoupon = isOldInvoice
+      ? Math.round(editCouponDiscount * (newPercentage / 100) * 100) / 100
+      : 0;
+
     const vatBase =
       adjustedPrice.subTotal +
       adjustedPrice.extras +
       adjustedPrice.costSend -
-      adjustedPrice.userDiscount;
+      adjustedPrice.userDiscount -
+      scaledCoupon;
     adjustedPrice.vat =
       Math.round(vatBase * (newTaxType.tax / 100) * 100) / 100;
     adjustedPrice.total = Math.round((vatBase + adjustedPrice.vat) * 100) / 100;
+
+    // For old invoices, also update userDiscount to include the coupon going forward
+    if (isOldInvoice) {
+      adjustedPrice.userDiscount =
+        Math.round((adjustedPrice.userDiscount + scaledCoupon) * 100) / 100;
+    }
 
     const result = await dispatch(
       updateInvoice({
@@ -233,6 +265,7 @@ export const Invoices: FC = () => {
           client_postal_code: invoice.client_postal_code,
           client_phone: invoice.client_phone,
           additional_data: editAdditionalData,
+          coupon_discount: editCouponDiscount,
           created_at: editCreatedAt
             ? new Date(editCreatedAt).toISOString()
             : undefined,
@@ -261,6 +294,7 @@ export const Invoices: FC = () => {
     editTaxesTypeId,
     editAdditionalData,
     editCreatedAt,
+    editCouponDiscount,
     dispatch,
     appliedFilters,
     pageIndex,

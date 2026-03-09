@@ -24,6 +24,7 @@ export interface Invoice {
   client_postal_code?: string;
   client_phone?: string;
   additional_data?: string;
+  coupon_discount?: number;
   is_corrective?: boolean;
   original_invoice_id?: string;
   corrective_reason?: string;
@@ -74,6 +75,7 @@ export interface CreateInvoiceData {
   client_postal_code?: string;
   client_phone?: string;
   additional_data?: string;
+  coupon_discount?: number;
   created_at?: string;
 }
 
@@ -94,6 +96,7 @@ export interface UpdateInvoiceData {
   client_postal_code?: string;
   client_phone?: string;
   additional_data?: string;
+  coupon_discount?: number;
   created_at?: string;
 }
 
