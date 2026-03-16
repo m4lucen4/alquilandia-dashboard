@@ -262,7 +262,10 @@ export const Budgets: FC = () => {
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `presupuesto_${selectedBudgetForPdf.budgetReference}.pdf`;
+      const safeClient = clientData.client_name
+        .replaceAll(/[/\\:*?"<>|]/g, "")
+        .replaceAll(/\s+/g, "_");
+      link.download = `${safeClient}_${selectedBudgetForPdf.budgetReference}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 

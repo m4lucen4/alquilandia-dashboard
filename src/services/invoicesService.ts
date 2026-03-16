@@ -7,6 +7,23 @@ import type {
 } from "@/types/invoices";
 import type { Json } from "@/types/supabase";
 import { generateInvoicePDF } from "./pdfService";
+import { formatInvoiceNumber } from "@/helpers";
+
+const buildInvoicePdfFileName = (
+  invoiceNumber: number,
+  createdAt: string | undefined,
+  clientName: string,
+  budgetReference: number,
+): string => {
+  const num = formatInvoiceNumber(invoiceNumber, createdAt).replaceAll(
+    /[/\\:*?"<>|]/g,
+    "_",
+  );
+  const client = clientName
+    .replaceAll(/[/\\:*?"<>|]/g, "")
+    .replaceAll(/\s+/g, "_");
+  return `${num}_${client}_${budgetReference}.pdf`;
+};
 
 /**
  * Gets all invoices with business information
@@ -304,7 +321,13 @@ export const createInvoice = async (
     const pdfBlob = await generateInvoicePDF(fullInvoice as Invoice);
 
     // Upload PDF to Supabase Storage
-    const fileName = `invoice_${createdInvoice.id}.pdf`;
+    const invoice = fullInvoice as Invoice;
+    const fileName = buildInvoicePdfFileName(
+      invoice.invoice_number,
+      invoice.created_at,
+      invoiceData.client_name || "",
+      invoice.budget_reference,
+    );
     const { error: uploadError } = await supabase.storage
       .from("invoices-pdf")
       .upload(fileName, pdfBlob, {
@@ -711,21 +734,31 @@ export const updateInvoice = async (
 
     const pdfBlob = await generateInvoicePDF(invoiceForPdf);
 
-    // Step 3: Delete the old PDF if it exists
-    const fileName = `invoice_${invoiceId}.pdf`;
-    const { error: deleteError } = await supabase.storage
-      .from("invoices-pdf")
-      .remove([fileName]);
-
-    // We don't throw an error if deletion fails (file might not exist)
-    if (deleteError) {
-      console.log(
-        "Note: Could not delete old PDF (might not exist):",
-        deleteError.message,
-      );
+    // Step 3: Delete the old PDF if it exists (extract filename from stored pdf_url)
+    const oldPdfUrl = (currentInvoice as Invoice).pdf_url || "";
+    const oldFileName = oldPdfUrl
+      ? decodeURIComponent(oldPdfUrl.split("/").pop()?.split("?")[0] || "")
+      : "";
+    if (oldFileName) {
+      const { error: deleteError } = await supabase.storage
+        .from("invoices-pdf")
+        .remove([oldFileName]);
+      if (deleteError) {
+        console.log(
+          "Note: Could not delete old PDF (might not exist):",
+          deleteError.message,
+        );
+      }
     }
 
-    // Step 4: Upload the new PDF
+    // Step 4: Upload the new PDF with meaningful filename
+    const inv = currentInvoice as Invoice;
+    const fileName = buildInvoicePdfFileName(
+      inv.invoice_number,
+      data.created_at || inv.created_at,
+      data.client_name || inv.client_name || "",
+      inv.budget_reference,
+    );
     const { error: uploadError } = await supabase.storage
       .from("invoices-pdf")
       .upload(fileName, pdfBlob, {

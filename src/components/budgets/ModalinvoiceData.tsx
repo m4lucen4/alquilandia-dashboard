@@ -101,7 +101,7 @@ export const ModalInvoiceData: FC<ModalInvoiceDataProps> = ({
                     {invoice.pdf_url ? (
                       <a
                         href={invoice.pdf_url}
-                        download={`factura_${formatInvoiceNumber(invoice.invoice_number, invoice.created_at).replace("/", "_")}.pdf`}
+                        download={`${formatInvoiceNumber(invoice.invoice_number, invoice.created_at).replaceAll(/[/\\:*?"<>|]/g, "_")}_${(invoice.client_name || "").replaceAll(/[/\\:*?"<>|]/g, "").replaceAll(/\s+/g, "_")}_${invoice.budget_reference}.pdf`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
