@@ -1,37 +1,37 @@
-import type { Budget, BudgetLine, Price } from "../types/budgets";
+import type { BudgetLine, Price, User } from "../types/budgets";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-export function getClientDataFromBudget(
-  budget: Budget,
+export function getClientDataFromUser(
+  user: User,
   invoiceTo: "titular" | "empresa",
 ) {
-  if (invoiceTo === "empresa" && budget.user?.company) {
+  if (invoiceTo === "empresa" && user.company) {
     return {
-      client_name: budget.user.company.name,
-      client_nif: budget.user.company.nif,
-      client_email: budget.user?.email || "",
-      client_address: budget.user.company.address,
-      client_locality: budget.user.company.locality,
-      client_postal_code: budget.user.company.zipCode,
-      client_phone: budget.user?.phone || budget.phone || "",
+      client_name: user.company.name,
+      client_nif: user.company.nif,
+      client_email: user.email || "",
+      client_address: user.company.address,
+      client_locality: user.company.locality,
+      client_postal_code: user.company.zipCode,
+      client_phone: user.phone || "",
     };
   }
 
   return {
     client_name:
-      budget.user?.FullName ||
-      `${budget.user?.firstName || ""} ${budget.user?.lastName || ""}`.trim() ||
-      budget.client ||
+      user.FullName ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
       "",
-    client_nif: budget.user?.dnif || "",
-    client_email: budget.user?.email || "",
-    client_address: budget.user?.address || budget.address || "",
-    client_locality: budget.user?.locality || budget.locality || "",
-    client_postal_code: budget.user?.zipCode || "",
-    client_phone: budget.user?.phone || budget.phone || "",
+    client_nif: user.dnif || "",
+    client_email: user.email || "",
+    client_address: user.address || "",
+    client_locality: user.locality || "",
+    client_postal_code: user.zipCode || "",
+    client_phone: user.phone || "",
   };
 }
+
 
 export function calculateAdjustedPrice(
   originalPrice: Price,

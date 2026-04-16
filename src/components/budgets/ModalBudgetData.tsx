@@ -1,6 +1,6 @@
 import { type FC } from "react";
 import { Modal } from "../shared/Modal";
-import type { Budget } from "../../types/budgets";
+import type { Budget, User } from "../../types/budgets";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
 import { calculateBudgetTotal } from "@/helpers/budgets";
@@ -9,18 +9,20 @@ interface ModalBudgetDataProps {
   isOpen: boolean;
   onClose: () => void;
   budget: Budget | null;
+  user: User | null;
 }
 
 export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
   isOpen,
   onClose,
   budget,
+  user,
 }) => {
   if (!isOpen || !budget) return null;
 
   const clientName =
-    budget.user?.FullName ||
-    `${budget.user?.firstName || ""} ${budget.user?.lastName || ""}`.trim() ||
+    user?.FullName ||
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     budget.client ||
     "-";
 
@@ -28,7 +30,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
 
   return (
     <Modal
-      title={`Presupuesto #${budget.budgetReference}`}
+      title={`Presupuesto #${budget.budgetReference}${budget.technician?.role === "TECHNICIAN" && budget.technician?.firstName ? ` (Atendido por: ${budget.technician.firstName})` : ""}`}
       onAccept={onClose}
       onClose={onClose}
       acceptText="Cerrar"
@@ -47,14 +49,14 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
             <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Email
             </p>
-            <p className="mt-0.5 text-gray-900">{budget.user?.email || "-"}</p>
+            <p className="mt-0.5 text-gray-900">{user?.email || "-"}</p>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Teléfono
             </p>
             <p className="mt-0.5 text-gray-900">
-              {budget.user?.phone || budget.phone || "-"}
+              {user?.phone || "-"}
             </p>
           </div>
           <div>
@@ -62,7 +64,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
               Dirección
             </p>
             <p className="mt-0.5 text-gray-900">
-              {budget.user?.address || budget.address || "-"}
+              {user?.address || "-"}
             </p>
           </div>
           <div>

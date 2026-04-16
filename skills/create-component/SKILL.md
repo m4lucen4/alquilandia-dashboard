@@ -1,5 +1,5 @@
 ---
-name: Create Component
+name: create-component
 description: Estándares para componentes React con TS y Tailwind CSS v4.
 trigger: "component, tsx, style, tailwind, classname"
 ---

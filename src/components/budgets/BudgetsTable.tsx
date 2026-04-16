@@ -15,6 +15,7 @@ interface BudgetsTableProps {
   pageSize: number;
   isLoading: boolean;
   loadingInvoice: boolean;
+  loadingBudget: boolean;
   budgetHasInvoice: (budgetReference: number) => boolean;
   onPageChange: (pageIndex: number) => void;
   onPageSizeChange: (pageSize: number) => void;
@@ -31,6 +32,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
   pageSize,
   isLoading,
   loadingInvoice,
+  loadingBudget,
   budgetHasInvoice,
   onPageChange,
   onPageSizeChange,
@@ -115,6 +117,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
               budget={budget}
               hasInvoice={budgetHasInvoice(budget.budgetReference)}
               loadingInvoice={loadingInvoice}
+              loadingBudget={loadingBudget}
               onGenerateInvoice={onGenerateInvoice}
               onViewInvoice={onViewInvoice}
               onViewBudget={onViewBudget}
@@ -127,6 +130,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
     [
       budgetHasInvoice,
       loadingInvoice,
+      loadingBudget,
       onGenerateInvoice,
       onViewInvoice,
       onViewBudget,

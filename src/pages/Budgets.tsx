@@ -14,16 +14,17 @@ import {
 import { Alert } from "../components/shared/Alert";
 import { SearchBudgets } from "../components/budgets/SearchBudgets";
 import { BudgetsTable } from "../components/budgets/BudgetsTable";
-import type { Budget } from "../types/budgets";
+import type { Budget, User } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
 import {
-  getClientDataFromBudget,
+  getClientDataFromUser,
   calculateAdjustedPrice,
   adjustBudgetLines,
 } from "../helpers/budgets";
+import { fetchUserDetails } from "../redux/actions/users";
 import { generateBudgetPDF } from "../services/pdfService";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
 import { ModalGenerateBudgetPdf } from "../components/budgets/ModalGenerateBudgetPdf";
@@ -51,6 +52,8 @@ export const Budgets: FC = () => {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedBudgetToView, setSelectedBudgetToView] =
     useState<Budget | null>(null);
+  const [selectedUserToView, setSelectedUserToView] = useState<User | null>(null);
+  const [loadingBudget, setLoadingBudget] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
@@ -157,8 +160,11 @@ export const Budgets: FC = () => {
       return;
     }
 
-    // Extract client data from budget
-    const clientData = getClientDataFromBudget(selectedBudget, invoiceTo);
+    // Extract client data from fresh user fetch
+    const freshUser = await dispatch(
+      fetchUserDetails(selectedBudget.user.id),
+    ).unwrap();
+    const clientData = getClientDataFromUser(freshUser, invoiceTo);
 
     // Apply invoice type percentage and recalculate IVA
     const invoiceType = invoicesTypes.find(
@@ -247,10 +253,11 @@ export const Budgets: FC = () => {
 
     setIsGeneratingPdf(true);
     try {
-      const clientData = getClientDataFromBudget(
-        selectedBudgetForPdf,
-        pdfInvoiceTo,
-      );
+      const freshUser = await dispatch(
+        fetchUserDetails(selectedBudgetForPdf.user.id),
+      ).unwrap();
+      const clientData = getClientDataFromUser(freshUser, pdfInvoiceTo);
+
       const pdfBlob = await generateBudgetPDF(
         selectedBudgetForPdf,
         business,
@@ -282,17 +289,28 @@ export const Budgets: FC = () => {
     pdfInvoiceTo,
     pdfIncludeVAT,
     businesses,
+    dispatch,
     handleCloseBudgetPdfModal,
   ]);
 
-  const handleViewBudget = useCallback((budget: Budget) => {
-    setSelectedBudgetToView(budget);
-    setIsViewBudgetModalOpen(true);
-  }, []);
+  const handleViewBudget = useCallback(async (budget: Budget) => {
+    setLoadingBudget(true);
+    try {
+      const freshUser = await dispatch(fetchUserDetails(budget.user.id)).unwrap();
+      setSelectedUserToView(freshUser);
+      setSelectedBudgetToView(budget);
+      setIsViewBudgetModalOpen(true);
+    } catch (error) {
+      console.error("Error loading user details:", error);
+    } finally {
+      setLoadingBudget(false);
+    }
+  }, [dispatch]);
 
   const handleCloseViewBudgetModal = useCallback(() => {
     setIsViewBudgetModalOpen(false);
     setSelectedBudgetToView(null);
+    setSelectedUserToView(null);
   }, []);
 
   const handleViewInvoice = useCallback(async (budget: Budget) => {
@@ -399,6 +417,7 @@ export const Budgets: FC = () => {
         isOpen={isViewBudgetModalOpen}
         onClose={handleCloseViewBudgetModal}
         budget={selectedBudgetToView}
+        user={selectedUserToView}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
@@ -444,6 +463,7 @@ export const Budgets: FC = () => {
           pageSize={pageSize}
           isLoading={fetchBudgetsRequest.inProgress}
           loadingInvoice={loadingInvoice}
+          loadingBudget={loadingBudget}
           budgetHasInvoice={budgetHasInvoice}
           onPageChange={setPageIndex}
           onPageSizeChange={handlePageSizeChange}

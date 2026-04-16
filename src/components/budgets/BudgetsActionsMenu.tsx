@@ -8,6 +8,7 @@ interface BudgetsActionsMenuProps {
   budget: Budget;
   hasInvoice: boolean;
   loadingInvoice: boolean;
+  loadingBudget: boolean;
   onGenerateInvoice: (budget: Budget) => void;
   onViewInvoice: (budget: Budget) => void;
   onViewBudget: (budget: Budget) => void;
@@ -18,6 +19,7 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
   budget,
   hasInvoice,
   loadingInvoice,
+  loadingBudget,
   onGenerateInvoice,
   onViewInvoice,
   onViewBudget,
@@ -40,11 +42,13 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
             {({ focus }) => (
               <div className="px-2">
                 <Button
-                  title="Ver presupuesto"
+                  title={loadingBudget ? "Cargando..." : "Ver presupuesto"}
                   onClick={() => onViewBudget(budget)}
                   variant="ghost"
                   size="sm"
                   block
+                  disabled={loadingBudget}
+                  loading={loadingBudget}
                   className={focus ? "bg-gray-100" : ""}
                 />
               </div>

@@ -21,8 +21,8 @@ const buildInvoicePdfFileName = (
   );
   const client = clientName
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ñ/gi, "n")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .replaceAll(/ñ/gi, "n")
     .replaceAll(/[/\\:*?"<>|]/g, "")
     .replaceAll(/\s+/g, "_");
   return `${num}_${client}_${budgetReference}.pdf`;
@@ -565,7 +565,7 @@ export const createCorrectiveInvoice = async (
         )
       `,
       )
-      .eq("id", createdInvoice.id as string)
+      .eq("id", createdInvoice.id)
       .single();
 
     if (fetchFullError || !fullInvoice) {

@@ -139,6 +139,8 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     );
     clientY += 4;
     doc.text(`Tel: ${invoice.client_phone || ""}`, 24, clientY);
+    clientY += 4;
+    doc.text(`Email: ${invoice.client_email || ""}`, 24, clientY);
 
     yPosition += boxHeight + 12;
 
@@ -410,13 +412,13 @@ export const generateBudgetPDF = async (
     // Business data (top right)
     const businessAlignX = pageWidth - 20;
     let businessY = yPosition;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
     doc.text(business.name, businessAlignX, businessY, { align: "right" });
     businessY += 5;
 
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`NIF: ${business.nif}`, businessAlignX, businessY, {
       align: "right",
@@ -449,7 +451,7 @@ export const generateBudgetPDF = async (
     yPosition += 35;
 
     // Budget title and reference number
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text(`PRESUPUESTO Nº: ${budget.budgetReference}`, 20, yPosition);
@@ -467,7 +469,14 @@ export const generateBudgetPDF = async (
       20,
       yPosition,
     );
-    yPosition += 8;
+    yPosition += 6;
+
+    if (budget.technician?.role === "TECHNICIAN" && budget.technician?.firstName) {
+      doc.text(`Le atendió: ${budget.technician.firstName}`, 20, yPosition);
+      yPosition += 6;
+    }
+
+    yPosition += 2;
 
     // Client data box
     const columnWidth = pageWidth - 40;
@@ -479,12 +488,12 @@ export const generateBudgetPDF = async (
     doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
 
     let clientY = yPosition + 8;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(clientData.client_name || "-", 24, clientY);
+    doc.text(budget.client || "-", 24, clientY);
     clientY += 5;
 
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`NIF: ${clientData.client_nif || "-"}`, 24, clientY);
     clientY += 4;
@@ -503,8 +512,51 @@ export const generateBudgetPDF = async (
     );
     clientY += 4;
     doc.text(`Tel: ${clientData.client_phone || ""}`, 24, clientY);
+    clientY += 4;
+    doc.text(`Email: ${budget.user?.email || ""}`, 24, clientY);
 
     yPosition += boxHeight + 12;
+
+    // Comments (client) and internal comments
+    if (budget.comments?.trim()) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Comentarios del cliente:", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      const commentLines = doc.splitTextToSize(budget.comments.trim(), pageWidth - 44);
+      const commentHeight = commentLines.length * 5 + 4;
+
+      doc.setFillColor(227, 242, 253);
+      doc.rect(20, yPosition, pageWidth - 40, commentHeight, "F");
+      doc.setDrawColor(100, 181, 246);
+      doc.rect(20, yPosition, pageWidth - 40, commentHeight, "S");
+
+      doc.text(commentLines, 24, yPosition + 5);
+      yPosition += commentHeight + 6;
+    }
+
+    if (budget.commentsalquilandia?.trim()) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Notas internas:", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      const internalLines = doc.splitTextToSize(budget.commentsalquilandia.trim(), pageWidth - 44);
+      const internalHeight = internalLines.length * 5 + 4;
+
+      doc.setFillColor(255, 243, 224);
+      doc.rect(20, yPosition, pageWidth - 40, internalHeight, "F");
+      doc.setDrawColor(255, 167, 38);
+      doc.rect(20, yPosition, pageWidth - 40, internalHeight, "S");
+
+      doc.text(internalLines, 24, yPosition + 5);
+      yPosition += internalHeight + 6;
+    }
 
     // Budget Lines Table
     yPosition += 5;
@@ -525,11 +577,11 @@ export const generateBudgetPDF = async (
       headStyles: {
         fillColor: [51, 51, 51],
         textColor: [255, 255, 255],
-        fontSize: 8,
+        fontSize: 10,
         fontStyle: "bold",
       },
       bodyStyles: {
-        fontSize: 8,
+        fontSize: 10,
       },
       columnStyles: {
         0: { cellWidth: 10, halign: "center" },
@@ -552,7 +604,7 @@ export const generateBudgetPDF = async (
     // Price Summary
     const totals = calculateBudgetTotal(budget);
     const summaryX = pageWidth - 70;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
 
@@ -605,7 +657,7 @@ export const generateBudgetPDF = async (
     yPosition += 2;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.text("TOTAL:", summaryX, yPosition, { align: "right" });
     doc.text(
       formatCurrency(includeVAT ? totals.total : totals.base),
