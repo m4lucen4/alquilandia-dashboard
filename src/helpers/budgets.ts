@@ -1,4 +1,4 @@
-import type { BudgetLine, Price, User } from "../types/budgets";
+import type { Budget, BudgetLine, Price, User } from "../types/budgets";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
