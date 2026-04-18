@@ -64,9 +64,54 @@ autoTable(doc, {
 
 Anchos de columna fijos: `[10, 80, 20, 30, 30]` mm.
 
+### Extras en la tabla
+
+Cada `BudgetLine` tiene `extras: Extra[]`. Si `extra.checked === true`, se inserta como fila inmediatamente después de su línea padre, con numeración secuencial continua.
+
+```typescript
+// Extra { checked, extraName, units, price }
+// total de un extra = extra.units * extra.price
+const tableData: string[][] = [];
+let rowIndex = 1;
+budgetLines.forEach((line) => {
+  tableData.push([rowIndex.toString(), line.elemento, ...]);
+  rowIndex++;
+  line.extras?.forEach((extra) => {
+    if (extra.checked) {
+      tableData.push([rowIndex.toString(), extra.extraName, extra.units, formatCurrency(extra.price), formatCurrency(extra.units * extra.price)]);
+      rowIndex++;
+    }
+  });
+});
+```
+
+Se aplica igual en `generateInvoicePDF` y `generateBudgetPDF`.
+
 ## Footer
 
 `business.additional_data` centrado a `pageHeight - 15 - additionalDataHeight`. Solo se renderiza si existe.
+
+## Precios especiales por fecha (priceExceptionList)
+
+Cada `BudgetLine` tiene `priceExceptionList: { id, price, date }[]`.
+
+Si la fecha del evento coincide con alguna entrada, el precio unitario de esa línea se sustituye por `exception.price`. El total se recalcula como `exception.price * units`.
+
+**CRÍTICO — timezone**: las fechas de evento se guardan en UTC con hora española (`2026-06-05T22:00:00Z` = 6 de junio en España). Las excepciones también en UTC pero con el día local correcto (`2026-06-06T10:00:00Z`). Comparar con `substring(0,10)` o `.toISOString()` falla porque son días UTC distintos. La comparación DEBE usar `getFullYear/getMonth/getDate` (hora local) via `toLocalDateString` en `pdfService.ts`.
+
+El helper en `pdfService.ts`:
+```typescript
+const toLocalDateString = (dateStr: string): string => { /* getFullYear/getMonth/getDate */ }
+const getEffectiveUnitPrice = (line, eventDate?) => { ... }
+```
+
+- En `generateBudgetPDF`: usa `budget.eventDate`
+- En `generateInvoicePDF`: usa `invoice.event_date` (columna en Supabase, almacenada al crear la factura)
+
+**Importante**: `event_date` debe estar en la tabla `invoices` de Supabase. Se propaga en:
+- Creación normal: desde `selectedBudget.eventDate` en `Budgets.tsx`
+- Factura rectificativa: copiada de la factura original
+- Actualización: se preserva del registro existente (no necesita pasarse de nuevo)
 
 ## Checklist al modificar o añadir un PDF
 

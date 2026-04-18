@@ -4,7 +4,7 @@ import type { Invoice } from "@/types/invoices";
 import type { Budget } from "@/types/budgets";
 import type { Business } from "@/types/business";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
-import { calculateBudgetTotal } from "@/helpers/budgets";
+import { calculateBudgetTotal, getEffectiveUnitPrice } from "@/helpers/budgets";
 import logoImage from "@/assets/logo.png";
 
 /**
@@ -213,13 +213,32 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     if (invoice.invoices_type?.show_budgetlines !== false) {
       yPosition += 5;
 
-      const tableData = invoice.budgetlines.map((line, index) => [
-        (index + 1).toString(),
-        line.elemento || "-",
-        line.units?.toString() || "1",
-        formatCurrency(line.precioUd || 0),
-        formatCurrency(line.totalPrice || 0),
-      ]);
+      const tableData: string[][] = [];
+      let rowIndex = 1;
+      invoice.budgetlines.forEach((line) => {
+        const unitPrice = getEffectiveUnitPrice(line, invoice.event_date);
+        const units = line.units || 1;
+        tableData.push([
+          rowIndex.toString(),
+          line.elemento || "-",
+          units.toString(),
+          formatCurrency(unitPrice),
+          formatCurrency(unitPrice * units),
+        ]);
+        rowIndex++;
+        line.extras?.forEach((extra) => {
+          if (extra.checked) {
+            tableData.push([
+              rowIndex.toString(),
+              extra.extraName || "-",
+              extra.units.toString(),
+              formatCurrency(extra.price),
+              formatCurrency(extra.units * extra.price),
+            ]);
+            rowIndex++;
+          }
+        });
+      });
 
       autoTable(doc, {
         startY: yPosition,
@@ -568,13 +587,32 @@ export const generateBudgetPDF = async (
     // Budget Lines Table
     yPosition += 5;
 
-    const tableData = budget.budgetLines.map((line, index) => [
-      (index + 1).toString(),
-      line.elemento || "-",
-      (line.units || line.unidades || 1).toString(),
-      formatCurrency(line.precioUd || 0),
-      formatCurrency(line.totalPrice || 0),
-    ]);
+    const tableData: string[][] = [];
+    let rowIndex = 1;
+    budget.budgetLines.forEach((line) => {
+      const unitPrice = getEffectiveUnitPrice(line, budget.eventDate);
+      const units = line.units || line.unidades || 1;
+      tableData.push([
+        rowIndex.toString(),
+        line.elemento || "-",
+        units.toString(),
+        formatCurrency(unitPrice),
+        formatCurrency(unitPrice * units),
+      ]);
+      rowIndex++;
+      line.extras?.forEach((extra) => {
+        if (extra.checked) {
+          tableData.push([
+            rowIndex.toString(),
+            extra.extraName || "-",
+            extra.units.toString(),
+            formatCurrency(extra.price),
+            formatCurrency(extra.units * extra.price),
+          ]);
+          rowIndex++;
+        }
+      });
+    });
 
     autoTable(doc, {
       startY: yPosition,

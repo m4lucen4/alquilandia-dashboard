@@ -256,6 +256,7 @@ export const createInvoice = async (
     client_phone: invoiceData.client_phone || "",
     additional_data: invoiceData.additional_data || "",
     coupon_discount: invoiceData.coupon_discount || 0,
+    ...(invoiceData.event_date && { event_date: invoiceData.event_date }),
     ...(invoiceData.created_at && { created_at: invoiceData.created_at }),
   };
 
@@ -513,6 +514,7 @@ export const createCorrectiveInvoice = async (
     is_corrective: true,
     original_invoice_id: correctiveData.original_invoice_id,
     corrective_reason: correctiveData.corrective_reason || "",
+    ...(originalInvoiceData.event_date && { event_date: originalInvoiceData.event_date }),
   };
 
   const { data: createdInvoice, error: createError } = (await supabase

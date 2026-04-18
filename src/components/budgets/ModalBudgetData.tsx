@@ -3,7 +3,7 @@ import { Modal } from "../shared/Modal";
 import type { Budget, User } from "../../types/budgets";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
-import { calculateBudgetTotal } from "@/helpers/budgets";
+import { calculateBudgetTotal, getEffectiveUnitPrice } from "@/helpers/budgets";
 
 interface ModalBudgetDataProps {
   isOpen: boolean;
@@ -61,7 +61,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-              Dirección
+              Dirección cliente
             </p>
             <p className="mt-0.5 text-gray-900">
               {user?.address || "-"}
@@ -73,6 +73,14 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
             </p>
             <p className="mt-0.5 text-gray-900">
               {formatDate(budget.eventDate)}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+              Dirección evento
+            </p>
+            <p className="mt-0.5 text-gray-900">
+              {budget.address || "-"}
             </p>
           </div>
           <div>
@@ -120,22 +128,47 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {budget.budgetLines.map((line) => (
-                  <tr key={line.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {line.nombre || line.elemento || "-"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-600">
-                      {line.units}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
-                      {formatCurrency(line.precioUd)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                      {formatCurrency(line.totalPrice)}
-                    </td>
-                  </tr>
-                ))}
+                {budget.budgetLines.flatMap((line) => {
+                  const unitPrice = getEffectiveUnitPrice(line, budget.eventDate);
+                  const units = line.units || 1;
+                  const rows = [
+                    <tr key={line.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {line.nombre || line.elemento || "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-600">
+                        {units}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
+                        {formatCurrency(unitPrice)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                        {formatCurrency(unitPrice * units)}
+                      </td>
+                    </tr>,
+                  ];
+                  line.extras?.forEach((extra) => {
+                    if (extra.checked) {
+                      rows.push(
+                        <tr key={`${line.id}-extra-${extra.extraName}`} className="bg-gray-50 hover:bg-gray-100">
+                          <td className="px-4 py-2 pl-8 text-sm text-gray-500 italic">
+                            {extra.extraName || "-"}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2 text-center text-sm text-gray-500">
+                            {extra.units}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2 text-right text-sm text-gray-500">
+                            {formatCurrency(extra.price)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2 text-right text-sm text-gray-500">
+                            {formatCurrency(extra.units * extra.price)}
+                          </td>
+                        </tr>,
+                      );
+                    }
+                  });
+                  return rows;
+                })}
               </tbody>
             </table>
           </div>

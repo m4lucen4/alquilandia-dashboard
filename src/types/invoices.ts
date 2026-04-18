@@ -14,6 +14,7 @@ export interface Invoice {
   budgetlines: BudgetLine[];
   price: Price;
   pdf_url?: string;
+  event_date?: string;
   created_at?: string;
   updated_at?: string;
   client_name?: string;
@@ -76,6 +77,7 @@ export interface CreateInvoiceData {
   client_phone?: string;
   additional_data?: string;
   coupon_discount?: number;
+  event_date?: string;
   created_at?: string;
 }
 

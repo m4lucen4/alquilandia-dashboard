@@ -120,6 +120,7 @@ export interface Database {
           price: Json;
           additional_data: string | null;
           pdf_url: string | null;
+          event_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -134,6 +135,7 @@ export interface Database {
           price: Json;
           additional_data?: string | null;
           pdf_url?: string | null;
+          event_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -148,6 +150,7 @@ export interface Database {
           price?: Json;
           additional_data?: string | null;
           pdf_url?: string | null;
+          event_date?: string | null;
           updated_at?: string;
         };
       };

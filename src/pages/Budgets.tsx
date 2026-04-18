@@ -196,6 +196,7 @@ export const Budgets: FC = () => {
         ...clientData,
         additional_data: additionalData || undefined,
         coupon_discount: selectedBudget.totalCouponDiscount || 0,
+        event_date: selectedBudget.eventDate,
         created_at: createdAt
           ? new Date(createdAt).toISOString()
           : new Date().toISOString(),

@@ -100,3 +100,31 @@ export const formatDateForDisplay = (dateString: string): string => {
   const [year, month, day] = dateString.split("-");
   return `${day}/${month}/${year}`;
 };
+
+/**
+ * Converts a UTC date string to a local YYYY-MM-DD string using browser timezone.
+ * Critical for Spain (UTC+2): "2026-06-05T22:00:00Z" → "2026-06-06" in local time.
+ */
+export const toLocalDateString = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Returns the effective unit price for a budget line, applying price exceptions by event date.
+ * If the event date matches an entry in priceExceptionList, that price is used instead.
+ */
+export const getEffectiveUnitPrice = (
+  line: { precioUd?: number; priceExceptionList?: { price: number; date: string }[] },
+  eventDate?: string,
+): number => {
+  if (!eventDate || !line.priceExceptionList?.length) return line.precioUd || 0;
+  const eventDay = toLocalDateString(eventDate);
+  const exception = line.priceExceptionList.find(
+    (ex) => toLocalDateString(ex.date) === eventDay,
+  );
+  return exception ? exception.price : line.precioUd || 0;
+};
