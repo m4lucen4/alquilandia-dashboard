@@ -456,7 +456,7 @@ export const generateBudgetPDF = async (
     doc.setFont("helvetica", "bold");
     doc.text(`PRESUPUESTO Nº: ${budget.budgetReference}`, 20, yPosition);
     doc.text(
-      `Fecha del evento: ${new Date(budget.eventDate).toLocaleDateString("es-ES")}`,
+      `Fecha y dirección del evento: ${new Date(budget.eventDate).toLocaleDateString("es-ES")}`,
       pageWidth - 20,
       yPosition,
       { align: "right" },
@@ -464,6 +464,13 @@ export const generateBudgetPDF = async (
     yPosition += 6;
 
     doc.setFont("helvetica", "normal");
+    if (budget.address?.trim()) {
+      const addressLines = doc.splitTextToSize(budget.address.trim(), 90);
+      addressLines.forEach((line: string) => {
+        doc.text(line, pageWidth - 20, yPosition, { align: "right" });
+        yPosition += 5;
+      });
+    }
     doc.text(
       `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
       20,

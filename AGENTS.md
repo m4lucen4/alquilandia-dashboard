@@ -1,24 +1,47 @@
-# AGENT CONFIGURATION: React + TypeScript + Tailwind Architect
+# AGENTS.md — alquilandia-dashboard
 
-## Project Overview
+Dashboard de gestión para Alquilandia.
+React + TypeScript + Tailwind CSS v4 + Redux Toolkit.
 
-Aplicación moderna de React con **TypeScript** y **Tailwind CSS v4**. El objetivo es un código limpio, sin archivos de estilo redundantes, basado en utilidades.
+## Stack
+React 19 · TypeScript · Tailwind CSS v4 · Redux Toolkit · redux-persist · Heroicons
 
-## Cultural Guidelines
+## Arquitectura
+src/
+  services/       ← HTTP calls (apiClient)
+  types/          ← interfaces + slice state shapes
+  redux/
+    actions/      ← createAsyncThunk
+    slices/       ← createSlice + extraReducers
+  components/
+  pages/
 
-- **Language**: Explicaciones en español, código en **Inglés**.
-- **Type Safety**: TypeScript estricto. Prohibido `any`.
-- **Styling**: **Utility-First** con Tailwind CSS. No usar CSS Modules a menos que sea estrictamente necesario por una limitación técnica.
-- **Component Pattern**: Named Exports + Functional Components (FC).
+## Decisiones tomadas
+- HTTP exclusivamente via `apiClient` (src/services/api.ts)
+- Redux Toolkit para estado global; redux-persist persiste auth
+- Tailwind CSS v4 utility-first; no CSS Modules
+- TypeScript estricto en todo el proyecto
 
-## Skills & Auto-invocation
+## Convenciones
+- Código en inglés · explicaciones en español
+- Named exports + Functional Components
+- Sufijo `Thunk` cuando el nombre del thunk colisiona con la función del service
+- Constante `requestIdle = { inProgress: false, messages: "", ok: false }` en todo slice
+- `apiClient` detecta `FormData` y omite `Content-Type` automáticamente
 
-- **Create Component**: [./skills/create-component/SKILL.md]
-  - _Trigger_: Creación de componentes, diseño de UI, refactorización de estilos.
+## Skills disponibles
 
-## Technical Stack
+| Skill | Cuándo invocar | Estado |
+|---|---|---|
+| `/create-component` | Crear o refactorizar componentes UI | activa |
+| `/create-action-rtk` | Añadir acciones RTK (service + thunk + types + slice) | activa |
+| `/pdf-generation` | Modificar o añadir generación de PDFs | activa |
 
-- React 19.
-- TypeScript.
-- **Tailwind CSS v4** (Uso de variables CSS modernas y utilidades nativas).
-- Heroicons para iconos.
+> Antes de ejecutar una skill, lee `skills/<nombre>/SKILL.md`.
+
+## Prohibido
+- `any` en TypeScript
+- `axios` o `fetch` directo — siempre `apiClient`
+- CSS Modules salvo limitación técnica demostrable
+- `Content-Type` manual en peticiones FormData
+- Thunks para cleaners de redux — usar `reducers` síncronos del slice

@@ -25,6 +25,7 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
   onViewBudget,
   onGenerateBudgetPdf,
 }) => {
+  console.log("Rendering BudgetsActionsMenu for budget:", budget);
   return (
     <Menu as="div" className="relative inline-block text-left">
       <MenuButton className="flex items-center rounded-full p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">

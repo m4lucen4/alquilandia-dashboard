@@ -29,11 +29,14 @@ export const getAuthToken = (): string | null => {
 
 /**
  * Configura los headers por defecto para las peticiones
+ * Omite Content-Type cuando el body es FormData para que el browser añada el boundary
  */
-const getDefaultHeaders = (): HeadersInit => {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
+const getDefaultHeaders = (body?: RequestInit["body"]): HeadersInit => {
+  const headers: HeadersInit = {};
+
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const token = getAuthToken();
   if (token) {
@@ -82,7 +85,7 @@ export const apiClient = async (
   const config: RequestInit = {
     ...options,
     headers: {
-      ...getDefaultHeaders(),
+      ...getDefaultHeaders(options.body),
       ...options.headers,
     },
     credentials: options.credentials || "include",
