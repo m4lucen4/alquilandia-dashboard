@@ -63,11 +63,14 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
   );
 
   const invoiceTypeOptions = useMemo(
-    () =>
-      invoicesTypes.map((invoiceType) => ({
+    () => [
+      ...invoicesTypes.map((invoiceType) => ({
         value: invoiceType.id,
         label: `${invoiceType.invoices} (${invoiceType.percentage}%)`,
       })),
+      { value: "proforma-25", label: "Factura Proforma 25" },
+      { value: "proforma-100", label: "Factura Proforma Completa" },
+    ],
     [invoicesTypes],
   );
 

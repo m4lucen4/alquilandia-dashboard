@@ -25,7 +25,7 @@ import {
   adjustBudgetLines,
 } from "../helpers/budgets";
 import { fetchUserDetails } from "../redux/actions/users";
-import { generateBudgetPDF } from "../services/pdfService";
+import { generateBudgetPDF, generateProformaPDF } from "../services/pdfService";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
 import { ModalGenerateBudgetPdf } from "../components/budgets/ModalGenerateBudgetPdf";
 import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
@@ -165,6 +165,37 @@ export const Budgets: FC = () => {
       fetchUserDetails(selectedBudget.user.id),
     ).unwrap();
     const clientData = getClientDataFromUser(freshUser, invoiceTo);
+
+    // Proforma flow — generate and download directly, no DB save
+    if (selectedInvoicesTypeId === "proforma-25" || selectedInvoicesTypeId === "proforma-100") {
+      const factor = selectedInvoicesTypeId === "proforma-25" ? 0.25 : 1;
+      const taxType = taxesTypes.find((t) => t.id === selectedTaxesTypeId);
+      const taxRate = taxType?.tax ?? 0;
+      const business = businesses.find((b) => b.id === selectedBusinessId);
+      if (!business) return;
+
+      const proformaClientData = clientData;
+
+      const blob = await generateProformaPDF(
+        selectedBudget,
+        business,
+        proformaClientData,
+        factor,
+        taxRate,
+        createdAt || new Date().toISOString().slice(0, 10),
+        selectedInvoicesTypeId === "proforma-100",
+        additionalData || undefined,
+      );
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `proforma_${selectedBudget.budgetReference}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      handleCloseModal();
+      return;
+    }
 
     // Apply invoice type percentage and recalculate IVA
     const invoiceType = invoicesTypes.find(

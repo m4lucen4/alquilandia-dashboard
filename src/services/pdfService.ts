@@ -395,6 +395,296 @@ interface BudgetClientData {
 }
 
 /**
+ * Generates a proforma invoice PDF directly for download (not saved to DB or storage)
+ */
+export const generateProformaPDF = async (
+  budget: Budget,
+  business: Business,
+  clientData: BudgetClientData,
+  factor: number,
+  taxRate: number,
+  date: string,
+  showBudgetLines: boolean,
+  additionalData?: string,
+): Promise<Blob> => {
+  try {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
+
+    // Logo (top left)
+    try {
+      doc.addImage(logoImage, "PNG", 20, yPosition, 35, 30);
+    } catch (error) {
+      console.error("Error adding logo to PDF:", error);
+    }
+
+    // Business data (top right)
+    const businessAlignX = pageWidth - 20;
+    let businessY = yPosition;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 0, 0);
+    doc.text(business.name, businessAlignX, businessY, { align: "right" });
+    businessY += 5;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIF: ${business.nif || "-"}`, businessAlignX, businessY, { align: "right" });
+    businessY += 4;
+
+    const businessAddress = doc.splitTextToSize(business.address || "", 75);
+    businessAddress.forEach((line: string) => {
+      doc.text(line, businessAlignX, businessY, { align: "right" });
+      businessY += 4;
+    });
+
+    doc.text(
+      `${business.postal_code || ""} ${business.locality || ""}`.trim(),
+      businessAlignX,
+      businessY,
+      { align: "right" },
+    );
+    businessY += 4;
+    if (business.province) {
+      doc.text(business.province, businessAlignX, businessY, { align: "right" });
+      businessY += 4;
+    }
+    doc.text(`Tel: ${business.phone || ""}`, businessAlignX, businessY, { align: "right" });
+
+    yPosition += 35;
+
+    // Header: Factura Proforma (no invoice number)
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("FACTURA PROFORMA", 20, yPosition);
+    doc.text(
+      `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
+      pageWidth - 20,
+      yPosition,
+      { align: "right" },
+    );
+    yPosition += 6;
+
+    doc.setFont("helvetica", "normal");
+    if (budget.address?.trim()) {
+      const eventAddressLines = doc.splitTextToSize(budget.address.trim(), 90);
+      eventAddressLines.forEach((line: string) => {
+        doc.text(line, pageWidth - 20, yPosition, { align: "right" });
+        yPosition += 5;
+      });
+    }
+    doc.text(`Nº Presupuesto: ${budget.budgetReference}`, 20, yPosition);
+    yPosition += 12;
+
+    // Client data box
+    const columnWidth = pageWidth - 40;
+    const boxHeight = 30;
+
+    doc.setFillColor(232, 245, 233);
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "F");
+    doc.setDrawColor(129, 199, 132);
+    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
+
+    let clientY = yPosition + 8;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(clientData.client_name || "-", 24, clientY);
+    clientY += 5;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIF: ${clientData.client_nif || "-"}`, 24, clientY);
+    clientY += 4;
+
+    const clientAddress = doc.splitTextToSize(clientData.client_address || "", columnWidth - 8);
+    doc.text(clientAddress, 24, clientY);
+    clientY += clientAddress.length * 4;
+
+    doc.text(
+      `${clientData.client_postal_code || ""} ${clientData.client_locality || ""}`,
+      24,
+      clientY,
+    );
+    clientY += 4;
+    doc.text(`Tel: ${clientData.client_phone || ""}`, 24, clientY);
+    clientY += 4;
+    doc.text(`Email: ${budget.user?.email || ""}`, 24, clientY);
+
+    yPosition += boxHeight + 12;
+
+    // Additional data
+    if (additionalData?.trim()) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("CONCEPTO", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFillColor(255, 248, 225);
+      const conceptLines = doc.splitTextToSize(additionalData.trim(), pageWidth - 44);
+      const conceptHeight = conceptLines.length * 5 + 4;
+
+      doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "F");
+      doc.setDrawColor(255, 193, 7);
+      doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "S");
+
+      doc.text(conceptLines, 24, yPosition + 5);
+      yPosition += conceptHeight + 8;
+    }
+
+    // Budget lines table (only for proforma completa)
+    if (showBudgetLines) {
+      yPosition += 5;
+
+      const tableData: string[][] = [];
+      let rowIndex = 1;
+      budget.budgetLines.forEach((line) => {
+        const basePrice = getEffectiveUnitPrice(line, budget.eventDate);
+        const unitPrice = Math.round(basePrice * factor * 100) / 100;
+        const units = line.units || line.unidades || 1;
+        tableData.push([
+          rowIndex.toString(),
+          line.elemento || "-",
+          units.toString(),
+          formatCurrency(unitPrice),
+          formatCurrency(unitPrice * units),
+        ]);
+        rowIndex++;
+        line.extras?.forEach((extra) => {
+          if (extra.checked) {
+            const extraPrice = Math.round(extra.price * factor * 100) / 100;
+            tableData.push([
+              rowIndex.toString(),
+              extra.extraName || "-",
+              extra.units.toString(),
+              formatCurrency(extraPrice),
+              formatCurrency(extra.units * extraPrice),
+            ]);
+            rowIndex++;
+          }
+        });
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
+        body: tableData,
+        theme: "grid",
+        headStyles: {
+          fillColor: [51, 51, 51],
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: "bold",
+        },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 10, halign: "center" },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 20, halign: "center" },
+          3: { cellWidth: 30, halign: "right" },
+          4: { cellWidth: 30, halign: "right" },
+        },
+        margin: { left: 20, right: 20, bottom: 45 },
+      });
+
+      // @ts-expect-error - autoTable adds finalY to doc
+      yPosition = doc.lastAutoTable.finalY + 10;
+
+      if (yPosition > pageHeight - 50) {
+        doc.addPage();
+        yPosition = 20;
+      }
+    } else {
+      yPosition += 5;
+    }
+
+    // Price summary — calculated from effective line prices
+    const summaryX = pageWidth - 70;
+    let effectiveSubTotal = 0;
+    let effectiveExtras = 0;
+    budget.budgetLines.forEach((line) => {
+      const basePrice = getEffectiveUnitPrice(line, budget.eventDate);
+      const unitPrice = Math.round(basePrice * factor * 100) / 100;
+      const units = line.units || line.unidades || 1;
+      effectiveSubTotal += unitPrice * units;
+      line.extras?.forEach((extra) => {
+        if (extra.checked) {
+          effectiveExtras += Math.round(extra.price * factor * 100) / 100 * extra.units;
+        }
+      });
+    });
+
+    const costSend = Math.round((budget.price?.costSend || 0) * factor * 100) / 100;
+    const couponDiscount = Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100;
+    const vatBase = effectiveSubTotal + effectiveExtras + costSend - couponDiscount;
+    const effectiveVat = Math.round(vatBase * (taxRate / 100) * 100) / 100;
+    const effectiveTotal = Math.round((vatBase + effectiveVat) * 100) / 100;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 0, 0);
+
+    doc.text("Subtotal:", summaryX, yPosition, { align: "right" });
+    doc.text(formatCurrency(effectiveSubTotal), pageWidth - 20, yPosition, { align: "right" });
+    yPosition += 5;
+
+    if (effectiveExtras > 0) {
+      doc.text("Extras:", summaryX, yPosition, { align: "right" });
+      doc.text(formatCurrency(effectiveExtras), pageWidth - 20, yPosition, { align: "right" });
+      yPosition += 5;
+    }
+
+    doc.text("Gastos de transporte:", summaryX, yPosition, { align: "right" });
+    doc.text(formatCurrency(costSend), pageWidth - 20, yPosition, { align: "right" });
+    yPosition += 5;
+
+    if (couponDiscount > 0) {
+      doc.setTextColor(211, 47, 47);
+      doc.text("Descuento:", summaryX, yPosition, { align: "right" });
+      doc.text(`-${formatCurrency(couponDiscount)}`, pageWidth - 20, yPosition, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+    }
+
+    if (taxRate > 0) {
+      doc.text(`IVA (${taxRate}%):`, summaryX, yPosition, { align: "right" });
+      doc.text(formatCurrency(effectiveVat), pageWidth - 20, yPosition, { align: "right" });
+      yPosition += 5;
+    }
+
+    yPosition += 2;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("TOTAL:", summaryX, yPosition, { align: "right" });
+    doc.text(formatCurrency(effectiveTotal), pageWidth - 20, yPosition, { align: "right" });
+
+    // Footer
+    if (business.additional_data) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 100, 100);
+      const additionalDataLines = doc.splitTextToSize(business.additional_data, pageWidth - 40);
+      const additionalDataHeight = additionalDataLines.length * 3;
+      const footerY = pageHeight - 15 - additionalDataHeight;
+      doc.text(additionalDataLines, pageWidth / 2, footerY, { align: "center" });
+    }
+
+    return doc.output("blob");
+  } catch (error) {
+    console.error("Error generating proforma PDF:", error);
+    throw error;
+  }
+};
+
+/**
  * Generates a PDF document for a budget using jsPDF
  * @param budget - Budget data
  * @param business - Selected business (issuer)
