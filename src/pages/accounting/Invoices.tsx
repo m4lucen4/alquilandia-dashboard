@@ -269,6 +269,7 @@ export const Invoices: FC = () => {
           created_at: editCreatedAt
             ? new Date(editCreatedAt).toISOString()
             : undefined,
+          event_date: invoice.event_date ?? null,
         },
       }),
     );

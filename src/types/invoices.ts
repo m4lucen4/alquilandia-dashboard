@@ -100,6 +100,7 @@ export interface UpdateInvoiceData {
   additional_data?: string;
   coupon_discount?: number;
   created_at?: string;
+  event_date?: string | null;
 }
 
 /**

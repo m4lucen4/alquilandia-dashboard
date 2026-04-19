@@ -8,6 +8,7 @@ import type {
 import type { Json } from "@/types/supabase";
 import { generateInvoicePDF } from "./pdfService";
 import { formatInvoiceNumber } from "@/helpers";
+import { getBudgetByReference } from "./budgetsServices";
 
 const buildInvoicePdfFileName = (
   invoiceNumber: number,
@@ -718,9 +719,18 @@ export const updateInvoice = async (
       throw new Error("No se pudo obtener la factura.");
     }
 
-    // Step 2: Generate new PDF with updated data
+    // Step 2: Resolve event_date — use stored value or fetch from budget as fallback
+    const inv = currentInvoice as Invoice;
+    let resolvedEventDate: string | null =
+      (data.event_date !== undefined ? data.event_date : inv.event_date) ?? null;
+    if (!resolvedEventDate && inv.budget_reference) {
+      const budget = await getBudgetByReference(inv.budget_reference);
+      resolvedEventDate = budget?.eventDate ?? null;
+    }
+
+    // Step 3: Generate new PDF with updated data
     const invoiceForPdf = {
-      ...(currentInvoice as Invoice),
+      ...inv,
       business_id: data.business_id,
       invoices_type_id: data.invoices_type_id,
       taxes_type_id: data.taxes_type_id,
@@ -735,6 +745,7 @@ export const updateInvoice = async (
       client_phone: data.client_phone || "",
       additional_data: data.additional_data || "",
       ...(data.created_at && { created_at: data.created_at }),
+      event_date: resolvedEventDate,
     } as Invoice;
 
     const pdfBlob = await generateInvoicePDF(invoiceForPdf);
@@ -757,7 +768,6 @@ export const updateInvoice = async (
     }
 
     // Step 4: Upload the new PDF with meaningful filename
-    const inv = currentInvoice as Invoice;
     const fileName = buildInvoicePdfFileName(
       inv.invoice_number,
       data.created_at || inv.created_at,
@@ -804,6 +814,7 @@ export const updateInvoice = async (
       coupon_discount: data.coupon_discount ?? 0,
       pdf_url: pdfUrl,
       ...(data.created_at && { created_at: data.created_at }),
+      ...(resolvedEventDate && { event_date: resolvedEventDate }),
     };
 
     const { data: updatedInvoice, error: updateError } = (await supabase
@@ -855,7 +866,7 @@ export const updateInvoice = async (
       );
     }
 
-    return updatedInvoice as Invoice;
+    return updatedInvoice;
   } catch (error) {
     console.error(
       "Error in invoice update process:",
