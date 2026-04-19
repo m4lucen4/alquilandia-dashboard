@@ -240,8 +240,17 @@ export const ModalGenerateInvoice: FC<ModalGenerateInvoiceProps> = ({
           required
           disabled={isGenerating}
           emptyMessage="No hay tipos de factura disponibles. Crea uno en Ajustes."
-          className="mb-4"
+          className="mb-2"
         />
+
+        {selectedInvoicesTypeId && !selectedInvoicesTypeId.startsWith("proforma") ? (
+          <p className="mb-4 text-sm font-semibold text-red-600">
+            ⚠ Estás generando una factura real. Esta factura quedará registrada
+            en contabilidad y no podrá eliminarse.
+          </p>
+        ) : (
+          <div className="mb-4" />
+        )}
 
         <SelectField
           label="Tipo de Impuesto"
