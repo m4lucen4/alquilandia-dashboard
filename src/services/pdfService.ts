@@ -35,7 +35,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     // Business data (top right, next to logo)
     const businessAlignX = pageWidth - 20;
     let businessY = yPosition;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
     doc.text(invoice.business?.name || "-", businessAlignX, businessY, {
@@ -43,7 +43,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     });
     businessY += 5;
 
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(
       `NIF: ${invoice.business?.nif || "-"}`,
@@ -85,7 +85,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     yPosition += 35;
 
     // Invoice and Budget Reference
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text(
@@ -115,12 +115,12 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
 
     let clientY = yPosition + 8;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(invoice.client_name || "-", 24, clientY);
     clientY += 5;
 
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`NIF: ${invoice.client_nif || "-"}`, 24, clientY);
     clientY += 4;
@@ -146,7 +146,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     // Corrective Invoice Notice (only for corrective invoices)
     if (invoice.is_corrective) {
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(211, 47, 47);
       doc.text("FACTURA RECTIFICATIVA", 20, yPosition);
@@ -191,7 +191,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       .join("\n");
 
     if (conceptText) {
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.text("CONCEPTO", 20, yPosition);
       yPosition += 5;
@@ -248,11 +248,11 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
         headStyles: {
           fillColor: [51, 51, 51],
           textColor: [255, 255, 255],
-          fontSize: 8,
+          fontSize: 10,
           fontStyle: "bold",
         },
         bodyStyles: {
-          fontSize: 8,
+          fontSize: 10,
         },
         columnStyles: {
           0: { cellWidth: 10, halign: "center" },
@@ -280,7 +280,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     // Price Summary (right aligned)
     const summaryX = pageWidth - 70;
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
 
     // Subtotal
@@ -341,7 +341,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     yPosition += 2;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.text("TOTAL:", summaryX, yPosition, { align: "right" });
     doc.text(
       formatCurrency(invoice.price?.total || 0),
