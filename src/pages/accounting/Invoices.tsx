@@ -12,6 +12,7 @@ import {
 } from "@/redux/slices/invoicesSlice";
 import { fetchAllInvoicesTypes } from "@/redux/actions/invoicesTypes";
 import { fetchAllTaxesTypes } from "@/redux/actions/taxesTypes";
+import { fetchUserDetails } from "@/redux/actions/users";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ModalCreateCorrectiveInvoice } from "@/components/invoices/ModalCreateCorrectiveInvoice";
 import { ModalEditInvoice } from "@/components/invoices/ModalEditInvoice";
@@ -21,7 +22,9 @@ import { InvoicesTable } from "@/components/invoices/InvoicesTable";
 import { useInvoiceSearch } from "@/hooks/useInvoiceSearch";
 import { getRectifiedInvoiceIds } from "@/services/invoicesService";
 import { getBudgetByReference } from "@/services/budgetsServices";
+import { getClientDataFromUser } from "@/helpers/budgets";
 import type { Invoice } from "@/types/invoices";
+import type { User } from "@/types/budgets";
 
 export const Invoices: FC = () => {
   const dispatch = useAppDispatch();
@@ -84,6 +87,8 @@ export const Invoices: FC = () => {
   const [editAdditionalData, setEditAdditionalData] = useState("");
   const [editCreatedAt, setEditCreatedAt] = useState("");
   const [editCouponDiscount, setEditCouponDiscount] = useState(0);
+  const [editInvoiceTo, setEditInvoiceTo] = useState<"titular" | "empresa">("titular");
+  const [editUser, setEditUser] = useState<User | null>(null);
 
   const handleCloseAlert = () => {
     dispatch(clearInvoicesErrors());
@@ -147,21 +152,42 @@ export const Invoices: FC = () => {
       invoice.created_at ? invoice.created_at.split("T")[0] : "",
     );
 
-    // For old invoices (coupon_discount not stored), fetch it from the original budget
-    // TODO: Remove this when all invoices have coupon_discount
-    if (!invoice.coupon_discount && invoice.budget_reference) {
+    // Fetch budget to get coupon_discount and user
+    if (invoice.budget_reference) {
       try {
         const budget = await getBudgetByReference(invoice.budget_reference);
-        setEditCouponDiscount(budget?.totalCouponDiscount || 0);
+
+        // For old invoices (coupon_discount not stored), use budget value
+        if (!invoice.coupon_discount && budget?.totalCouponDiscount) {
+          setEditCouponDiscount(budget.totalCouponDiscount);
+        } else {
+          setEditCouponDiscount(invoice.coupon_discount || 0);
+        }
+
+        // Fetch fresh user data for titular/empresa selection
+        if (budget?.user?.id) {
+          try {
+            const freshUser = await dispatch(
+              fetchUserDetails(budget.user.id),
+            ).unwrap();
+            setEditUser(freshUser);
+            // Default to "empresa" if user has company data, otherwise "titular"
+            const hasCompany = !!(freshUser.company?.name && freshUser.company?.nif);
+            setEditInvoiceTo(hasCompany ? "empresa" : "titular");
+          } catch {
+            setEditUser(null);
+            setEditInvoiceTo("titular");
+          }
+        }
       } catch {
-        setEditCouponDiscount(0);
+        setEditCouponDiscount(invoice.coupon_discount || 0);
       }
     } else {
       setEditCouponDiscount(invoice.coupon_discount || 0);
     }
 
     setIsEditModalOpen(true);
-  }, []);
+  }, [dispatch]);
 
   const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
@@ -172,6 +198,8 @@ export const Invoices: FC = () => {
     setEditAdditionalData("");
     setEditCreatedAt("");
     setEditCouponDiscount(0);
+    setEditInvoiceTo("titular");
+    setEditUser(null);
     dispatch(resetUpdateInvoiceRequest());
   }, [dispatch]);
 
@@ -248,6 +276,19 @@ export const Invoices: FC = () => {
         Math.round((adjustedPrice.userDiscount + scaledCoupon) * 100) / 100;
     }
 
+    // Use fresh user data if available, otherwise fall back to stored invoice fields
+    const clientData = editUser
+      ? getClientDataFromUser(editUser, editInvoiceTo)
+      : {
+          client_name: invoice.client_name,
+          client_nif: invoice.client_nif,
+          client_email: invoice.client_email,
+          client_address: invoice.client_address,
+          client_locality: invoice.client_locality,
+          client_postal_code: invoice.client_postal_code,
+          client_phone: invoice.client_phone,
+        };
+
     const result = await dispatch(
       updateInvoice({
         invoiceId: invoice.id,
@@ -257,13 +298,7 @@ export const Invoices: FC = () => {
           taxes_type_id: editTaxesTypeId,
           budgetlines: adjustedBudgetlines,
           price: adjustedPrice,
-          client_name: invoice.client_name,
-          client_nif: invoice.client_nif,
-          client_email: invoice.client_email,
-          client_address: invoice.client_address,
-          client_locality: invoice.client_locality,
-          client_postal_code: invoice.client_postal_code,
-          client_phone: invoice.client_phone,
+          ...clientData,
           additional_data: editAdditionalData,
           coupon_discount: editCouponDiscount,
           created_at: editCreatedAt
@@ -296,6 +331,8 @@ export const Invoices: FC = () => {
     editAdditionalData,
     editCreatedAt,
     editCouponDiscount,
+    editUser,
+    editInvoiceTo,
     dispatch,
     appliedFilters,
     pageIndex,
@@ -338,6 +375,9 @@ export const Invoices: FC = () => {
         createdAt={editCreatedAt}
         setCreatedAt={setEditCreatedAt}
         isUpdating={updateInvoiceRequest.inProgress}
+        invoiceTo={editInvoiceTo}
+        setInvoiceTo={setEditInvoiceTo}
+        editUser={editUser}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">

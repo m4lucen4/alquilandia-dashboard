@@ -5,6 +5,7 @@ import type { Invoice } from "@/types/invoices";
 import type { Business } from "@/types/business";
 import type { InvoicesType } from "@/types/invoicesTypes";
 import type { TaxesType } from "@/types/taxesTypes";
+import type { User } from "@/types/budgets";
 import { formatInvoiceNumber } from "@/helpers";
 
 interface ModalEditInvoiceProps {
@@ -25,6 +26,9 @@ interface ModalEditInvoiceProps {
   createdAt: string;
   setCreatedAt: (value: string) => void;
   isUpdating: boolean;
+  invoiceTo: "titular" | "empresa";
+  setInvoiceTo: (value: "titular" | "empresa") => void;
+  editUser: User | null;
 }
 
 export const ModalEditInvoice: FC<ModalEditInvoiceProps> = ({
@@ -45,6 +49,9 @@ export const ModalEditInvoice: FC<ModalEditInvoiceProps> = ({
   createdAt,
   setCreatedAt,
   isUpdating,
+  invoiceTo,
+  setInvoiceTo,
+  editUser,
 }) => {
   const invoiceTypeOptions = useMemo(
     () =>
@@ -93,6 +100,40 @@ export const ModalEditInvoice: FC<ModalEditInvoiceProps> = ({
             </span>
           </p>
         </div>
+
+        {editUser?.company?.name && editUser?.company?.nif && (
+          <div>
+            <label className="block text-sm font-medium text-gray-900">
+              Factura a nombre de
+            </label>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="editInvoiceTo"
+                  checked={invoiceTo === "titular"}
+                  onChange={() => setInvoiceTo("titular")}
+                  disabled={isUpdating}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-700">Titular</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="editInvoiceTo"
+                  checked={invoiceTo === "empresa"}
+                  onChange={() => setInvoiceTo("empresa")}
+                  disabled={isUpdating}
+                  className="accent-blue-600"
+                />
+                <span className="text-sm text-gray-700">
+                  {editUser.company.name}
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-4">
           <div className="flex-1">
