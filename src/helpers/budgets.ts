@@ -86,8 +86,9 @@ export function calculateBudgetTotal(budget: Budget): {
   const subTotal = budget.price?.subTotal || 0;
   const extras = budget.price?.extras || 0;
   const costSend = budget.price?.costSend || 0;
+  const userDiscount = budget.price?.userDiscount || 0;
   const couponDiscount = budget.totalCouponDiscount || 0;
-  const base = round(subTotal + extras + costSend - couponDiscount);
+  const base = round(subTotal + extras + costSend - userDiscount - couponDiscount);
   const iva = round(base * 0.21);
   return { base, iva, total: round(base + iva) };
 }

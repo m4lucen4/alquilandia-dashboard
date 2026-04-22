@@ -181,6 +181,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
             const subTotal = budget.price?.subTotal || 0;
             const extras = budget.price?.extras || 0;
             const costSend = budget.price?.costSend || 0;
+            const userDiscount = budget.price?.userDiscount || 0;
             const couponDiscount = budget.totalCouponDiscount || 0;
 
             return (
@@ -201,8 +202,14 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                     <span>{formatCurrency(costSend)}</span>
                   </div>
                 )}
+                {userDiscount > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>Descuento</span>
+                    <span>-{formatCurrency(userDiscount)}</span>
+                  </div>
+                )}
                 {couponDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-red-600">
                     <span>Cupón de descuento</span>
                     <span>-{formatCurrency(couponDiscount)}</span>
                   </div>

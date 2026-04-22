@@ -623,8 +623,9 @@ export const generateProformaPDF = async (
     });
 
     const costSend = Math.round((budget.price?.costSend || 0) * factor * 100) / 100;
+    const userDiscount = Math.round((budget.price?.userDiscount || 0) * factor * 100) / 100;
     const couponDiscount = Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100;
-    const vatBase = effectiveSubTotal + effectiveExtras + costSend - couponDiscount;
+    const vatBase = effectiveSubTotal + effectiveExtras + costSend - userDiscount - couponDiscount;
     const effectiveVat = Math.round(vatBase * (taxRate / 100) * 100) / 100;
     const effectiveTotal = Math.round((vatBase + effectiveVat) * 100) / 100;
 
@@ -646,9 +647,17 @@ export const generateProformaPDF = async (
     doc.text(formatCurrency(costSend), pageWidth - 20, yPosition, { align: "right" });
     yPosition += 5;
 
-    if (couponDiscount > 0) {
+    if (userDiscount > 0) {
       doc.setTextColor(211, 47, 47);
       doc.text("Descuento:", summaryX, yPosition, { align: "right" });
+      doc.text(`-${formatCurrency(userDiscount)}`, pageWidth - 20, yPosition, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+    }
+
+    if (couponDiscount > 0) {
+      doc.setTextColor(211, 47, 47);
+      doc.text("Descuento cupón:", summaryX, yPosition, { align: "right" });
       doc.text(`-${formatCurrency(couponDiscount)}`, pageWidth - 20, yPosition, { align: "right" });
       doc.setTextColor(0, 0, 0);
       yPosition += 5;
@@ -946,6 +955,7 @@ export const generateBudgetPDF = async (
     const subTotal = budget.price?.subTotal || 0;
     const extras = budget.price?.extras || 0;
     const costSend = budget.price?.costSend || 0;
+    const userDiscount = budget.price?.userDiscount || 0;
     const couponDiscount = budget.totalCouponDiscount || 0;
 
     doc.text("Subtotal:", summaryX, yPosition, { align: "right" });
@@ -968,9 +978,17 @@ export const generateBudgetPDF = async (
     });
     yPosition += 5;
 
-    if (couponDiscount > 0) {
+    if (userDiscount > 0) {
       doc.setTextColor(211, 47, 47);
       doc.text("Descuento:", summaryX, yPosition, { align: "right" });
+      doc.text(`-${formatCurrency(userDiscount)}`, pageWidth - 20, yPosition, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+    }
+
+    if (couponDiscount > 0) {
+      doc.setTextColor(211, 47, 47);
+      doc.text("Descuento cupón:", summaryX, yPosition, { align: "right" });
       doc.text(
         `-${formatCurrency(couponDiscount)}`,
         pageWidth - 20,
