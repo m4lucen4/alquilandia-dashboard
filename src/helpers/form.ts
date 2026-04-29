@@ -65,7 +65,7 @@ export const validateTaxesTypeForm = (
 
   if (formData.tax === undefined || formData.tax === null) {
     errors.tax = "El porcentaje de impuesto es obligatorio";
-  } else if (isNaN(formData.tax)) {
+  } else if (Number.isNaN(formData.tax)) {
     errors.tax = "El valor debe ser un número";
   } else if (formData.tax < 0) {
     errors.tax = "El porcentaje no puede ser negativo";
@@ -92,7 +92,7 @@ export const validateInvoicesTypeForm = (
 
   if (formData.percentage === undefined || formData.percentage === null) {
     errors.percentage = "El porcentaje es obligatorio";
-  } else if (isNaN(formData.percentage)) {
+  } else if (Number.isNaN(formData.percentage)) {
     errors.percentage = "El valor debe ser un número";
   } else if (formData.percentage < 0) {
     errors.percentage = "El porcentaje no puede ser negativo";

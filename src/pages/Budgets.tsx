@@ -239,6 +239,7 @@ export const Budgets: FC = () => {
       // Navigate to invoices page
       navigate("/accounting/invoices");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedBudget,
     selectedBusinessId,

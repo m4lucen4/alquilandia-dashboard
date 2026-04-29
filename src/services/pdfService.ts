@@ -221,7 +221,8 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
           units.toString(),
           line.elemento || "-",
           formatCurrency(unitPrice),
-          formatCurrency(unitPrice * units),
+          line.descuento ? `${line.descuento}%` : "-",
+          formatCurrency(line.totalPrice),
         ]);
         line.extras?.forEach((extra) => {
           if (extra.checked) {
@@ -229,6 +230,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
               extra.units.toString(),
               extra.extraName || "-",
               formatCurrency(extra.price),
+              "-",
               formatCurrency(extra.units * extra.price),
             ]);
           }
@@ -237,7 +239,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
       autoTable(doc, {
         startY: yPosition,
-        head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
+        head: [["Unidades", "Nombre", "Precio Ud.", "Dto.", "Total"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -251,9 +253,10 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
         },
         columnStyles: {
           0: { cellWidth: 20, halign: "center" },
-          1: { cellWidth: 90 },
-          2: { cellWidth: 30, halign: "right" },
-          3: { cellWidth: 30, halign: "right" },
+          1: { cellWidth: 75 },
+          2: { cellWidth: 25, halign: "right" },
+          3: { cellWidth: 20, halign: "center" },
+          4: { cellWidth: 30, halign: "right" },
         },
         margin: { left: 20, right: 20, bottom: 45 },
       });
@@ -547,7 +550,8 @@ export const generateProformaPDF = async (
           units.toString(),
           line.elemento || "-",
           formatCurrency(unitPrice),
-          formatCurrency(unitPrice * units),
+          line.descuento ? `${line.descuento}%` : "-",
+          formatCurrency(line.totalPrice),
         ]);
         line.extras?.forEach((extra) => {
           if (extra.checked) {
@@ -556,6 +560,7 @@ export const generateProformaPDF = async (
               extra.units.toString(),
               extra.extraName || "-",
               formatCurrency(extraPrice),
+              "-",
               formatCurrency(extra.units * extraPrice),
             ]);
           }
@@ -564,7 +569,7 @@ export const generateProformaPDF = async (
 
       autoTable(doc, {
         startY: yPosition,
-        head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
+        head: [["Unidades", "Nombre", "Precio Ud.", "Dto.", "Total"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -576,9 +581,10 @@ export const generateProformaPDF = async (
         bodyStyles: { fontSize: 10 },
         columnStyles: {
           0: { cellWidth: 20, halign: "center" },
-          1: { cellWidth: 90 },
-          2: { cellWidth: 30, halign: "right" },
-          3: { cellWidth: 30, halign: "right" },
+          1: { cellWidth: 75 },
+          2: { cellWidth: 25, halign: "right" },
+          3: { cellWidth: 20, halign: "center" },
+          4: { cellWidth: 30, halign: "right" },
         },
         margin: { left: 20, right: 20, bottom: 45 },
       });
@@ -882,7 +888,8 @@ export const generateBudgetPDF = async (
         units.toString(),
         line.elemento || "-",
         formatCurrency(unitPrice),
-        formatCurrency(unitPrice * units),
+        line.descuento ? `${line.descuento}%` : "-",
+        formatCurrency(line.totalPrice),
       ]);
       line.extras?.forEach((extra) => {
         if (extra.checked) {
@@ -890,6 +897,7 @@ export const generateBudgetPDF = async (
             extra.units.toString(),
             extra.extraName || "-",
             formatCurrency(extra.price),
+            "-",
             formatCurrency(extra.units * extra.price),
           ]);
         }
@@ -898,7 +906,7 @@ export const generateBudgetPDF = async (
 
     autoTable(doc, {
       startY: yPosition,
-      head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
+      head: [["Unidades", "Nombre", "Precio Ud.", "Dto.", "Total"]],
       body: tableData,
       theme: "grid",
       headStyles: {
@@ -912,9 +920,10 @@ export const generateBudgetPDF = async (
       },
       columnStyles: {
         0: { cellWidth: 20, halign: "center" },
-        1: { cellWidth: 90 },
-        2: { cellWidth: 30, halign: "right" },
-        3: { cellWidth: 30, halign: "right" },
+        1: { cellWidth: 75 },
+        2: { cellWidth: 25, halign: "right" },
+        3: { cellWidth: 20, halign: "center" },
+        4: { cellWidth: 30, halign: "right" },
       },
       margin: { left: 20, right: 20, bottom: 45 },
     });
