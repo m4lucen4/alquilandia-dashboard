@@ -214,35 +214,30 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       yPosition += 5;
 
       const tableData: string[][] = [];
-      let rowIndex = 1;
       invoice.budgetlines.forEach((line) => {
         const unitPrice = getEffectiveUnitPrice(line, invoice.event_date);
         const units = line.units || 1;
         tableData.push([
-          rowIndex.toString(),
-          line.elemento || "-",
           units.toString(),
+          line.elemento || "-",
           formatCurrency(unitPrice),
           formatCurrency(unitPrice * units),
         ]);
-        rowIndex++;
         line.extras?.forEach((extra) => {
           if (extra.checked) {
             tableData.push([
-              rowIndex.toString(),
-              extra.extraName || "-",
               extra.units.toString(),
+              extra.extraName || "-",
               formatCurrency(extra.price),
               formatCurrency(extra.units * extra.price),
             ]);
-            rowIndex++;
           }
         });
       });
 
       autoTable(doc, {
         startY: yPosition,
-        head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
+        head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -255,11 +250,10 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
           fontSize: 10,
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 80 },
-          2: { cellWidth: 20, halign: "center" },
+          0: { cellWidth: 20, halign: "center" },
+          1: { cellWidth: 90 },
+          2: { cellWidth: 30, halign: "right" },
           3: { cellWidth: 30, halign: "right" },
-          4: { cellWidth: 30, halign: "right" },
         },
         margin: { left: 20, right: 20, bottom: 45 },
       });
@@ -545,37 +539,32 @@ export const generateProformaPDF = async (
       yPosition += 5;
 
       const tableData: string[][] = [];
-      let rowIndex = 1;
       budget.budgetLines.forEach((line) => {
         const basePrice = getEffectiveUnitPrice(line, budget.eventDate);
         const unitPrice = Math.round(basePrice * factor * 100) / 100;
         const units = line.units || line.unidades || 1;
         tableData.push([
-          rowIndex.toString(),
-          line.elemento || "-",
           units.toString(),
+          line.elemento || "-",
           formatCurrency(unitPrice),
           formatCurrency(unitPrice * units),
         ]);
-        rowIndex++;
         line.extras?.forEach((extra) => {
           if (extra.checked) {
             const extraPrice = Math.round(extra.price * factor * 100) / 100;
             tableData.push([
-              rowIndex.toString(),
-              extra.extraName || "-",
               extra.units.toString(),
+              extra.extraName || "-",
               formatCurrency(extraPrice),
               formatCurrency(extra.units * extraPrice),
             ]);
-            rowIndex++;
           }
         });
       });
 
       autoTable(doc, {
         startY: yPosition,
-        head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
+        head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -586,11 +575,10 @@ export const generateProformaPDF = async (
         },
         bodyStyles: { fontSize: 10 },
         columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 80 },
-          2: { cellWidth: 20, halign: "center" },
+          0: { cellWidth: 20, halign: "center" },
+          1: { cellWidth: 90 },
+          2: { cellWidth: 30, halign: "right" },
           3: { cellWidth: 30, halign: "right" },
-          4: { cellWidth: 30, halign: "right" },
         },
         margin: { left: 20, right: 20, bottom: 45 },
       });
@@ -887,35 +875,30 @@ export const generateBudgetPDF = async (
     yPosition += 5;
 
     const tableData: string[][] = [];
-    let rowIndex = 1;
     budget.budgetLines.forEach((line) => {
       const unitPrice = getEffectiveUnitPrice(line, budget.eventDate);
       const units = line.units || line.unidades || 1;
       tableData.push([
-        rowIndex.toString(),
-        line.elemento || "-",
         units.toString(),
+        line.elemento || "-",
         formatCurrency(unitPrice),
         formatCurrency(unitPrice * units),
       ]);
-      rowIndex++;
       line.extras?.forEach((extra) => {
         if (extra.checked) {
           tableData.push([
-            rowIndex.toString(),
-            extra.extraName || "-",
             extra.units.toString(),
+            extra.extraName || "-",
             formatCurrency(extra.price),
             formatCurrency(extra.units * extra.price),
           ]);
-          rowIndex++;
         }
       });
     });
 
     autoTable(doc, {
       startY: yPosition,
-      head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
+      head: [["Unidades", "Nombre", "Precio Ud.", "Total"]],
       body: tableData,
       theme: "grid",
       headStyles: {
@@ -928,11 +911,10 @@ export const generateBudgetPDF = async (
         fontSize: 10,
       },
       columnStyles: {
-        0: { cellWidth: 10, halign: "center" },
-        1: { cellWidth: 80 },
-        2: { cellWidth: 20, halign: "center" },
+        0: { cellWidth: 20, halign: "center" },
+        1: { cellWidth: 90 },
+        2: { cellWidth: 30, halign: "right" },
         3: { cellWidth: 30, halign: "right" },
-        4: { cellWidth: 30, halign: "right" },
       },
       margin: { left: 20, right: 20, bottom: 45 },
     });
