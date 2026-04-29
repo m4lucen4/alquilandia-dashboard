@@ -55,31 +55,33 @@ El nombre de fichero se genera con `buildInvoicePdfFileName(invoice_number, crea
 ```typescript
 autoTable(doc, {
   startY: yPosition,
-  head: [["#", "Nombre", "Unidades", "Precio Ud.", "Total"]],
+  head: [["Unidades", "Nombre", "Precio Ud.", "Dto.", "Total"]],
   body: tableData,
   theme: "grid",
   margin: { left: 20, right: 20, bottom: 45 },  // bottom: 45 evita pisar el footer
 });
 ```
 
-Anchos de columna fijos: `[10, 80, 20, 30, 30]` mm.
+Anchos de columna fijos: `[20, 75, 25, 20, 30]` mm (total 170mm = pageWidth 210 - márgenes 40).
+
+### Columnas destacadas
+
+- **Dto.**: `line.descuento ? \`${line.descuento}%\` : "-"` — los extras siempre muestran `"-"`
+- **Total**: usa `line.totalPrice` (precio real con unidades y descuento ya aplicado), NO calcular `unitPrice * units`
 
 ### Extras en la tabla
 
-Cada `BudgetLine` tiene `extras: Extra[]`. Si `extra.checked === true`, se inserta como fila inmediatamente después de su línea padre, con numeración secuencial continua.
+Cada `BudgetLine` tiene `extras: Extra[]`. Si `extra.checked === true`, se inserta como fila inmediatamente después de su línea padre.
 
 ```typescript
 // Extra { checked, extraName, units, price }
-// total de un extra = extra.units * extra.price
+// total de un extra = extra.units * extra.price (los extras no tienen totalPrice ni descuento)
 const tableData: string[][] = [];
-let rowIndex = 1;
 budgetLines.forEach((line) => {
-  tableData.push([rowIndex.toString(), line.elemento, ...]);
-  rowIndex++;
+  tableData.push([units.toString(), line.elemento, formatCurrency(unitPrice), line.descuento ? `${line.descuento}%` : "-", formatCurrency(line.totalPrice)]);
   line.extras?.forEach((extra) => {
     if (extra.checked) {
-      tableData.push([rowIndex.toString(), extra.extraName, extra.units, formatCurrency(extra.price), formatCurrency(extra.units * extra.price)]);
-      rowIndex++;
+      tableData.push([extra.units.toString(), extra.extraName, formatCurrency(extra.price), "-", formatCurrency(extra.units * extra.price)]);
     }
   });
 });

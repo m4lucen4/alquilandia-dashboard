@@ -121,6 +121,12 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                   </th>
                   <th
                     scope="col"
+                    className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Dto.
+                  </th>
+                  <th
+                    scope="col"
                     className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
                   >
                     Total
@@ -142,8 +148,11 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                       <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
                         {formatCurrency(unitPrice)}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-600">
+                        {line.descuento ? `${line.descuento}%` : "-"}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                        {formatCurrency(unitPrice * units)}
+                        {formatCurrency(line.totalPrice)}
                       </td>
                     </tr>,
                   ];
@@ -159,6 +168,9 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                           </td>
                           <td className="whitespace-nowrap px-4 py-2 text-right text-sm text-gray-500">
                             {formatCurrency(extra.price)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2 text-center text-sm text-gray-500">
+                            -
                           </td>
                           <td className="whitespace-nowrap px-4 py-2 text-right text-sm text-gray-500">
                             {formatCurrency(extra.units * extra.price)}
