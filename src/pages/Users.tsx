@@ -11,8 +11,22 @@ import { ModalCreateUser, type CreateUserFormValues } from "../components/users/
 import { ModalEditUser, type EditUserFormValues } from "../components/users/ModalEditUser";
 import Button from "@/components/shared/Button";
 import { EnvelopeIcon, UserPlusIcon } from "@heroicons/react/24/outline";
-import type { User } from "../types/budgets";
+import type { User, Company } from "../types/budgets";
 import { useUserSearch } from "../hooks/useUserSearch";
+
+const mapFormCompany = (
+  company: Partial<Company> | undefined,
+): Company | null => {
+  if (!company || !Object.values(company).some(Boolean)) return null;
+  return {
+    name: company.name ?? "",
+    nif: company.nif ?? "",
+    address: company.address ?? "",
+    population: company.population ?? "",
+    locality: company.locality ?? "",
+    zipCode: company.zipCode ?? "",
+  };
+};
 
 export const Users: FC = () => {
   const dispatch = useAppDispatch();
@@ -72,8 +86,10 @@ export const Users: FC = () => {
 
   const handleCreateUser = useCallback(
     async (formData: CreateUserFormValues) => {
+      const { company, ...rest } = formData;
+      const payload: Partial<User> = { ...rest, company: mapFormCompany(company) };
       try {
-        await dispatch(createUserThunk(formData)).unwrap();
+        await dispatch(createUserThunk(payload)).unwrap();
         setIsCreateUserModalOpen(false);
         const filtersQuery = buildFiltersQuery();
         dispatch(fetchPaginatedUsersThunk({ pageSize, pageToFetch: pageIndex + 1, filtersQuery }));
@@ -92,8 +108,10 @@ export const Users: FC = () => {
   const handleEditUser = useCallback(
     async (formData: EditUserFormValues) => {
       if (!selectedUser) return;
+      const { company, ...rest } = formData;
+      const body: Partial<User> = { ...rest, company: mapFormCompany(company) };
       try {
-        await dispatch(editUserThunk({ id: selectedUser.id, body: formData })).unwrap();
+        await dispatch(editUserThunk({ id: selectedUser.id, body })).unwrap();
         setIsEditUserModalOpen(false);
         setSelectedUser(null);
         const filtersQuery = buildFiltersQuery();

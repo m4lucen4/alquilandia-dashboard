@@ -14,7 +14,7 @@ export interface GetPaginatedUsersParams {
 
 export interface MassiveEmailData {
   subject: string;
-  body: string;
+  body?: string;
   image?: File;
   [key: string]: unknown;
 }
