@@ -129,6 +129,7 @@ export const UsersTable: FC<UsersTableProps> = ({
       isLoading={isLoading}
       loadingMessage="Cargando usuarios..."
       emptyMessage="No se encontraron usuarios"
+      getRowClassName={(user) => (user.problematic ? "bg-red-50" : "")}
       pagination={{
         pageIndex,
         pageSize,

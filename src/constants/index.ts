@@ -12,3 +12,10 @@ export const statusOptions = [
   { value: "PAID_PENDING", label: "Archivada" },
   { value: "EXPIRED", label: "Expirado" },
 ];
+
+export const ROLE_OPTIONS = [
+  { value: "CLIENT", label: "Cliente" },
+  { value: "MANAGER", label: "Gestor" },
+  { value: "ADMIN", label: "Administrador" },
+  { value: "TECHNICIAN", label: "Técnico" },
+];
