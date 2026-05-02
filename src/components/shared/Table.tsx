@@ -13,6 +13,7 @@ interface TableProps<TData> {
   isLoading: boolean;
   loadingMessage?: string;
   emptyMessage?: string;
+  getRowClassName?: (row: TData) => string;
   pagination?: {
     pageIndex: number;
     pageSize: number;
@@ -28,6 +29,7 @@ export const Table = <TData,>({
   isLoading,
   loadingMessage = "Cargando...",
   emptyMessage = "No se encontraron resultados",
+  getRowClassName,
   pagination,
 }: TableProps<TData>): ReturnType<FC> => {
   const table = useReactTable({
@@ -106,7 +108,10 @@ export const Table = <TData,>({
                   </tr>
                 ) : (
                   table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
+                    <tr
+                      key={row.id}
+                      className={`hover:bg-gray-50 ${getRowClassName ? getRowClassName(row.original) : ""}`}
+                    >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}

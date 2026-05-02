@@ -41,7 +41,7 @@ interface UserAvatarProps {
 // Constants
 const navigation: NavigationItem[] = [
   { name: "Inicio", href: "/", current: true },
-  { name: "Usuarios", href: "#", current: false },
+  { name: "Usuarios", href: "/users", current: false },
   { name: "Presupuestos", href: "/budgets", current: false },
   { name: "Inventario", href: "#", current: false },
   { name: "Contabilidad", href: "/accounting", current: false },
