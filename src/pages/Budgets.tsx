@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
+import { resetWizard } from "../redux/slices/budgetWizardSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
 import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
@@ -18,6 +19,7 @@ import type { Budget, User } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { PageHeader } from "@/components/shared/PageHeader";
+import Button from "@/components/shared/Button";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
 import {
   getClientDataFromUser,
@@ -454,10 +456,17 @@ export const Budgets: FC = () => {
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <PageHeader
-          title="Presupuestos"
-          description="Gestiona tus presupuestos"
-        />
+        <div className="flex items-start justify-between">
+          <PageHeader
+            title="Presupuestos"
+            description="Gestiona tus presupuestos"
+          />
+          <Button
+            title="Nuevo presupuesto"
+            onClick={() => { dispatch(resetWizard()); navigate("/budgets/new"); }}
+            variant="primary"
+          />
+        </div>
 
         {/* Buscador */}
         <SearchBudgets

@@ -16,6 +16,7 @@ interface UsersTableProps {
   onPageSizeChange: (pageSize: number) => void;
   onSelectionChange: (id: string, checked: boolean) => void;
   onEditUser: (user: User) => void;
+  onGenerateBudget: (user: User) => void;
 }
 
 export const UsersTable: FC<UsersTableProps> = ({
@@ -29,6 +30,7 @@ export const UsersTable: FC<UsersTableProps> = ({
   onPageSizeChange,
   onSelectionChange,
   onEditUser,
+  onGenerateBudget,
 }) => {
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -115,11 +117,12 @@ export const UsersTable: FC<UsersTableProps> = ({
           <UsersActionsMenu
             user={info.row.original}
             onEditUser={onEditUser}
+            onGenerateBudget={onGenerateBudget}
           />
         ),
       },
     ],
-    [selectedIds, onSelectionChange, onEditUser],
+    [selectedIds, onSelectionChange, onEditUser, onGenerateBudget],
   );
 
   return (
