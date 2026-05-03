@@ -17,6 +17,10 @@ const shippingCostsSlice = createSlice({
     clearUpdateShippingCostsSuccess: (state) => {
       state.updateShippingCostsRequest = requestIdle;
     },
+    clearShippingCostsErrors: (state) => {
+      state.fetchShippingCostsRequest = requestIdle;
+      state.updateShippingCostsRequest = requestIdle;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -57,6 +61,7 @@ const shippingCostsSlice = createSlice({
   },
 });
 
-export const { clearUpdateShippingCostsSuccess } = shippingCostsSlice.actions;
+export const { clearUpdateShippingCostsSuccess, clearShippingCostsErrors } =
+  shippingCostsSlice.actions;
 
 export default shippingCostsSlice.reducer;
