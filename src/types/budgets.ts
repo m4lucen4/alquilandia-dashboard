@@ -161,13 +161,48 @@ export interface BudgetsResponse {
   total?: number;
 }
 
+export interface UnavailableProduct {
+  name?: string;
+  elemento?: string;
+}
+
+export type BudgetErrorCode =
+  | "USER_ALREADY_EXISTS"
+  | "USER_IS_PROBLEMATIC"
+  | "PRODUCTS_UNAVAILABLE"
+  | "UNKNOWN";
+
+export interface BudgetError {
+  code: BudgetErrorCode;
+  message?: string;
+  products?: UnavailableProduct[];
+}
+
+export interface Receipt {
+  id: string;
+}
+
 // Redux State
 export interface BudgetsState {
   budgets: Budget[];
   total: number;
   currentBudget: Budget | null;
+  receipts: Receipt[];
+  stripeSecret: string | null;
+  stripeFinalSecret: string | null;
   fetchBudgetsRequest: IRequest;
   fetchBudgetByIdRequest: IRequest;
+  fetchBudgetFinalDetailsRequest: IRequest;
+  createBudgetRequest: IRequest;
+  createBudgetConfirmRequest: IRequest;
+  updateBudgetRequest: IRequest;
+  updateBudgetTechnicianRequest: IRequest;
+  deleteBudgetRequest: IRequest;
+  rejectBudgetRequest: IRequest;
+  fetchBudgetReceiptsRequest: IRequest;
+  checkoutRequest: IRequest;
+  getStripeSecretRequest: IRequest;
+  getStripeFinalSecretRequest: IRequest;
 }
 
 export interface AppliedFiltersType {
