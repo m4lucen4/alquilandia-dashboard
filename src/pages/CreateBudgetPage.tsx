@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { resetWizard } from "@/redux/slices/budgetWizardSlice";
 import { BudgetStep1Client } from "@/components/budgets/wizard/BudgetStep1Client";
+import { BudgetStep2EventDetails } from "@/components/budgets/wizard/BudgetStep2EventDetails";
 import Button from "@/components/shared/Button";
 
 const TOTAL_STEPS = 5;
@@ -39,11 +40,7 @@ export const CreateBudgetPage: FC = () => {
       </div>
 
       {step === 1 && <BudgetStep1Client />}
-      {step === 2 && (
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <p className="text-gray-900">Este es el paso 2</p>
-        </div>
-      )}
+      {step === 2 && <BudgetStep2EventDetails />}
     </div>
   );
 };

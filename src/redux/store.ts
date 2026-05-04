@@ -20,7 +20,7 @@ const persistConfig = {
 const wizardPersistConfig = {
   key: "budgetWizard",
   storage,
-  blacklist: ["createBudgetRequest"],
+  blacklist: ["createBudgetRequest", "updateEventDetailsRequest"],
 };
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);

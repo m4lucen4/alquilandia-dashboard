@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { createBudgetThunk } from "../actions/budgets";
+import { createBudgetThunk, updateBudgetEventDetailsThunk } from "../actions/budgets";
 import type { BudgetWizardState, ClientWizardFormData } from "@/types/budgetWizard";
 import type { BudgetError } from "@/types/budgets";
 
@@ -10,6 +10,7 @@ const initialState: BudgetWizardState = {
   prefillData: null,
   budgetId: null,
   createBudgetRequest: requestIdle,
+  updateEventDetailsRequest: requestIdle,
 };
 
 const budgetWizardSlice = createSlice({
@@ -42,6 +43,20 @@ const budgetWizardSlice = createSlice({
       state.createBudgetRequest = { inProgress: false, messages: "", ok: true };
       state.budgetId = action.payload.id;
       state.step = 2;
+    });
+    builder.addCase(updateBudgetEventDetailsThunk.pending, (state) => {
+      state.updateEventDetailsRequest = { inProgress: true, messages: "", ok: false };
+    });
+    builder.addCase(updateBudgetEventDetailsThunk.fulfilled, (state) => {
+      state.updateEventDetailsRequest = { inProgress: false, messages: "", ok: true };
+      state.step = 3;
+    });
+    builder.addCase(updateBudgetEventDetailsThunk.rejected, (state, action) => {
+      state.updateEventDetailsRequest = {
+        inProgress: false,
+        messages: (action.payload as string) || "Error al guardar los datos del evento",
+        ok: false,
+      };
     });
     builder.addCase(createBudgetThunk.rejected, (state, action) => {
       const error = action.payload as BudgetError;

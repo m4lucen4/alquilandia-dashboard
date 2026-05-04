@@ -28,4 +28,5 @@ export interface BudgetWizardState {
   prefillData: ClientWizardFormData | null;
   budgetId: string | null;
   createBudgetRequest: IRequest;
+  updateEventDetailsRequest: IRequest;
 }
