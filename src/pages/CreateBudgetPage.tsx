@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { resetWizard } from "@/redux/slices/budgetWizardSlice";
 import { BudgetStep1Client } from "@/components/budgets/wizard/BudgetStep1Client";
 import { BudgetStep2EventDetails } from "@/components/budgets/wizard/BudgetStep2EventDetails";
+import { BudgetStep3Lines } from "@/components/budgets/wizard/BudgetStep3Lines";
 import Button from "@/components/shared/Button";
 
 const TOTAL_STEPS = 5;
@@ -41,6 +42,7 @@ export const CreateBudgetPage: FC = () => {
 
       {step === 1 && <BudgetStep1Client />}
       {step === 2 && <BudgetStep2EventDetails />}
+      {step === 3 && <BudgetStep3Lines />}
     </div>
   );
 };

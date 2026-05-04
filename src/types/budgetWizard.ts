@@ -1,4 +1,5 @@
 import type { IRequest } from "./auth";
+import type { Budget } from "./budgets";
 
 export interface ClientWizardFormData {
   firstName: string;
@@ -27,6 +28,7 @@ export interface BudgetWizardState {
   step: number;
   prefillData: ClientWizardFormData | null;
   budgetId: string | null;
+  budget: Budget | null;
   createBudgetRequest: IRequest;
   updateEventDetailsRequest: IRequest;
 }

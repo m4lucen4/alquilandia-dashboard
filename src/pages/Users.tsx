@@ -113,7 +113,7 @@ export const Users: FC = () => {
       dispatch(resetWizard());
       const result = await dispatch(generateBudgetByIdThunk(user.id));
       if (generateBudgetByIdThunk.fulfilled.match(result)) {
-        dispatch(setExistingBudget(result.payload.id));
+        dispatch(setExistingBudget(result.payload));
         navigate("/budgets/new");
       }
     },
