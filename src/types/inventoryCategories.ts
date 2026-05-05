@@ -1,16 +1,15 @@
 import type { IRequest } from "./auth";
 
 export interface InventoryCategory {
-  _id: string;
-  name: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  id: string;
+  principal: string;
+  nombre: string;
 }
 
 export interface InventoryCategoryOption {
-  _id: string;
-  name: string;
+  id: string;
+  principal: string;
+  nombre: string;
 }
 
 export interface InventoryCategoryPaginatedResponse {
@@ -21,8 +20,8 @@ export interface InventoryCategoryPaginatedResponse {
 }
 
 export interface InventoryCategoryFormData {
-  name: string;
-  description?: string;
+  principal: string;
+  nombre: string;
 }
 
 export interface FetchPaginatedInventoryCategoriesParams {

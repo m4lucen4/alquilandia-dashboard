@@ -201,7 +201,7 @@ const inventoryCategoriesSlice = createSlice({
       })
       .addCase(deleteInventoryCategoryThunk.fulfilled, (state, action) => {
         state.inventoryCategories = state.inventoryCategories.filter(
-          (c) => c._id !== action.payload
+          (c) => c.id !== action.payload
         );
         state.deleteInventoryCategoryRequest = {
           inProgress: false,

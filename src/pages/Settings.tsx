@@ -5,8 +5,9 @@ import { TaxesTypesTab } from "@/components/settings/taxesTypes/TaxesTypesTab";
 import { InvoicesTypesTab } from "@/components/settings/invoicesTypes/InvoicesTypesTab";
 import { ShippingCostsTab } from "@/components/settings/shippingCosts/ShippingCostsTab";
 import { LogisticsTab } from "@/components/settings/logistics/LogisticsTab";
+import { InventoryCategoriesTab } from "@/components/settings/inventoryCategories/InventoryCategoriesTab";
 
-type TabId = "business" | "taxesTypes" | "invoicesTypes" | "shippingCosts" | "logistics";
+type TabId = "business" | "taxesTypes" | "invoicesTypes" | "shippingCosts" | "logistics" | "inventoryCategories";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "business", label: "Empresas" },
@@ -14,6 +15,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "invoicesTypes", label: "Tipos de Facturas" },
   { id: "shippingCosts", label: "Gastos de Envío" },
   { id: "logistics", label: "Logística" },
+  { id: "inventoryCategories", label: "Categorías de Inventario" },
 ];
 
 const TAB_COMPONENTS: Record<TabId, FC> = {
@@ -22,6 +24,7 @@ const TAB_COMPONENTS: Record<TabId, FC> = {
   invoicesTypes: InvoicesTypesTab,
   shippingCosts: ShippingCostsTab,
   logistics: LogisticsTab,
+  inventoryCategories: InventoryCategoriesTab,
 };
 
 export const Settings: FC = () => {
