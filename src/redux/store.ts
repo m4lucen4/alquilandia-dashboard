@@ -3,6 +3,7 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "./slices/authSlice";
 import budgetsReducer from "./slices/budgetsSlice";
+import budgetWizardReducer from "./slices/budgetWizardSlice";
 import businessReducer from "./slices/businessSlice";
 import taxesTypesReducer from "./slices/taxesTypesSlice";
 import invoicesTypesReducer from "./slices/invoicesTypesSlice";
@@ -10,18 +11,28 @@ import invoicesReducer from "./slices/invoicesSlice";
 import profileReducer from "./slices/profileSlice";
 import usersReducer from "./slices/usersSlice";
 import shippingCostsReducer from "./slices/shippingCostsSlice";
+import warehousesReducer from "./slices/warehousesSlice";
+import inventoryCategoriesReducer from "./slices/inventoryCategoriesSlice";
 
 const persistConfig = {
   key: "auth",
   storage,
 };
 
+const wizardPersistConfig = {
+  key: "budgetWizard",
+  storage,
+  blacklist: ["createBudgetRequest", "updateEventDetailsRequest"],
+};
+
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+const persistedBudgetWizardReducer = persistReducer(wizardPersistConfig, budgetWizardReducer);
 
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     budgets: budgetsReducer,
+    budgetWizard: persistedBudgetWizardReducer,
     business: businessReducer,
     taxesTypes: taxesTypesReducer,
     invoicesTypes: invoicesTypesReducer,
@@ -29,6 +40,8 @@ export const store = configureStore({
     profile: profileReducer,
     users: usersReducer,
     shippingCosts: shippingCostsReducer,
+    warehouses: warehousesReducer,
+    inventoryCategories: inventoryCategoriesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

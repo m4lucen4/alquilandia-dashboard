@@ -18,7 +18,7 @@ src/
 
 ## Decisiones tomadas
 - HTTP exclusivamente via `apiClient` (src/services/api.ts)
-- Redux Toolkit para estado global; redux-persist persiste auth
+- Redux Toolkit para estado global; redux-persist persiste auth y el wizard de presupuestos
 - Tailwind CSS v4 utility-first; no CSS Modules
 - TypeScript estricto en todo el proyecto
 
@@ -38,6 +38,7 @@ src/
 | `/create-action-rtk` | Añadir acciones RTK (service + thunk + types + slice) | activa |
 | `/pdf-generation` | Modificar o añadir generación de PDFs | activa |
 | `/create-form-rhf` | Crear o modificar formularios con React Hook Form + Zod | activa |
+| `/budget-wizard` | Añadir o modificar steps del wizard de creación de presupuestos | activa |
 
 > Antes de ejecutar una skill, lee `skills/<nombre>/SKILL.md`.
 

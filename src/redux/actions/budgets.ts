@@ -118,6 +118,19 @@ export const createBudgetConfirmThunk = createAsyncThunk(
   },
 );
 
+export const updateBudgetEventDetailsThunk = createAsyncThunk(
+  "budgetWizard/updateEventDetails",
+  async (params: UpdateBudgetParams, { rejectWithValue }) => {
+    try {
+      return await updateBudget(params);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al guardar los datos del evento";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const updateBudgetThunk = createAsyncThunk(
   "budgets/update",
   async (params: UpdateBudgetParams, { rejectWithValue }) => {

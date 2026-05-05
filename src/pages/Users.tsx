@@ -1,7 +1,9 @@
 import { type FC, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { fetchPaginatedUsersThunk, sendMassiveEmailThunk, createUserThunk, editUserThunk } from "../redux/actions/users";
+import { fetchPaginatedUsersThunk, sendMassiveEmailThunk, createUserThunk, editUserThunk, generateBudgetByIdThunk } from "../redux/actions/users";
 import { clearUsersTable } from "../redux/slices/usersSlice";
+import { setExistingBudget, resetWizard } from "../redux/slices/budgetWizardSlice";
 import { Alert } from "../components/shared/Alert";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { UsersTable } from "../components/users/UsersTable";
@@ -30,6 +32,7 @@ const mapFormCompany = (
 
 export const Users: FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { users, usersTotal, fetchPaginatedUsersRequest, sendMassiveEmailRequest, createUserRequest, editUserRequest } =
     useAppSelector((state) => state.users);
 
@@ -104,6 +107,18 @@ export const Users: FC = () => {
     setSelectedUser(user);
     setIsEditUserModalOpen(true);
   }, []);
+
+  const handleGenerateBudget = useCallback(
+    async (user: User) => {
+      dispatch(resetWizard());
+      const result = await dispatch(generateBudgetByIdThunk(user.id));
+      if (generateBudgetByIdThunk.fulfilled.match(result)) {
+        dispatch(setExistingBudget(result.payload));
+        navigate("/budgets/new");
+      }
+    },
+    [dispatch, navigate],
+  );
 
   const handleEditUser = useCallback(
     async (formData: EditUserFormValues) => {
@@ -300,6 +315,7 @@ export const Users: FC = () => {
           onPageSizeChange={handlePageSizeChange}
           onSelectionChange={handleSelectionChange}
           onEditUser={handleOpenEditUser}
+          onGenerateBudget={handleGenerateBudget}
         />
       </div>
     </>

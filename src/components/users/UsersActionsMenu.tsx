@@ -7,11 +7,13 @@ import type { User } from "../../types/budgets";
 interface UsersActionsMenuProps {
   user: User;
   onEditUser: (user: User) => void;
+  onGenerateBudget: (user: User) => void;
 }
 
 export const UsersActionsMenu: FC<UsersActionsMenuProps> = ({
   user,
   onEditUser,
+  onGenerateBudget,
 }) => {
   return (
     <Menu as="div" className="relative inline-block text-left">
@@ -32,6 +34,20 @@ export const UsersActionsMenu: FC<UsersActionsMenuProps> = ({
                 <Button
                   title="Editar usuario"
                   onClick={() => onEditUser(user)}
+                  variant="ghost"
+                  size="sm"
+                  block
+                  className={focus ? "bg-gray-100" : ""}
+                />
+              </div>
+            )}
+          </MenuItem>
+          <MenuItem>
+            {({ focus }) => (
+              <div className="px-2">
+                <Button
+                  title="Generar presupuesto"
+                  onClick={() => onGenerateBudget(user)}
                   variant="ghost"
                   size="sm"
                   block
