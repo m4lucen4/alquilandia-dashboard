@@ -32,6 +32,7 @@ const step2Schema = z.object({
     .object({ latitude: z.string(), longitude: z.string() })
     .optional(),
   distance: z.string().optional(),
+  pickupInWarehouse: z.boolean().optional(),
 });
 
 type Step2FormValues = z.infer<typeof step2Schema>;
@@ -72,10 +73,12 @@ export const BudgetStep2EventDetails: FC = () => {
           ? budget.location
           : undefined,
       distance: budget?.distance || undefined,
+      pickupInWarehouse: budget?.nosend ?? false,
     },
   });
 
   const distance = watch("distance");
+  const pickupInWarehouse = watch("pickupInWarehouse");
 
   const handleLocationChange = (loc: { latitude: string; longitude: string }) => {
     setValue("location", loc);
@@ -107,7 +110,8 @@ export const BudgetStep2EventDetails: FC = () => {
           comments: values.comments ?? "",
           commentsalquilandia: values.commentsalquilandia ?? "",
           location: values.location ?? budget.location,
-          distance: values.distance ?? budget.distance ?? "",
+          distance: values.pickupInWarehouse ? "0" : (values.distance ?? budget.distance ?? ""),
+          nosend: values.pickupInWarehouse ?? false,
         },
       }),
     );
@@ -155,7 +159,7 @@ export const BudgetStep2EventDetails: FC = () => {
                 )}
               />
 
-              {distance && (
+              {distance && !pickupInWarehouse && (
                 <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
                   <span className="font-medium">Distancia al almacén más cercano:</span>
                   <span className="font-bold">{distance}</span>
@@ -163,6 +167,24 @@ export const BudgetStep2EventDetails: FC = () => {
               )}
             </div>
           </div>
+
+          <Controller
+            name="pickupInWarehouse"
+            control={control}
+            render={({ field }) => (
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={field.value ?? false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 accent-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Los artículos se recogen en almacén
+                </span>
+              </label>
+            )}
+          />
 
           <Controller
             name="concepto"
@@ -179,39 +201,41 @@ export const BudgetStep2EventDetails: FC = () => {
             )}
           />
 
-          <Controller
-            name="comments"
-            control={control}
-            render={({ field }) => (
-              <InputField
-                label="Observaciones"
-                name={field.name}
-                value={field.value ?? ""}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                as="textarea"
-                rows={3}
-                error={errors.comments?.message}
-              />
-            )}
-          />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Controller
+              name="comments"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Observaciones"
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  as="textarea"
+                  rows={3}
+                  error={errors.comments?.message}
+                />
+              )}
+            />
 
-          <Controller
-            name="commentsalquilandia"
-            control={control}
-            render={({ field }) => (
-              <InputField
-                label="Observaciones internas"
-                name={field.name}
-                value={field.value ?? ""}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                as="textarea"
-                rows={3}
-                error={errors.commentsalquilandia?.message}
-              />
-            )}
-          />
+            <Controller
+              name="commentsalquilandia"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Observaciones internas"
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  as="textarea"
+                  rows={3}
+                  error={errors.commentsalquilandia?.message}
+                />
+              )}
+            />
+          </div>
         </div>
 
         {updateEventDetailsRequest.messages && !updateEventDetailsRequest.ok && (
