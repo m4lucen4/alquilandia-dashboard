@@ -43,7 +43,7 @@ const navigation: NavigationItem[] = [
   { name: "Inicio", href: "/", current: true },
   { name: "Usuarios", href: "/users", current: false },
   { name: "Presupuestos", href: "/budgets", current: false },
-  { name: "Inventario", href: "#", current: false },
+  { name: "Inventario", href: "/inventory", current: false },
   { name: "Contabilidad", href: "/accounting", current: false },
 ];
 

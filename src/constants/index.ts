@@ -1,4 +1,5 @@
 export const baseURL = import.meta.env.VITE_API_BASE_URL;
+export const s3BaseURL = import.meta.env.VITE_S3_BASE_URL;
 export const tokenName = "token";
 
 export const statusOptions = [
