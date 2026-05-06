@@ -14,6 +14,20 @@ export interface InventoryCategoryRef {
   nombre: string;
 }
 
+export interface InventoryExtra {
+  id?: string;
+  extraName: string;
+  price: number;
+  checked?: boolean;
+  units?: number;
+}
+
+export interface PriceException {
+  id?: string;
+  date: string;
+  price: number;
+}
+
 export interface Inventory {
   id: string;
   elemento: string;
@@ -25,8 +39,8 @@ export interface Inventory {
   precioCoste: number;
   bloqueo: number;
   private: boolean;
-  priceExceptionList: unknown[];
-  extras: unknown[];
+  priceExceptionList: PriceException[];
+  extras: InventoryExtra[];
   archivo: InventoryImage[];
   datetime: string;
   observaciones: string;
@@ -47,6 +61,10 @@ export interface InventoryFormData {
   private: boolean;
   observaciones?: string;
   images?: File[];
+  deletedImageIds?: string[];
+  archivo?: InventoryImage[];
+  extras?: InventoryExtra[];
+  priceExceptionList?: PriceException[];
 }
 
 export interface InventoryPaginatedResponse {

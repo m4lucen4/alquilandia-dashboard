@@ -23,14 +23,14 @@ export const editInventory = async (
   id: string,
   data: InventoryFormData
 ): Promise<Inventory> => {
-  const { images, ...rest } = data;
+  const { images, deletedImageIds, ...rest } = data;
   const body = new FormData();
   if (images && images.length > 0) {
     images.forEach((image) => {
       if (image) body.append("image[]", image);
     });
   }
-  body.append("inventory", JSON.stringify(rest));
+  body.append("inventory", JSON.stringify({ ...rest, deletedImageIds }));
   const response = await apiClient(`/inventory/${id}`, { method: "PUT", body });
   return response.json();
 };

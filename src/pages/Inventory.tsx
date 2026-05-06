@@ -13,13 +13,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { InventoryTable } from "../components/inventory/InventoryTable";
 import { ModalImagesInventory } from "../components/inventory/ModalImagesInventory";
 import {
-  ModalCreateInventory,
-  type CreateInventoryFormValues,
-} from "../components/inventory/ModalCreateInventory";
-import {
-  ModalEditInventory,
-  type EditInventoryFormValues,
-} from "../components/inventory/ModalEditInventory";
+  ModalInventory,
+  type InventoryFormValues,
+} from "../components/inventory/ModalInventory";
 import { Modal } from "../components/shared/Modal";
 import Button from "@/components/shared/Button";
 import { InventoryFilters } from "../components/inventory/InventoryFilters";
@@ -100,8 +96,7 @@ export const InventoryPage: FC = () => {
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [inventoryCategoriesOptions, filterPrincipal]);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
   const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -130,50 +125,50 @@ export const InventoryPage: FC = () => {
     };
   }, [dispatch]);
 
-  const handleCreateInventory = useCallback(
-    async (formData: CreateInventoryFormValues) => {
-      try {
-        await dispatch(
-          createInventoryThunk({
-            elemento: formData.elemento,
-            categoria: formData.categoria,
-            unidades: formData.unidades,
-            precioUd: formData.precioUd,
-            precioCoste: formData.precioCoste,
-            costeTotal: formData.costeTotal,
-            private: formData.private,
-            observaciones: formData.observaciones,
-            images: formData.images,
-          }),
-        ).unwrap();
-        setIsCreateModalOpen(false);
-        dispatch(
-          fetchPaginatedInventoryThunk({
-            pageSize,
-            pageToFetch: pageIndex + 1,
-            filtersQuery: buildFiltersQuery(),
-          }),
-        );
-      } catch {
-        // error visible via createInventoryRequest.messages
-      }
-    },
-    [dispatch, pageSize, pageIndex, buildFiltersQuery],
-  );
+  const handleOpenCreate = useCallback(() => {
+    setSelectedItem(null);
+    setIsInventoryModalOpen(true);
+  }, []);
 
   const handleOpenEdit = useCallback((item: Inventory) => {
     setSelectedItem(item);
-    setIsEditModalOpen(true);
+    setIsInventoryModalOpen(true);
   }, []);
 
-  const handleEditInventory = useCallback(
-    async (formData: EditInventoryFormValues) => {
-      if (!selectedItem) return;
+  const handleSaveInventory = useCallback(
+    async (formData: InventoryFormValues) => {
       try {
-        await dispatch(
-          editInventoryThunk({
-            id: selectedItem.id,
-            body: {
+        const priceExceptionList = formData.priceExceptionList.map((e) => ({
+          date: `${e.date}T11:00:00Z`,
+          price: e.price,
+        }));
+
+        if (selectedItem) {
+          const archivo = (selectedItem.archivo ?? []).filter(
+            (img) => !formData.deletedImageIds.includes(img.id),
+          );
+          await dispatch(
+            editInventoryThunk({
+              id: selectedItem.id,
+              body: {
+                elemento: formData.elemento,
+                categoria: formData.categoria,
+                unidades: formData.unidades,
+                precioUd: formData.precioUd,
+                precioCoste: formData.precioCoste,
+                costeTotal: formData.costeTotal,
+                private: formData.private,
+                observaciones: formData.observaciones,
+                images: formData.images,
+                archivo,
+                extras: formData.extras,
+                priceExceptionList,
+              },
+            }),
+          ).unwrap();
+        } else {
+          await dispatch(
+            createInventoryThunk({
               elemento: formData.elemento,
               categoria: formData.categoria,
               unidades: formData.unidades,
@@ -183,10 +178,12 @@ export const InventoryPage: FC = () => {
               private: formData.private,
               observaciones: formData.observaciones,
               images: formData.images,
-            },
-          }),
-        ).unwrap();
-        setIsEditModalOpen(false);
+              extras: formData.extras,
+              priceExceptionList,
+            }),
+          ).unwrap();
+        }
+        setIsInventoryModalOpen(false);
         setSelectedItem(null);
         dispatch(
           fetchPaginatedInventoryThunk({
@@ -196,7 +193,7 @@ export const InventoryPage: FC = () => {
           }),
         );
       } catch {
-        // error visible via editInventoryRequest.messages
+        // error visible via createInventoryRequest/editInventoryRequest.messages
       }
     },
     [dispatch, selectedItem, pageSize, pageIndex, buildFiltersQuery],
@@ -310,25 +307,19 @@ export const InventoryPage: FC = () => {
         }}
       />
 
-      <ModalCreateInventory
-        isOpen={isCreateModalOpen}
-        isCreating={createInventoryRequest.inProgress}
-        categoryOptions={inventoryCategoriesOptions}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateInventory}
-      />
-
-      <ModalEditInventory
-        key={selectedItem?.id}
-        isOpen={isEditModalOpen}
-        isEditing={editInventoryRequest.inProgress}
+      <ModalInventory
+        key={selectedItem?.id ?? "create"}
+        isOpen={isInventoryModalOpen}
+        isSaving={
+          createInventoryRequest.inProgress || editInventoryRequest.inProgress
+        }
         item={selectedItem}
         categoryOptions={inventoryCategoriesOptions}
         onClose={() => {
-          setIsEditModalOpen(false);
+          setIsInventoryModalOpen(false);
           setSelectedItem(null);
         }}
-        onSubmit={handleEditInventory}
+        onSubmit={handleSaveInventory}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
@@ -340,10 +331,9 @@ export const InventoryPage: FC = () => {
         <div className="mt-6 mb-4 flex items-center justify-between gap-3">
           <Button
             title="Nuevo artículo"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={handleOpenCreate}
             variant="secondary"
             icon={<PlusIcon className="h-4 w-4" />}
-            disabled
           />
         </div>
 

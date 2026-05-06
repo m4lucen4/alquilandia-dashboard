@@ -53,7 +53,6 @@ export const InventoryActionsMenu: FC<InventoryActionsMenuProps> = ({
                   variant="ghost"
                   size="sm"
                   block
-                  disabled
                   className={focus ? "bg-gray-100" : ""}
                 />
               </div>
