@@ -63,6 +63,7 @@ export interface Database {
           is_default?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
       };
       taxes_types: {
         Row: {
@@ -85,6 +86,7 @@ export interface Database {
           tax?: number;
           updated_at?: string;
         };
+        Relationships: [];
       };
       invoices_types: {
         Row: {
@@ -107,6 +109,39 @@ export interface Database {
           percentage?: number;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      inventory_documents: {
+        Row: {
+          id: string;
+          inventory_id: string;
+          storage_path: string;
+          file_name: string;
+          file_size: number;
+          mime_type: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          inventory_id: string;
+          storage_path: string;
+          file_name: string;
+          file_size?: number;
+          mime_type?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          inventory_id?: string;
+          storage_path?: string;
+          file_name?: string;
+          file_size?: number;
+          mime_type?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       invoices: {
         Row: {
@@ -153,6 +188,7 @@ export interface Database {
           event_date?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: {

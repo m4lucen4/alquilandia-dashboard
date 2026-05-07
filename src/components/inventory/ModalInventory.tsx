@@ -7,6 +7,7 @@ import InputField from "@/components/shared/InputField";
 import SelectField from "@/components/shared/SelectField";
 import Button from "@/components/shared/Button";
 import { PricesTab } from "./PricesTab";
+import { DocumentsSection } from "./DocumentsSection";
 import { s3BaseURL } from "@/constants";
 import type { Inventory } from "@/types/inventory";
 import type { InventoryCategoryOption } from "@/types/inventoryCategories";
@@ -38,12 +39,13 @@ const inventorySchema = z.object({
 
 export type InventoryFormValues = z.infer<typeof inventorySchema>;
 
-type Tab = "info" | "extras" | "precios";
+type Tab = "info" | "extras" | "precios" | "documentacion";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "info", label: "Información" },
   { id: "extras", label: "Extras" },
   { id: "precios", label: "Precios especiales" },
+  { id: "documentacion", label: "Documentación" },
 ];
 
 interface ModalInventoryProps {
@@ -223,7 +225,7 @@ export const ModalInventory: FC<ModalInventoryProps> = ({
             </div>
           </div>
 
-          <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
+          <div className="h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
             {activeTab === "info" && (
               <div className="space-y-4">
                 <Controller
@@ -465,6 +467,7 @@ export const ModalInventory: FC<ModalInventoryProps> = ({
                     )}
                   />
                 </div>
+
               </div>
             )}
 
@@ -544,6 +547,16 @@ export const ModalInventory: FC<ModalInventoryProps> = ({
             )}
 
             {activeTab === "precios" && <PricesTab control={control} />}
+
+            {activeTab === "documentacion" && (
+              isEditing ? (
+                <DocumentsSection inventoryId={item.id} />
+              ) : (
+                <p className="py-10 text-center text-sm text-gray-400">
+                  Guarda el artículo para poder adjuntar documentos
+                </p>
+              )
+            )}
           </div>
 
           <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 sm:px-8">

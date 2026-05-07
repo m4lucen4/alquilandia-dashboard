@@ -28,6 +28,16 @@ export interface PriceException {
   price: number;
 }
 
+export interface InventoryDocument {
+  id: string;
+  name: string;
+  path: string;
+  url: string;
+  size: number;
+  mimeType: string | null;
+  createdAt: string;
+}
+
 export interface Inventory {
   id: string;
   elemento: string;
