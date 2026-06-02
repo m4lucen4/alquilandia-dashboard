@@ -17,7 +17,8 @@ export const getRecords = async <T = unknown>(
   table: string,
   columns = "*",
 ): Promise<T[]> => {
-  const { data, error } = await supabase.from(table).select(columns);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase.from(table as any).select(columns);
 
   if (error) {
     console.error(`Error fetching records from ${table}:`, error);
@@ -42,7 +43,8 @@ export const getRecordById = async <T = unknown>(
   id: string,
   idColumn = "id",
 ): Promise<T | null> => {
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from(table)
     .select("*")
     .eq(idColumn, id)
@@ -69,7 +71,8 @@ export const insertRecord = async <T = unknown>(
   table: string,
   record: Partial<T>,
 ): Promise<T> => {
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from(table)
     .insert(record as never)
     .select()
@@ -104,7 +107,8 @@ export const updateRecord = async <T = unknown>(
   updates: Partial<T>,
   idColumn = "id",
 ): Promise<T> => {
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from(table)
     .update(updates as never)
     .eq(idColumn, id)
@@ -138,7 +142,8 @@ export const deleteRecord = async (
   id: string,
   idColumn = "id",
 ): Promise<void> => {
-  const { error } = await supabase.from(table).delete().eq(idColumn, id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from(table).delete().eq(idColumn, id);
 
   if (error) {
     console.error(`Error deleting record from ${table}:`, error);
@@ -161,7 +166,8 @@ export const queryRecords = async <T = unknown>(
   table: string,
   builder: (query: ReturnType<typeof supabase.from>) => unknown,
 ): Promise<T[]> => {
-  const query = supabase.from(table);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const query = (supabase as any).from(table);
   const { data, error } = await (builder(query) as Promise<{
     data: T[] | null;
     error: unknown;

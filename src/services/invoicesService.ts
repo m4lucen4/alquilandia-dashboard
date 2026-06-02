@@ -70,7 +70,7 @@ export const getAllInvoices = async (
   }
 
   if (budgetReference) {
-    query = query.eq("budget_reference", budgetReference);
+    query = query.eq("budget_reference", Number(budgetReference));
   }
 
   // Fetch all data without pagination to sort globally
@@ -85,7 +85,7 @@ export const getAllInvoices = async (
   }
 
   // Sort client-side: first by business.is_default (true first), then by invoice_number (descending)
-  const sortedInvoices = ((data || []) as Invoice[]).sort((a, b) => {
+  const sortedInvoices = ((data || []) as unknown as Invoice[]).sort((a, b) => {
     // First, sort by is_default (true comes first)
     const aIsDefault = a.business?.is_default ?? false;
     const bIsDefault = b.business?.is_default ?? false;
@@ -170,7 +170,7 @@ export const getInvoiceByBudgetReference = async (
     );
   }
 
-  return data as Invoice;
+  return data as unknown as Invoice;
 };
 
 /**
@@ -227,7 +227,7 @@ export const getInvoicesByBudgetReference = async (
     );
   }
 
-  return (data || []) as Invoice[];
+  return (data || []) as unknown as Invoice[];
 };
 
 /**
@@ -269,7 +269,7 @@ export const createInvoice = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .insert(insertData as any)
     .select()
-    .single()) as { data: Invoice | null; error: { message?: string } | null };
+    .single()) as unknown as { data: Invoice | null; error: { message?: string } | null };
 
   if (createError || !createdInvoice) {
     console.error("Error creating invoice:", createError);
@@ -323,10 +323,10 @@ export const createInvoice = async (
     }
 
     // Generate PDF
-    const pdfBlob = await generateInvoicePDF(fullInvoice as Invoice);
+    const pdfBlob = await generateInvoicePDF(fullInvoice as unknown as Invoice);
 
     // Upload PDF to Supabase Storage
-    const invoice = fullInvoice as Invoice;
+    const invoice = fullInvoice as unknown as Invoice;
     const fileName = buildInvoicePdfFileName(
       invoice.invoice_number,
       invoice.created_at,
@@ -359,7 +359,6 @@ export const createInvoice = async (
     // The update object is correctly typed, but Supabase's generic type isn't propagating
     const { data: updatedInvoice, error: updateError } = (await supabase
       .from("invoices")
-      // @ts-expect-error - Supabase type inference bug: incorrectly infers update param as 'never'
       .update({ pdf_url: pdfUrl })
       .eq("id", createdInvoice.id as string)
       .select(
@@ -401,10 +400,10 @@ export const createInvoice = async (
     if (updateError || !updatedInvoice) {
       console.error("Error updating invoice with PDF URL:", updateError);
       // Even if update fails, we still return the invoice
-      return { ...(fullInvoice as Invoice), pdf_url: pdfUrl } as Invoice;
+      return { ...(fullInvoice as unknown as Invoice), pdf_url: pdfUrl } as Invoice;
     }
 
-    return updatedInvoice as Invoice;
+    return updatedInvoice as unknown as Invoice;
   } catch (error) {
     console.error(
       "Error in invoice creation process:",
@@ -412,7 +411,7 @@ export const createInvoice = async (
     );
     // If PDF generation/upload fails, we still have the invoice created
     // Return it without PDF URL
-    return createdInvoice as Invoice;
+    return createdInvoice as unknown as Invoice;
   }
 };
 
@@ -469,7 +468,7 @@ export const createCorrectiveInvoice = async (
     );
   }
 
-  const originalInvoiceData = original as Invoice;
+  const originalInvoiceData = original as unknown as Invoice;
 
   // Step 2: Create budget lines with negative prices
   const negativeBudgetlines = originalInvoiceData.budgetlines.map((line) => ({
@@ -523,7 +522,7 @@ export const createCorrectiveInvoice = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .insert(insertData as any)
     .select()
-    .single()) as { data: Invoice | null; error: { message?: string } | null };
+    .single()) as unknown as { data: Invoice | null; error: { message?: string } | null };
 
   if (createError || !createdInvoice) {
     console.error("Error creating corrective invoice:", createError);
@@ -579,7 +578,7 @@ export const createCorrectiveInvoice = async (
     }
 
     // Generate PDF
-    const pdfBlob = await generateInvoicePDF(fullInvoice as Invoice);
+    const pdfBlob = await generateInvoicePDF(fullInvoice as unknown as Invoice);
 
     // Upload PDF to Supabase Storage
     const fileName = `invoice_corrective_${createdInvoice.id}.pdf`;
@@ -607,7 +606,6 @@ export const createCorrectiveInvoice = async (
     // Update invoice with PDF URL
     const { data: updatedInvoice, error: updateError } = (await supabase
       .from("invoices")
-      // @ts-expect-error - Supabase type inference bug
       .update({ pdf_url: pdfUrl })
       .eq("id", createdInvoice.id as string)
       .select(
@@ -651,16 +649,16 @@ export const createCorrectiveInvoice = async (
         "Error updating corrective invoice with PDF URL:",
         updateError,
       );
-      return { ...(fullInvoice as Invoice), pdf_url: pdfUrl } as Invoice;
+      return { ...(fullInvoice as unknown as Invoice), pdf_url: pdfUrl } as Invoice;
     }
 
-    return updatedInvoice as Invoice;
+    return updatedInvoice as unknown as Invoice;
   } catch (error) {
     console.error(
       "Error in corrective invoice creation process:",
       error instanceof Error ? error.message : error,
     );
-    return createdInvoice as Invoice;
+    return createdInvoice as unknown as Invoice;
   }
 };
 
@@ -720,7 +718,7 @@ export const updateInvoice = async (
     }
 
     // Step 2: Resolve event_date — use stored value or fetch from budget as fallback
-    const inv = currentInvoice as Invoice;
+    const inv = currentInvoice as unknown as Invoice;
     let resolvedEventDate: string | null =
       (data.event_date !== undefined ? data.event_date : inv.event_date) ?? null;
     if (!resolvedEventDate && inv.budget_reference) {
@@ -777,7 +775,7 @@ export const updateInvoice = async (
     const pdfBlob = await generateInvoicePDF(invoiceForPdf);
 
     // Step 3: Delete the old PDF if it exists (extract filename from stored pdf_url)
-    const oldPdfUrl = (currentInvoice as Invoice).pdf_url || "";
+    const oldPdfUrl = (currentInvoice as unknown as Invoice).pdf_url || "";
     const oldFileName = oldPdfUrl
       ? decodeURIComponent(oldPdfUrl.split("/").pop()?.split("?")[0] || "")
       : "";
@@ -845,7 +843,6 @@ export const updateInvoice = async (
 
     const { data: updatedInvoice, error: updateError } = (await supabase
       .from("invoices")
-      // @ts-expect-error - Supabase type inference bug
       .update(updateData)
       .eq("id", invoiceId)
       .select(
@@ -919,7 +916,7 @@ export const getRectifiedInvoiceIds = async (): Promise<string[]> => {
     return [];
   }
 
-  return ((data as { original_invoice_id: string | null }[] | null) || [])
+  return ((data as unknown as { original_invoice_id: string | null }[] | null) || [])
     .map((row) => row.original_invoice_id)
     .filter((id): id is string => Boolean(id));
 };
