@@ -728,12 +728,38 @@ export const updateInvoice = async (
       resolvedEventDate = budget?.eventDate ?? null;
     }
 
+    // Resolve invoices_type for PDF — if the type changed, fetch the new one so that
+    // show_budgetlines reflects the destination type (e.g. 25%→100% must show articles)
+    let resolvedInvoicesType = inv.invoices_type;
+    if (data.invoices_type_id !== inv.invoices_type_id) {
+      const { data: newType } = await supabase
+        .from("invoices_types")
+        .select("id, invoices, percentage, concept, show_budgetlines")
+        .eq("id", data.invoices_type_id)
+        .single();
+      if (newType) resolvedInvoicesType = newType as Invoice["invoices_type"];
+    }
+
+    // Resolve taxes_type for PDF — if the tax type changed, fetch the new one so that
+    // the IVA percentage shown in the PDF matches the updated tax type
+    let resolvedTaxesType = inv.taxes_type;
+    if (data.taxes_type_id !== inv.taxes_type_id) {
+      const { data: newTaxType } = await supabase
+        .from("taxes_types")
+        .select("id, name, tax")
+        .eq("id", data.taxes_type_id)
+        .single();
+      if (newTaxType) resolvedTaxesType = newTaxType as Invoice["taxes_type"];
+    }
+
     // Step 3: Generate new PDF with updated data
     const invoiceForPdf = {
       ...inv,
       business_id: data.business_id,
       invoices_type_id: data.invoices_type_id,
+      invoices_type: resolvedInvoicesType,
       taxes_type_id: data.taxes_type_id,
+      taxes_type: resolvedTaxesType,
       budgetlines: data.budgetlines,
       price: data.price,
       client_name: data.client_name || "",
