@@ -49,9 +49,15 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
         cell: (info) => {
           const budgetRef = info.getValue() as number;
           const hasInvoice = budgetHasInvoice(budgetRef);
+          const budget = info.row.original;
           return (
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">#{budgetRef}</span>
+              <button
+                onClick={() => onViewBudget(budget)}
+                className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+              >
+                #{budgetRef}
+              </button>
               {hasInvoice && (
                 <DocumentCheckIcon
                   className="h-5 w-5 text-green-600"

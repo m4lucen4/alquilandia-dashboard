@@ -93,17 +93,22 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       20,
       yPosition,
     );
+    yPosition += 7;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
     doc.text(
       `Fecha: ${new Date(invoice.created_at || "").toLocaleDateString("es-ES")}`,
-      pageWidth - 20,
+      20,
       yPosition,
-      { align: "right" },
     );
-    yPosition += 6;
-
-    doc.setFont("helvetica", "normal");
+    yPosition += 5;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
     doc.text(`Nº Presupuesto: ${invoice.budget_reference}`, 20, yPosition);
-    yPosition += 12;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    yPosition += 10;
 
     // Client data
     const columnWidth = pageWidth - 40;
@@ -210,7 +215,10 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
     }
 
     // Budget Lines Table (only if show_budgetlines is true)
-    if (invoice.invoices_type?.show_budgetlines !== false) {
+    if (invoice.invoices_type?.show_budgetlines === false) {
+      // If budget lines are not shown, add some spacing
+      yPosition += 5;
+    } else {
       yPosition += 5;
 
       const tableData: string[][] = [];
@@ -270,9 +278,6 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
         doc.addPage();
         yPosition = 20;
       }
-    } else {
-      // If budget lines are not shown, add some spacing
-      yPosition += 5;
     }
 
     // Price Summary (right aligned)
@@ -462,24 +467,30 @@ export const generateProformaPDF = async (
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text("FACTURA PROFORMA", 20, yPosition);
+    yPosition += 7;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
     doc.text(
       `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
-      pageWidth - 20,
+      20,
       yPosition,
-      { align: "right" },
     );
-    yPosition += 6;
+    yPosition += 5;
 
-    doc.setFont("helvetica", "normal");
     if (budget.address?.trim()) {
-      const eventAddressLines = doc.splitTextToSize(budget.address.trim(), 90);
+      const eventAddressLines = doc.splitTextToSize(budget.address.trim(), pageWidth - 40);
       eventAddressLines.forEach((line: string) => {
-        doc.text(line, pageWidth - 20, yPosition, { align: "right" });
+        doc.text(line, 20, yPosition);
         yPosition += 5;
       });
     }
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
     doc.text(`Nº Presupuesto: ${budget.budgetReference}`, 20, yPosition);
-    yPosition += 12;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    yPosition += 10;
 
     // Client data box
     const columnWidth = pageWidth - 40;
@@ -608,7 +619,8 @@ export const generateProformaPDF = async (
       const basePrice = getEffectiveUnitPrice(line, budget.eventDate);
       const unitPrice = Math.round(basePrice * factor * 100) / 100;
       const units = line.units || line.unidades || 1;
-      effectiveSubTotal += unitPrice * units;
+      const lineDiscountFactor = 1 - (line.descuento || 0) / 100;
+      effectiveSubTotal += Math.round(unitPrice * units * lineDiscountFactor * 100) / 100;
       line.extras?.forEach((extra) => {
         if (extra.checked) {
           effectiveExtras += Math.round(extra.price * factor * 100) / 100 * extra.units;
@@ -616,10 +628,9 @@ export const generateProformaPDF = async (
       });
     });
 
-    const costSend = Math.round((budget.price?.costSend || 0) * factor * 100) / 100;
     const userDiscount = Math.round((budget.price?.userDiscount || 0) * factor * 100) / 100;
     const couponDiscount = Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100;
-    const vatBase = effectiveSubTotal + effectiveExtras + costSend - userDiscount - couponDiscount;
+    const vatBase = effectiveSubTotal + effectiveExtras - userDiscount - couponDiscount;
     const effectiveVat = Math.round(vatBase * (taxRate / 100) * 100) / 100;
     const effectiveTotal = Math.round((vatBase + effectiveVat) * 100) / 100;
 
@@ -636,10 +647,6 @@ export const generateProformaPDF = async (
       doc.text(formatCurrency(effectiveExtras), pageWidth - 20, yPosition, { align: "right" });
       yPosition += 5;
     }
-
-    doc.text("Gastos de transporte:", summaryX, yPosition, { align: "right" });
-    doc.text(formatCurrency(costSend), pageWidth - 20, yPosition, { align: "right" });
-    yPosition += 5;
 
     if (userDiscount > 0) {
       doc.setTextColor(211, 47, 47);
@@ -762,120 +769,131 @@ export const generateBudgetPDF = async (
 
     yPosition += 35;
 
-    // Budget title and reference number
-    doc.setFontSize(12);
+    // Budget title and all header info — left-aligned
+    doc.setFontSize(13);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text(`PRESUPUESTO Nº: ${budget.budgetReference}`, 20, yPosition);
-    doc.text(
-      `Fecha y dirección del evento: ${new Date(budget.eventDate).toLocaleDateString("es-ES")}`,
-      pageWidth - 20,
-      yPosition,
-      { align: "right" },
-    );
-    yPosition += 6;
+    yPosition += 8;
 
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
+    doc.text(
+      `Fecha del evento: ${new Date(budget.eventDate).toLocaleDateString("es-ES")}`,
+      20,
+      yPosition,
+    );
+    yPosition += 5;
+
     if (budget.address?.trim()) {
-      const addressLines = doc.splitTextToSize(budget.address.trim(), 90);
+      const addressLines = doc.splitTextToSize(budget.address.trim(), pageWidth - 40);
       addressLines.forEach((line: string) => {
-        doc.text(line, pageWidth - 20, yPosition, { align: "right" });
+        doc.text(line, 20, yPosition);
         yPosition += 5;
       });
     }
+
     doc.text(
       `Fecha: ${new Date(date).toLocaleDateString("es-ES")}`,
       20,
       yPosition,
     );
-    yPosition += 6;
+    yPosition += 5;
 
     if (budget.technician?.role === "TECHNICIAN" && budget.technician?.firstName) {
       doc.text(`Le atendió: ${budget.technician.firstName}`, 20, yPosition);
-      yPosition += 6;
+      yPosition += 5;
     }
 
-    yPosition += 2;
+    yPosition += 4;
 
-    // Client data box
-    const columnWidth = pageWidth - 40;
-    const boxHeight = 30;
+    // Two-column layout: client data (left) + comments (right)
+    const colGap = 8;
+    const colWidth = (pageWidth - 40 - colGap) / 2;
+    const leftColX = 20;
+    const rightColX = leftColX + colWidth + colGap;
+    const clientBoxStartY = yPosition + 2;
+    const boxHeight = 32;
 
     doc.setFillColor(232, 245, 233);
-    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "F");
+    doc.rect(leftColX, clientBoxStartY, colWidth, boxHeight, "F");
     doc.setDrawColor(129, 199, 132);
-    doc.rect(20, yPosition + 2, columnWidth, boxHeight, "S");
+    doc.rect(leftColX, clientBoxStartY, colWidth, boxHeight, "S");
 
-    let clientY = yPosition + 8;
+    let clientY = clientBoxStartY + 6;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(budget.client || "-", 24, clientY);
+    doc.text(budget.client || "-", leftColX + 4, clientY);
     clientY += 5;
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`NIF: ${clientData.client_nif || "-"}`, 24, clientY);
+    doc.text(`NIF: ${clientData.client_nif || "-"}`, leftColX + 4, clientY);
     clientY += 4;
 
     const clientAddress = doc.splitTextToSize(
       clientData.client_address || "",
-      columnWidth - 8,
+      colWidth - 8,
     );
-    doc.text(clientAddress, 24, clientY);
+    doc.text(clientAddress, leftColX + 4, clientY);
     clientY += clientAddress.length * 4;
 
     doc.text(
       `${clientData.client_postal_code || ""} ${clientData.client_locality || ""}`,
-      24,
+      leftColX + 4,
       clientY,
     );
     clientY += 4;
-    doc.text(`Tel: ${clientData.client_phone || ""}`, 24, clientY);
+    doc.text(`Tel: ${clientData.client_phone || ""}`, leftColX + 4, clientY);
     clientY += 4;
-    doc.text(`Email: ${budget.user?.email || ""}`, 24, clientY);
+    doc.text(`Email: ${budget.user?.email || ""}`, leftColX + 4, clientY);
 
-    yPosition += boxHeight + 12;
+    // Right column: comments stacked vertically
+    let rightY = clientBoxStartY;
+    let rightColUsedHeight = 0;
 
-    // Comments (client) and internal comments
     if (budget.comments?.trim()) {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text("Comentarios del cliente:", 20, yPosition);
-      yPosition += 5;
+      doc.text("Comentarios del cliente:", rightColX, rightY + 5);
+      rightY += 10;
+      rightColUsedHeight += 10;
 
       doc.setFont("helvetica", "normal");
-      const commentLines = doc.splitTextToSize(budget.comments.trim(), pageWidth - 44);
+      const commentLines = doc.splitTextToSize(budget.comments.trim(), colWidth - 8);
       const commentHeight = commentLines.length * 5 + 4;
 
       doc.setFillColor(227, 242, 253);
-      doc.rect(20, yPosition, pageWidth - 40, commentHeight, "F");
+      doc.rect(rightColX, rightY, colWidth, commentHeight, "F");
       doc.setDrawColor(100, 181, 246);
-      doc.rect(20, yPosition, pageWidth - 40, commentHeight, "S");
-
-      doc.text(commentLines, 24, yPosition + 5);
-      yPosition += commentHeight + 6;
+      doc.rect(rightColX, rightY, colWidth, commentHeight, "S");
+      doc.text(commentLines, rightColX + 4, rightY + 5);
+      rightY += commentHeight + 4;
+      rightColUsedHeight += commentHeight + 4;
     }
 
     if (budget.commentsalquilandia?.trim()) {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text("Notas internas:", 20, yPosition);
-      yPosition += 5;
+      doc.text("Notas internas:", rightColX, rightY + 5);
+      rightY += 10;
+      rightColUsedHeight += 10;
 
       doc.setFont("helvetica", "normal");
-      const internalLines = doc.splitTextToSize(budget.commentsalquilandia.trim(), pageWidth - 44);
+      const internalLines = doc.splitTextToSize(budget.commentsalquilandia.trim(), colWidth - 8);
       const internalHeight = internalLines.length * 5 + 4;
 
       doc.setFillColor(255, 243, 224);
-      doc.rect(20, yPosition, pageWidth - 40, internalHeight, "F");
+      doc.rect(rightColX, rightY, colWidth, internalHeight, "F");
       doc.setDrawColor(255, 167, 38);
-      doc.rect(20, yPosition, pageWidth - 40, internalHeight, "S");
-
-      doc.text(internalLines, 24, yPosition + 5);
-      yPosition += internalHeight + 6;
+      doc.rect(rightColX, rightY, colWidth, internalHeight, "S");
+      doc.text(internalLines, rightColX + 4, rightY + 5);
+      rightColUsedHeight += internalHeight + 4;
     }
+
+    yPosition += Math.max(boxHeight + 4, rightColUsedHeight) + 8;
 
     // Budget Lines Table
     yPosition += 5;
@@ -891,17 +909,17 @@ export const generateBudgetPDF = async (
         line.descuento ? `${line.descuento}%` : "-",
         formatCurrency(line.totalPrice),
       ]);
-      line.extras?.forEach((extra) => {
-        if (extra.checked) {
-          tableData.push([
-            extra.units.toString(),
-            extra.extraName || "-",
-            formatCurrency(extra.price),
-            "-",
-            formatCurrency(extra.units * extra.price),
-          ]);
-        }
-      });
+      // line.extras?.forEach((extra) => {
+      //   if (extra.checked) {
+      //     tableData.push([
+      //       extra.units.toString(),
+      //       extra.extraName || "-",
+      //       formatCurrency(extra.price),
+      //       "-",
+      //       formatCurrency(extra.units * extra.price),
+      //     ]);
+      //   }
+      // });
     });
 
     autoTable(doc, {
