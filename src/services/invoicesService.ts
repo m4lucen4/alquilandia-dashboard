@@ -24,7 +24,7 @@ const buildInvoicePdfFileName = (
     .normalize("NFD")
     .replaceAll(/[\u0300-\u036f]/g, "")
     .replaceAll(/ñ/gi, "n")
-    .replaceAll(/[/\\:*?"<>|]/g, "")
+    .replaceAll(/[/\\:*?"<>|“”‘’]/g, "")
     .replaceAll(/\s+/g, "_");
   return `${num}_${client}_${budgetReference}.pdf`;
 };
