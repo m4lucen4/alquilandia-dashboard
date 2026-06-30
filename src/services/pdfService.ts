@@ -909,17 +909,17 @@ export const generateBudgetPDF = async (
         line.descuento ? `${line.descuento}%` : "-",
         formatCurrency(line.totalPrice),
       ]);
-      // line.extras?.forEach((extra) => {
-      //   if (extra.checked) {
-      //     tableData.push([
-      //       extra.units.toString(),
-      //       extra.extraName || "-",
-      //       formatCurrency(extra.price),
-      //       "-",
-      //       formatCurrency(extra.units * extra.price),
-      //     ]);
-      //   }
-      // });
+      line.extras?.forEach((extra) => {
+        if (extra.checked) {
+          tableData.push([
+            extra.units.toString(),
+            extra.extraName || "-",
+            formatCurrency(extra.price),
+            "-",
+            formatCurrency(extra.units * extra.price),
+          ]);
+        }
+      });
     });
 
     autoTable(doc, {
@@ -961,8 +961,7 @@ export const generateBudgetPDF = async (
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
 
-    const subTotal = budget.price?.subTotal || 0;
-    const extras = budget.price?.extras || 0;
+    const subTotal = (budget.price?.subTotal || 0) + (budget.price?.extras || 0);
     const costSend = budget.price?.costSend || 0;
     const userDiscount = budget.price?.userDiscount || 0;
     const couponDiscount = budget.totalCouponDiscount || 0;
@@ -972,14 +971,6 @@ export const generateBudgetPDF = async (
       align: "right",
     });
     yPosition += 5;
-
-    if (extras > 0) {
-      doc.text("Extras:", summaryX, yPosition, { align: "right" });
-      doc.text(formatCurrency(extras), pageWidth - 20, yPosition, {
-        align: "right",
-      });
-      yPosition += 5;
-    }
 
     doc.text("Gastos de transporte:", summaryX, yPosition, { align: "right" });
     doc.text(formatCurrency(costSend), pageWidth - 20, yPosition, {
