@@ -813,7 +813,27 @@ export const generateBudgetPDF = async (
     const leftColX = 20;
     const rightColX = leftColX + colWidth + colGap;
     const clientBoxStartY = yPosition + 2;
-    const boxHeight = 32;
+
+    // Pre-calculate wrappable content to determine dynamic box height
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    const clientNameLines = doc.splitTextToSize(budget.client || "-", colWidth - 8);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const clientAddress = doc.splitTextToSize(
+      clientData.client_address || "",
+      colWidth - 8,
+    );
+
+    const contentHeight =
+      clientNameLines.length * 5 + // name
+      4 + // NIF
+      clientAddress.length * 4 + // address
+      4 + // postal + locality
+      4 + // phone
+      4; // email
+    const boxHeight = Math.max(32, contentHeight + 12);
 
     doc.setFillColor(232, 245, 233);
     doc.rect(leftColX, clientBoxStartY, colWidth, boxHeight, "F");
@@ -823,18 +843,14 @@ export const generateBudgetPDF = async (
     let clientY = clientBoxStartY + 6;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(budget.client || "-", leftColX + 4, clientY);
-    clientY += 5;
+    doc.text(clientNameLines, leftColX + 4, clientY);
+    clientY += clientNameLines.length * 5;
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`NIF: ${clientData.client_nif || "-"}`, leftColX + 4, clientY);
     clientY += 4;
 
-    const clientAddress = doc.splitTextToSize(
-      clientData.client_address || "",
-      colWidth - 8,
-    );
     doc.text(clientAddress, leftColX + 4, clientY);
     clientY += clientAddress.length * 4;
 
