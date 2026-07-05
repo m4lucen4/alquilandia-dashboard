@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
 import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
-import { resetWizard } from "../redux/slices/budgetWizardSlice";
+import { resetWizard, rescueBudget } from "../redux/slices/budgetWizardSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
 import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
@@ -18,6 +18,7 @@ import { BudgetsTable } from "../components/budgets/BudgetsTable";
 import type { Budget, User } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
+import { getBudgetById } from "../services/budgetsServices";
 import { PageHeader } from "@/components/shared/PageHeader";
 import Button from "@/components/shared/Button";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
@@ -348,6 +349,24 @@ export const Budgets: FC = () => {
     setSelectedUserToView(null);
   }, []);
 
+  const handleRescueBudget = useCallback(async () => {
+    if (!selectedBudgetToView) return;
+    const budgetFromList = selectedBudgetToView;
+    handleCloseViewBudgetModal();
+    dispatch(resetWizard());
+    try {
+      const freshBudget = await getBudgetById(budgetFromList.id);
+      const withIVA = freshBudget.price?.withIVA || budgetFromList.price?.withIVA;
+      dispatch(rescueBudget({
+        ...budgetFromList,
+        price: { ...budgetFromList.price, withIVA },
+      }));
+    } catch {
+      dispatch(rescueBudget(budgetFromList));
+    }
+    navigate("/budgets/new");
+  }, [selectedBudgetToView, handleCloseViewBudgetModal, dispatch, navigate]);
+
   const handleViewInvoice = useCallback(async (budget: Budget) => {
     setLoadingInvoice(true);
     try {
@@ -453,6 +472,7 @@ export const Budgets: FC = () => {
         onClose={handleCloseViewBudgetModal}
         budget={selectedBudgetToView}
         user={selectedUserToView}
+        onRescue={handleRescueBudget}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">

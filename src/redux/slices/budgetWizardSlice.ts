@@ -49,6 +49,14 @@ const budgetWizardSlice = createSlice({
       state.prefillData = null;
       state.createBudgetRequest = requestIdle;
     },
+    rescueBudget(state, action: PayloadAction<Budget>) {
+      state.budgetId = action.payload.id;
+      state.budget = action.payload;
+      state.step = 3;
+      state.prefillData = null;
+      state.createBudgetRequest = requestIdle;
+      state.updateEventDetailsRequest = requestIdle;
+    },
     goBackStep(state) {
       if (state.step > 1) state.step -= 1;
     },
@@ -201,7 +209,7 @@ const budgetWizardSlice = createSlice({
   },
 });
 
-export const { setPrefillData, setExistingBudget, goBackStep, goNextStep, goToStep, resetWizard, clearCreateBudgetError } =
+export const { setPrefillData, setExistingBudget, rescueBudget, goBackStep, goNextStep, goToStep, resetWizard, clearCreateBudgetError } =
   budgetWizardSlice.actions;
 
 export default budgetWizardSlice.reducer;

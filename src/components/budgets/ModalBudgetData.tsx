@@ -1,5 +1,6 @@
 import { type FC } from "react";
 import { Modal } from "../shared/Modal";
+import Button from "../shared/Button";
 import type { Budget, User } from "../../types/budgets";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
@@ -10,6 +11,7 @@ interface ModalBudgetDataProps {
   onClose: () => void;
   budget: Budget | null;
   user: User | null;
+  onRescue?: () => void;
 }
 
 export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
@@ -17,6 +19,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
   onClose,
   budget,
   user,
+  onRescue,
 }) => {
   if (!isOpen || !budget) return null;
 
@@ -183,6 +186,16 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {onRescue && (
+          <div className="flex justify-end pt-2">
+            <Button
+              title="Rescatar presupuesto"
+              onClick={onRescue}
+              variant="secondary"
+            />
           </div>
         )}
 

@@ -193,7 +193,8 @@ export function recalculatePrice(
 
   const totalPriceWithoutVat = subTotalWithExtras + costSend - applied;
   const vat = totalPriceWithoutVat * VAT_FACTOR;
-  const total = totalPriceWithoutVat + vat;
+  const withIVA = prevPrice.withIVA ?? false;
+  const total = withIVA ? totalPriceWithoutVat + vat : totalPriceWithoutVat;
 
   return {
     ...budget,

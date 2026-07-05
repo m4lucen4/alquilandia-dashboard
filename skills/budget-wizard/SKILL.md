@@ -164,6 +164,7 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
 **Layout del catálogo**: grid siempre a `sm:2 / lg:3 / xl:4` columnas — el carrito NO reduce el grid.
 
 **Carrito como drawer fijo** (desktop):
+  - Empieza **cerrado** (`useState(false)`) — el usuario lo abre con la lengüeta.
   - Botón toggle `fixed right-0 top-1/2` — lengüeta con icono de carrito + badge con número de líneas. Solo visible en `lg:`.
   - Cuando abierto: panel `fixed right-0 top-0 bottom-0 w-80` con scroll propio y cabecera con botón de cierre.
   - En mobile (`lg:hidden`): `CartSummary` apilado debajo del catálogo.
@@ -192,6 +193,11 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
   - `recalculatePrice(budget, shippingCosts?)` — canónico; sin `shippingCosts` conserva `prevPrice.costSend` (compat. step 3)
 
 **Dominio descuentos** creado completo: `src/types/discounts.ts`, `src/services/discountsService.ts`, `src/redux/actions/discounts.ts`, `src/redux/slices/discountsSlice.ts`. Registrado en store sin persist.
+
+**Catálogo bajo demanda**: el catálogo **no se carga al montar** — solo cuando el usuario ejecuta una búsqueda. Se controla con un `hasSearched` local:
+  - Inicializado a `() => catalogProducts.length > 0` (lazy initializer) para que al volver del step 4 se sigan mostrando los resultados previos.
+  - Se pone a `true` en `handleSearch`. Mientras sea `false` se muestra el placeholder "Usa los filtros para buscar artículos." en lugar del grid.
+  - `hasSearched` debe inicializarse **después** de los `useAppSelector` — antes de eso `catalogProducts` no existe y lanzaría un `ReferenceError`.
 
 **Disponibilidad por card**: `unidades − stockByProductId[id] − unitsEnBudgetLines`. El stock se pide en batch al cambiar página (0 GETs extra por operación de carrito).
 
@@ -261,6 +267,8 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
   - `calculateCostSend`: parsea `"18,5 km"` con coma decimal; maxBlock/hasMultipleBlocks → variante Zero, NotZero o ambas
   - Descuento aplicado: `userDiscount` del cliente (porcentaje sobre `subTotal − packs`)
   - Base del IVA: `subTotalWithExtras + costSend − userDiscount`
+
+**Corrección automática de `costSend` al entrar al step 4**: el step 3 llama a `recalculatePrice` sin `shippingCosts`, por lo que conserva el `costSend` previo. Pero cuando el budget se guarda por primera vez en el step 2 (event details), no hay líneas todavía → `calculateCostSend` devuelve 0 → el budget llega al step 4 con `costSend = 0`. Para corregirlo hay un `useEffect` que depende de `[shippingCosts]`: cuando `shippingCosts` se carga, compara `calculateCostSend(budget, shippingCosts)` con `budget.price.costSend` y si difieren despacha `updateBudgetLinesThunk` para persistir el valor correcto. Solo se ejecuta una vez por visita al step 4.
 
 **Flujo de mutaciones** (todas → `updateBudgetLinesThunk` → POST Budget completo → fulfilled actualiza `state.budget` sin avanzar step):
   - Líneas: `updateBudgetLineValues(budget, lineId, patch, shippingCosts)` → POST
