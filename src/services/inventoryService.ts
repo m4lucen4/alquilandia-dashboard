@@ -6,6 +6,11 @@ import type {
   ProductBlock,
 } from "../types/inventory";
 
+export const getProductStock = async (productId: string, budgetId: string): Promise<number> => {
+  const response = await apiClient(`/inventory/${productId}/stock?budgetId=${budgetId}`);
+  return response.json();
+};
+
 export const createInventory = async (data: InventoryFormData): Promise<Inventory> => {
   const { images, ...rest } = data;
   const body = new FormData();

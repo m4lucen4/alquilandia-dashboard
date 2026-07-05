@@ -2,9 +2,29 @@ import { apiClient } from "./api";
 import type {
   BudgetsResponse,
   Budget,
+  BudgetPaginatedProductsResponse,
   Receipt,
   UnavailableProduct,
 } from "../types/budgets";
+
+export interface FetchBudgetCatalogParams {
+  budgetId: string;
+  pageSize: number;
+  pageToFetch: number;
+  filtersQuery: string;
+}
+
+export const getBudgetPaginatedProducts = async ({
+  budgetId,
+  pageSize,
+  pageToFetch,
+  filtersQuery,
+}: FetchBudgetCatalogParams): Promise<BudgetPaginatedProductsResponse> => {
+  let url = `/budgets/${budgetId}/paginatedProducts?pageSize=${pageSize}&pageToFetch=${pageToFetch}`;
+  if (filtersQuery) url += `&${filtersQuery}`;
+  const response = await apiClient(url);
+  return response.json();
+};
 
 export interface GetBudgetsParams {
   pageSize: number;

@@ -15,3 +15,20 @@ export { getStatusBadgeConfig } from "./badgetsStatus";
 
 // Helpers de facturas
 export { formatInvoiceNumber } from "./invoices";
+
+// Helpers de líneas de presupuesto
+export {
+  getExceptionPrice,
+  buildBudgetLine,
+  recalculatePrice,
+  upsertBudgetLine,
+  removeBudgetLine,
+  setBudgetLineUnits,
+  calculateCostSend,
+  recalculateCouponDiscount,
+  getAppliedDiscount,
+  updateBudgetLineValues,
+} from "./budgetLines";
+
+// Helpers de filtros de catálogo
+export { normalizeElementoToRegex, buildCatalogFiltersQuery } from "./inventoryFilters";

@@ -14,13 +14,16 @@ import {
   checkoutBudget,
   getStripeSecret,
   getStripeFinalSecret,
+  getBudgetPaginatedProducts,
   type GetBudgetsParams,
   type CreateBudgetParams,
   type UpdateBudgetParams,
   type UpdateBudgetTechnicianParams,
   type CheckoutBudgetParams,
   type GetStripeSecretParams,
+  type FetchBudgetCatalogParams,
 } from "../../services/budgetsServices";
+import { getProductStock } from "../../services/inventoryService";
 import type { BudgetError } from "../../types/budgets";
 
 export const fetchBudgets = createAsyncThunk(
@@ -114,6 +117,92 @@ export const createBudgetConfirmThunk = createAsyncThunk(
         code: "UNKNOWN",
         message: apiError.message || "Error al crear el presupuesto",
       } satisfies BudgetError);
+    }
+  },
+);
+
+// ─── Thunks del wizard Step 3 ─────────────────────────────────────────────────
+
+export const fetchBudgetCatalogThunk = createAsyncThunk(
+  "budgetWizard/fetchCatalog",
+  async (params: FetchBudgetCatalogParams, { rejectWithValue }) => {
+    try {
+      const response = await getBudgetPaginatedProducts(params);
+      return { response, pageToFetch: params.pageToFetch, filtersQuery: params.filtersQuery };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al obtener el catálogo";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchCatalogStockThunk = createAsyncThunk(
+  "budgetWizard/fetchStock",
+  async (
+    { budgetId, productIds }: { budgetId: string; productIds: string[] },
+    { rejectWithValue },
+  ) => {
+    try {
+      const results = await Promise.all(
+        productIds.map((id) => getProductStock(id, budgetId)),
+      );
+      return productIds.reduce<Record<string, number>>((acc, id, idx) => {
+        acc[id] = results[idx];
+        return acc;
+      }, {});
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al obtener el stock";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const updateBudgetLinesThunk = createAsyncThunk(
+  "budgetWizard/updateLines",
+  async (params: UpdateBudgetParams, { rejectWithValue }) => {
+    try {
+      return await updateBudget(params);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al guardar las líneas del presupuesto";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+// ─── Thunks del wizard Step 5 ─────────────────────────────────────────────────
+
+export const budgetWizardCheckoutThunk = createAsyncThunk(
+  "budgetWizard/checkout",
+  async (params: CheckoutBudgetParams, { rejectWithValue }) => {
+    try {
+      const result = await checkoutBudget(params);
+      if (Array.isArray(result)) {
+        return rejectWithValue({
+          code: "PRODUCTS_UNAVAILABLE",
+          products: result,
+        } satisfies BudgetError);
+      }
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al finalizar el presupuesto";
+      return rejectWithValue({ code: "UNKNOWN", message: errorMessage } satisfies BudgetError);
+    }
+  },
+);
+
+export const budgetWizardArchiveThunk = createAsyncThunk(
+  "budgetWizard/archive",
+  async (params: UpdateBudgetParams, { rejectWithValue }) => {
+    try {
+      return await updateBudget(params);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al archivar el presupuesto";
+      return rejectWithValue(errorMessage);
     }
   },
 );

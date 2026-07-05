@@ -1,5 +1,13 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { createBudgetThunk, updateBudgetEventDetailsThunk } from "../actions/budgets";
+import {
+  createBudgetThunk,
+  updateBudgetEventDetailsThunk,
+  fetchBudgetCatalogThunk,
+  fetchCatalogStockThunk,
+  updateBudgetLinesThunk,
+  budgetWizardCheckoutThunk,
+  budgetWizardArchiveThunk,
+} from "../actions/budgets";
 import type { BudgetWizardState, ClientWizardFormData } from "@/types/budgetWizard";
 import type { Budget, BudgetError } from "@/types/budgets";
 
@@ -12,6 +20,16 @@ const initialState: BudgetWizardState = {
   budget: null,
   createBudgetRequest: requestIdle,
   updateEventDetailsRequest: requestIdle,
+  catalogProducts: [],
+  catalogTotal: 0,
+  catalogPage: 1,
+  catalogFiltersQuery: "",
+  stockByProductId: {},
+  fetchCatalogRequest: requestIdle,
+  fetchStockRequest: requestIdle,
+  updateLinesRequest: requestIdle,
+  finalizeRequest: requestIdle,
+  unavailableProducts: [],
 };
 
 const budgetWizardSlice = createSlice({
@@ -33,6 +51,12 @@ const budgetWizardSlice = createSlice({
     },
     goBackStep(state) {
       if (state.step > 1) state.step -= 1;
+    },
+    goNextStep(state) {
+      if (state.step < 5) state.step += 1;
+    },
+    goToStep(state, action: PayloadAction<number>) {
+      if (action.payload >= 1 && action.payload <= 5) state.step = action.payload;
     },
     resetWizard() {
       return initialState;
@@ -66,6 +90,99 @@ const budgetWizardSlice = createSlice({
         ok: false,
       };
     });
+    // Step 3 — catálogo
+    builder.addCase(fetchBudgetCatalogThunk.pending, (state) => {
+      state.fetchCatalogRequest = { inProgress: true, messages: "", ok: false };
+    });
+    builder.addCase(fetchBudgetCatalogThunk.fulfilled, (state, action) => {
+      state.fetchCatalogRequest = { inProgress: false, messages: "", ok: true };
+      state.catalogProducts = action.payload.response.inventory ?? [];
+      state.catalogTotal = action.payload.response.total ?? 0;
+      state.catalogPage = action.payload.pageToFetch;
+      state.catalogFiltersQuery = action.payload.filtersQuery;
+    });
+    builder.addCase(fetchBudgetCatalogThunk.rejected, (state, action) => {
+      state.fetchCatalogRequest = {
+        inProgress: false,
+        messages: (action.payload as string) || "Error al obtener el catálogo",
+        ok: false,
+      };
+    });
+
+    builder.addCase(fetchCatalogStockThunk.pending, (state) => {
+      state.fetchStockRequest = { inProgress: true, messages: "", ok: false };
+    });
+    builder.addCase(fetchCatalogStockThunk.fulfilled, (state, action) => {
+      state.fetchStockRequest = { inProgress: false, messages: "", ok: true };
+      state.stockByProductId = action.payload;
+    });
+    builder.addCase(fetchCatalogStockThunk.rejected, (state, action) => {
+      state.fetchStockRequest = {
+        inProgress: false,
+        messages: (action.payload as string) || "Error al obtener el stock",
+        ok: false,
+      };
+    });
+
+    // updateLines: guarda budget sin avanzar step
+    builder.addCase(updateBudgetLinesThunk.pending, (state) => {
+      state.updateLinesRequest = { inProgress: true, messages: "", ok: false };
+    });
+    builder.addCase(updateBudgetLinesThunk.fulfilled, (state, action) => {
+      state.updateLinesRequest = { inProgress: false, messages: "", ok: true };
+      state.budget = action.payload;
+    });
+    builder.addCase(updateBudgetLinesThunk.rejected, (state, action) => {
+      state.updateLinesRequest = {
+        inProgress: false,
+        messages: (action.payload as string) || "Error al guardar las líneas del presupuesto",
+        ok: false,
+      };
+    });
+
+    // Step 5 — checkout
+    builder.addCase(budgetWizardCheckoutThunk.pending, (state) => {
+      state.finalizeRequest = { inProgress: true, messages: "", ok: false };
+      state.unavailableProducts = [];
+    });
+    builder.addCase(budgetWizardCheckoutThunk.fulfilled, (state, action) => {
+      state.finalizeRequest = { inProgress: false, messages: "", ok: true };
+      state.budget = action.payload;
+    });
+    builder.addCase(budgetWizardCheckoutThunk.rejected, (state, action) => {
+      const error = action.payload as BudgetError;
+      if (error?.code === "PRODUCTS_UNAVAILABLE") {
+        state.unavailableProducts = error.products ?? [];
+        state.finalizeRequest = {
+          inProgress: false,
+          messages: "Algunos productos ya no están disponibles para la fecha seleccionada.",
+          ok: false,
+        };
+      } else {
+        state.finalizeRequest = {
+          inProgress: false,
+          messages: error?.message ?? "Error al finalizar el presupuesto",
+          ok: false,
+        };
+      }
+    });
+
+    // Step 5 — archivar
+    builder.addCase(budgetWizardArchiveThunk.pending, (state) => {
+      state.finalizeRequest = { inProgress: true, messages: "", ok: false };
+    });
+    builder.addCase(budgetWizardArchiveThunk.fulfilled, (state, action) => {
+      state.finalizeRequest = { inProgress: false, messages: "", ok: true };
+      state.budget = action.payload;
+    });
+    builder.addCase(budgetWizardArchiveThunk.rejected, (state, action) => {
+      state.finalizeRequest = {
+        inProgress: false,
+        messages: (action.payload as string) || "Error al archivar el presupuesto",
+        ok: false,
+      };
+    });
+
     builder.addCase(createBudgetThunk.rejected, (state, action) => {
       const error = action.payload as BudgetError;
       if (
@@ -84,7 +201,7 @@ const budgetWizardSlice = createSlice({
   },
 });
 
-export const { setPrefillData, setExistingBudget, goBackStep, resetWizard, clearCreateBudgetError } =
+export const { setPrefillData, setExistingBudget, goBackStep, goNextStep, goToStep, resetWizard, clearCreateBudgetError } =
   budgetWizardSlice.actions;
 
 export default budgetWizardSlice.reducer;

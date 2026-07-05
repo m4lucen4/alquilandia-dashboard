@@ -1,4 +1,13 @@
 import type { IRequest } from "./auth";
+import type { Inventory } from "./inventory";
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discount: number;
+  maxUses: number;
+  active: boolean;
+}
 
 export interface Company {
   address: string;
@@ -117,6 +126,8 @@ export interface BudgetLine {
   descuento: number;
   extra: string;
   totalPrice: number;
+  couponDiscount?: number;
+  packId?: string | null;
 }
 
 // Main Budget interface
@@ -153,12 +164,18 @@ export interface Budget {
   afiliatedPhone: string;
   budgetLines: BudgetLine[];
   totalCouponDiscount: number;
+  coupon?: Coupon | null;
 }
 
 // API Response
 export interface BudgetsResponse {
   budgets: Budget[];
   total?: number;
+}
+
+export interface BudgetPaginatedProductsResponse {
+  inventory: Inventory[];
+  total: number;
 }
 
 export interface UnavailableProduct {

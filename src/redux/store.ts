@@ -14,6 +14,7 @@ import shippingCostsReducer from "./slices/shippingCostsSlice";
 import warehousesReducer from "./slices/warehousesSlice";
 import inventoryCategoriesReducer from "./slices/inventoryCategoriesSlice";
 import inventoryReducer from "./slices/inventorySlice";
+import discountsReducer from "./slices/discountsSlice";
 
 const persistConfig = {
   key: "auth",
@@ -23,7 +24,20 @@ const persistConfig = {
 const wizardPersistConfig = {
   key: "budgetWizard",
   storage,
-  blacklist: ["createBudgetRequest", "updateEventDetailsRequest"],
+  blacklist: [
+    "createBudgetRequest",
+    "updateEventDetailsRequest",
+    "fetchCatalogRequest",
+    "fetchStockRequest",
+    "updateLinesRequest",
+    "catalogProducts",
+    "catalogTotal",
+    "catalogPage",
+    "catalogFiltersQuery",
+    "stockByProductId",
+    "finalizeRequest",
+    "unavailableProducts",
+  ],
 };
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
@@ -44,6 +58,7 @@ export const store = configureStore({
     warehouses: warehousesReducer,
     inventoryCategories: inventoryCategoriesReducer,
     inventory: inventoryReducer,
+    discounts: discountsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

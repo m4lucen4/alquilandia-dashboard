@@ -1,5 +1,6 @@
 import type { IRequest } from "./auth";
-import type { Budget } from "./budgets";
+import type { Budget, UnavailableProduct } from "./budgets";
+import type { Inventory } from "./inventory";
 
 export interface ClientWizardFormData {
   firstName: string;
@@ -31,4 +32,14 @@ export interface BudgetWizardState {
   budget: Budget | null;
   createBudgetRequest: IRequest;
   updateEventDetailsRequest: IRequest;
+  catalogProducts: Inventory[];
+  catalogTotal: number;
+  catalogPage: number;
+  catalogFiltersQuery: string;
+  stockByProductId: Record<string, number>;
+  fetchCatalogRequest: IRequest;
+  fetchStockRequest: IRequest;
+  updateLinesRequest: IRequest;
+  finalizeRequest: IRequest;
+  unavailableProducts: UnavailableProduct[];
 }

@@ -6,7 +6,7 @@ description: "Guía para continuar o modificar el wizard de creación de presupu
 # Budget Wizard — alquilandia-dashboard
 
 Wizard de creación de presupuestos en múltiples pasos. Ruta: `/budgets/new`.
-Estado actual: **Steps 1 y 2 implementados. Step 3 placeholder. Steps 4-5 pendientes.**
+Estado actual: **Steps 1, 2, 3 y 4 implementados. Step 5 pendiente.**
 
 ---
 
@@ -46,20 +46,24 @@ interface BudgetWizardState {
   budget: Budget | null;                   // objeto Budget completo — requerido para updates
   createBudgetRequest: IRequest;           // loading/error step 1
   updateEventDetailsRequest: IRequest;     // loading/error step 2
+  finalizeRequest: IRequest;               // loading/error step 5
+  unavailableProducts: UnavailableProduct[]; // productos no disponibles (checkout rechazado)
 }
 ```
 
-**Persist**: `key: "budgetWizard"`, blacklist: `["createBudgetRequest", "updateEventDetailsRequest"]`.
+**Persist**: `key: "budgetWizard"`, blacklist: `["createBudgetRequest", "updateEventDetailsRequest", "fetchCatalogRequest", "fetchStockRequest", "updateLinesRequest", "finalizeRequest", "unavailableProducts", "catalogProducts", "catalogTotal", "catalogPage", "catalogFiltersQuery", "stockByProductId"]`.
 Los campos `step`, `budgetId` y `budget` sobreviven a un refresh.
 
 ### Acciones del slice
 
 | Acción | Efecto |
 |---|---|
-| `resetWizard()` | Vuelve a `initialState` — llamar al pulsar "Cancelar" o "Nuevo presupuesto" |
+| `resetWizard()` | Vuelve a `initialState` — llamar al pulsar "Cancelar" o al navegar tras éxito en step 5 |
 | `setPrefillData(data)` | Guarda datos pre-rellenos y pone `step = 1` — **ya no se usa** |
 | `setExistingBudget(budget: Budget)` | Guarda el budget completo, pone `step = 2`, limpia `prefillData` — flow B |
 | `goBackStep()` | Decrementa `step` en 1 (guard: no baja de 1) — usado en botones "Volver" |
+| `goNextStep()` | Incrementa `step` en 1 (guard: no sube de 5) |
+| `goToStep(n: number)` | Salta al step n directamente — usado en "Continuar comprando" del step 5 para ir al 3 |
 | `clearCreateBudgetError()` | Resetea `createBudgetRequest` a idle |
 
 ### Regla crítica: la API requiere el objeto Budget COMPLETO
@@ -147,10 +151,51 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
 
 ---
 
-## Step 3 — `BudgetStep3Lines` (placeholder)
+## Step 3 — `BudgetStep3Lines` (implementado)
 
 **Cuándo se muestra**: `step === 3`.
-**Botón "Volver"**: `dispatch(goBackStep())` — vuelve al step 2 con el formulario pre-rellenado desde `budget`.
+**Ruta orquestador**: `src/components/budgets/wizard/BudgetStep3Lines.tsx`
+**Componentes hijo** (en `src/components/budgets/wizard/step3/`):
+  - `CatalogFilters.tsx` — filtros por categoría/subcategoría/nombre (RHF)
+  - `ProductCard.tsx` — tarjeta de producto con mini-form RHF (units+descuento+extras via `useFieldArray`)
+  - `ExtrasModal.tsx` — modal de extras con checkbox+units
+  - `CartSummary.tsx` — drawer lateral con líneas añadidas + totales sin IVA
+
+**Layout del catálogo**: grid siempre a `sm:2 / lg:3 / xl:4` columnas — el carrito NO reduce el grid.
+
+**Carrito como drawer fijo** (desktop):
+  - Botón toggle `fixed right-0 top-1/2` — lengüeta con icono de carrito + badge con número de líneas. Solo visible en `lg:`.
+  - Cuando abierto: panel `fixed right-0 top-0 bottom-0 w-80` con scroll propio y cabecera con botón de cierre.
+  - En mobile (`lg:hidden`): `CartSummary` apilado debajo del catálogo.
+
+**Totales en `CartSummary`**: NO muestra IVA — muestra "Subtotal sin IVA" = `subTotalWithExtras − userDiscount`. El IVA aparece por primera vez en el step 4 (donde ya se suman costSend y cupón).
+
+**Estado Redux nuevo** en `BudgetWizardState`:
+  - `catalogProducts`, `catalogTotal`, `catalogPage`, `catalogFiltersQuery` — catálogo paginado
+  - `stockByProductId: Record<string, number>` — unidades bloqueadas por producto (página actual)
+  - `fetchCatalogRequest`, `fetchStockRequest`, `updateLinesRequest` — todos blacklisteados de persist
+
+**Thunks nuevos** (en `src/redux/actions/budgets.ts`):
+  - `fetchBudgetCatalogThunk` ("budgetWizard/fetchCatalog") → `GET /budgets/{id}/paginatedProducts`
+  - `fetchCatalogStockThunk` ("budgetWizard/fetchStock") → `Promise.all` de `GET /inventory/{id}/stock?budgetId=` → `Record<id, number>`
+  - `updateBudgetLinesThunk` ("budgetWizard/updateLines") → `POST /budgets/{id}` con Budget completo
+
+**Regla crítica de `updateLines`**: el `fulfilled` solo hace `state.budget = payload`, **NO avanza `state.step`**. El step avanza con el reducer síncrono `goNextStep()`.
+
+**Reducer síncrono nuevo**: `goNextStep()` (guard `step < 5`) — exportado desde `budgetWizardSlice`.
+
+**Helpers puros** (en `src/helpers/budgetLines.ts`, todos testeados en `src/tests/budgetLines.test.ts`):
+  - `getExceptionPrice(product, eventDate)` — precio con excepción de fecha (sin moment)
+  - `buildBudgetLine(product, units, descuento, extras, unitPrice)` — mapea Inventory→BudgetLine
+  - `upsertBudgetLine(budget, product, opts, shippingCosts?)` — añade/actualiza sin duplicar, merge OR de extras
+  - `removeBudgetLine(budget, lineId, shippingCosts?)` y `setBudgetLineUnits(budget, lineId, units, shippingCosts?)` — recalculan
+  - `recalculatePrice(budget, shippingCosts?)` — canónico; sin `shippingCosts` conserva `prevPrice.costSend` (compat. step 3)
+
+**Dominio descuentos** creado completo: `src/types/discounts.ts`, `src/services/discountsService.ts`, `src/redux/actions/discounts.ts`, `src/redux/slices/discountsSlice.ts`. Registrado en store sin persist.
+
+**Disponibilidad por card**: `unidades − stockByProductId[id] − unitsEnBudgetLines`. El stock se pide en batch al cambiar página (0 GETs extra por operación de carrito).
+
+**Navegación**: los botones Volver y Continuar están en el header de `CreateBudgetPage` (ver sección correspondiente). El step 3 no tiene panel de navegación propio.
 
 ---
 
@@ -182,12 +227,88 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
 {step === 1 && <BudgetStep1Client />}
 {step === 2 && <BudgetStep2EventDetails />}
 {step === 3 && <BudgetStep3Lines />}
-// ...
+{step === 4 && <BudgetStep4Summary />}
 ```
 
-- Botón "Cancelar": `dispatch(resetWizard())` + `navigate("/budgets")`
-- Barra de progreso: 5 segmentos, los `<= step` en azul
-- `TOTAL_STEPS = 5` — ajustar cuando se confirme el número final
+**Header de navegación** (`src/pages/CreateBudgetPage.tsx`):
+- Layout: `[Title + step]  ····  [Volver] [Continuar]  │  [Cancelar🔴]`
+- **Cancelar**: `variant="danger"` (rojo), separado de los otros dos por `border-l` con margen. Siempre visible en todos los steps.
+- **Volver + Continuar**: solo visibles cuando `step >= 3` (steps 1 y 2 usan sus propios botones de formulario). Leídos del wizard state:
+  - `hasLines = (budget?.budgetLines?.length ?? 0) > 0`
+  - `isSaving = updateLinesRequest.inProgress`
+  - Continuar disabled si `!hasLines || isSaving`
+- **Regla**: los steps 3 y 4 NO tienen panel de navegación propio al pie — toda la nav vive aquí.
+- Barra de progreso: 5 segmentos, los `<= step` en azul.
+- `TOTAL_STEPS = 5` — ajustar cuando se confirme el número final.
+
+---
+
+---
+
+## Step 4 — `BudgetStep4Summary` (implementado)
+
+**Cuándo se muestra**: `step === 4`.
+**Ruta orquestador**: `src/components/budgets/wizard/BudgetStep4Summary.tsx`
+**Componentes hijo** (en `src/components/budgets/wizard/step4/`):
+  - `SummaryHeader.tsx` — fecha del evento (DD-MM-YYYY), dirección/nosend, datos del cliente
+  - `SummaryOptions.tsx` — toggles "Recogida en tienda" (nosend) y "Con IVA" (solo admin/técnico)
+  - `SummaryAmounts.tsx` — desglose artículos, extras, envío, descuento cliente, IVA, Total
+  - `SummaryLineRow.tsx` — fila editable: +/− unidades (clamp por stock), select descuento (admin), Extras vía `ExtrasModal` reutilizado del step 3, quitar línea
+
+**Recálculo canónico** — `recalculatePrice(budget, shippingCosts?)` en `src/helpers/budgetLines.ts`:
+  - `shippingCosts = undefined` → conserva `prevPrice.costSend` (compatible con step 3)
+  - `shippingCosts = null | ShippingCost` → llama `calculateCostSend` (step 4)
+  - `calculateCostSend`: parsea `"18,5 km"` con coma decimal; maxBlock/hasMultipleBlocks → variante Zero, NotZero o ambas
+  - Descuento aplicado: `userDiscount` del cliente (porcentaje sobre `subTotal − packs`)
+  - Base del IVA: `subTotalWithExtras + costSend − userDiscount`
+
+**Flujo de mutaciones** (todas → `updateBudgetLinesThunk` → POST Budget completo → fulfilled actualiza `state.budget` sin avanzar step):
+  - Líneas: `updateBudgetLineValues(budget, lineId, patch, shippingCosts)` → POST
+  - Quitar: `removeBudgetLine(budget, lineId, shippingCosts)` → POST
+  - Nosend: `recalculatePrice({ ...budget, nosend: !nosend }, shippingCosts)` → POST
+  - IVA: `recalculatePrice({ ...budget, price: { ...price, withIVA: !withIVA } }, shippingCosts)` → POST
+
+**Helpers** exportados de `src/helpers/budgetLines.ts` (testeados en `src/tests/budgetLines.step4.test.ts`):
+  - `calculateCostSend(budget, shippingCosts)` — paridad `calculateAndGetCostSend` legacy
+  - `getAppliedDiscount(budget)` — devuelve `userDiscount`; usado por `SummaryAmounts`
+  - `updateBudgetLineValues(budget, lineId, patch, shippingCosts?)` — mutación unificada para step 4
+
+**Constantes** en `src/constants/index.ts`: `MIN_BUDGET_AMOUNT = 40`, `VAT_FACTOR = 0.21`.
+
+**Aviso mínimo**: `Alert` si `subTotalWithExtras <= MIN_BUDGET_AMOUNT` (no bloquea "Continuar" — dashboard = admin).
+
+**Navegación**: los botones Volver y Continuar están en el header de `CreateBudgetPage` (ver sección correspondiente). El step 4 no tiene panel de navegación propio.
+
+---
+
+## Step 5 — `BudgetStep5Checkout` (implementado)
+
+**Cuándo se muestra**: `step === 5`.
+**Ruta orquestador**: `src/components/budgets/wizard/BudgetStep5Checkout.tsx`
+**Componentes hijo** (en `src/components/budgets/wizard/step5/`):
+  - `CheckoutSummary.tsx` — nº presupuesto, cliente, fecha evento, nº artículos, total
+  - `TransferPanel.tsx` — IBAN + importe del 25% + botón confirmar
+  - `AlquilandiaPanel.tsx` — "Dejar reservado" y "Marcar como pagado 25%" (solo ADMIN/TECHNICIAN)
+
+**Acciones disponibles**:
+  - **Continuar comprando** → `dispatch(goToStep(3))` — vuelve al catálogo sin perder el carrito
+  - **Archivar** → `dispatch(budgetWizardArchiveThunk({ budgetId, data: { ...budget, status: "PAID_PENDING" } }))` → estado `PAID_PENDING`
+  - **Transferencia bancaria** → panel expandible → `budgetWizardCheckoutThunk({ budgetId, paymentType: "TRANSFER_PAID" })` → estado `TRANSFER_PAID`
+  - **Pago Alquilandia** (solo ADMIN/TECH) → panel expandible:
+    - "Dejar reservado" → `paymentType: "RESERVED"` → estado `RESERVED`
+    - "Marcar como pagado 25%" → `paymentType: "PAID25"` → estado `PAID25`
+
+**Tras éxito**: `useEffect` observa `finalizeRequest.ok` → `dispatch(resetWizard())` + `navigate("/budgets")`
+
+**Productos no disponibles**: si el checkout rechaza con `PRODUCTS_UNAVAILABLE`, `unavailableProducts[]` se guarda en el estado y se muestra en el `Alert` junto a `finalizeRequest.messages`.
+
+**Constantes usadas** (`src/constants/index.ts`): `CAIXA_ACCOUNT`, `INITIAL_PAYMENT_FACTOR = 0.25`
+
+**Thunks del wizard** (`src/redux/actions/budgets.ts`):
+  - `budgetWizardCheckoutThunk` ("budgetWizard/checkout") — POST `/budgets/{id}/alquilandiaCheckout?paymentType=`
+  - `budgetWizardArchiveThunk` ("budgetWizard/archive") — POST `/budgets/{id}` con budget completo + `status: "PAID_PENDING"`
+
+**Navegación**: el header de `CreateBudgetPage` muestra solo "Volver" para step 5 (`showContinuar = step >= 3 && step < 5`). Step 5 gestiona su propio flujo de navegación post-acción.
 
 ---
 
@@ -196,13 +317,13 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
 1. **Crear** `src/components/budgets/wizard/BudgetStep{N}*.tsx`
    - Leer `budget` y `budgetId` del wizard state
    - Submit: `{ ...budget, ...camposNuevos }` — siempre objeto completo
-   - Botón "Volver": `dispatch(goBackStep())`
-   - Al completar: dispatch del thunk correspondiente → el slice avanza el step vía `extraReducers` y actualiza `state.budget`
+   - **No añadir botones de Volver/Continuar** — la navegación vive en `CreateBudgetPage`
 2. **Añadir** `{N}Request: IRequest` a `BudgetWizardState` + blacklist en `store.ts`
 3. **Añadir** thunk dedicado en `src/redux/actions/budgets.ts` (no reutilizar thunks genéricos — el slice escucha por action type)
 4. **Añadir** `extraReducers` en `budgetWizardSlice` para pending/fulfilled/rejected (guardar `state.budget = action.payload` en fulfilled)
 5. **Renderizar** en `CreateBudgetPage` con `{step === N && <BudgetStep{N} />}`
-6. **Actualizar esta skill** con los detalles del nuevo step
+6. Si el step necesita condición especial en el botón Continuar, añadirla en `CreateBudgetPage` leyendo el wizard state
+7. **Actualizar esta skill** con los detalles del nuevo step
 
 ---
 
@@ -223,6 +344,6 @@ Al guardar OK → el slice actualiza `state.budget` con la respuesta y avanza a 
 |---|---|---|
 | 1 | Datos del cliente | ✅ Implementado |
 | 2 | Datos del evento (dirección, fecha, concepto, observaciones, distancia al almacén) | ✅ Implementado |
-| 3 | Líneas del presupuesto | 🔲 Placeholder (botón Volver ✅) |
-| 4 | — | 🔲 Pendiente |
-| 5 | — | 🔲 Pendiente |
+| 3 | Selección de artículos (carrito) — productos simples, extras, descuentos por línea | ✅ Implementado |
+| 4 | Resumen del presupuesto — edición de carrito, costSend, nosend, IVA, descuento cliente | ✅ Implementado |
+| 5 | Finalización — archivar, transferencia bancaria, pago Alquilandia (RESERVED/PAID25) | ✅ Implementado |
