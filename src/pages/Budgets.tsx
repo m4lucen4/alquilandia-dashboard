@@ -1,8 +1,11 @@
 import { type FC, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { fetchBudgets } from "../redux/actions/budgets";
-import { clearBudgetsErrors } from "../redux/slices/budgetsSlice";
+import { fetchBudgets, rejectBudgetThunk } from "../redux/actions/budgets";
+import {
+  clearBudgetsErrors,
+  clearRejectBudgetErrors,
+} from "../redux/slices/budgetsSlice";
 import { resetWizard, rescueBudget } from "../redux/slices/budgetWizardSlice";
 import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
@@ -37,9 +40,8 @@ import { ModalBudgetData } from "../components/budgets/ModalBudgetData";
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { budgets, total, fetchBudgetsRequest } = useAppSelector(
-    (state) => state.budgets,
-  );
+  const { budgets, total, fetchBudgetsRequest, rejectBudgetRequest } =
+    useAppSelector((state) => state.budgets);
   const { businesses } = useAppSelector((state) => state.business);
   const { taxesTypes } = useAppSelector((state) => state.taxesTypes);
   const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
@@ -369,6 +371,32 @@ export const Budgets: FC = () => {
     navigate("/budgets/new");
   }, [selectedBudgetToView, handleCloseViewBudgetModal, dispatch, navigate]);
 
+  const handleRejectBudget = useCallback(async () => {
+    if (!selectedBudgetToView) return;
+    const result = await dispatch(rejectBudgetThunk(selectedBudgetToView.id));
+    if (rejectBudgetThunk.fulfilled.match(result)) {
+      handleCloseViewBudgetModal();
+      dispatch(
+        fetchBudgets({
+          pageSize,
+          pageToFetch: pageIndex + 1,
+          filtersQuery: buildFiltersQuery(),
+        }),
+      );
+    }
+  }, [
+    selectedBudgetToView,
+    dispatch,
+    handleCloseViewBudgetModal,
+    pageSize,
+    pageIndex,
+    buildFiltersQuery,
+  ]);
+
+  const handleCloseRejectAlert = useCallback(() => {
+    dispatch(clearRejectBudgetErrors());
+  }, [dispatch]);
+
   const handleViewInvoice = useCallback(async (budget: Budget) => {
     setLoadingInvoice(true);
     try {
@@ -420,6 +448,18 @@ export const Budgets: FC = () => {
           }
           description={createInvoiceRequest.messages}
           onClose={handleCloseInvoiceAlert}
+        />
+      )}
+
+      {rejectBudgetRequest.messages && !rejectBudgetRequest.inProgress && (
+        <Alert
+          title={
+            rejectBudgetRequest.ok
+              ? "Presupuesto rechazado"
+              : "Error al rechazar presupuesto"
+          }
+          description={rejectBudgetRequest.messages}
+          onClose={handleCloseRejectAlert}
         />
       )}
 
@@ -475,6 +515,8 @@ export const Budgets: FC = () => {
         budget={selectedBudgetToView}
         user={selectedUserToView}
         onRescue={handleRescueBudget}
+        onReject={handleRejectBudget}
+        isRejecting={rejectBudgetRequest.inProgress}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">

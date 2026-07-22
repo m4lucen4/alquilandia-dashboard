@@ -9,6 +9,7 @@ interface ModalProps {
   acceptText?: string;
   cancelText?: string;
   acceptDisabled?: boolean;
+  maxWidthClass?: string;
 }
 
 export const Modal = ({
@@ -19,6 +20,7 @@ export const Modal = ({
   acceptText = "Aceptar",
   cancelText = "Cancelar",
   acceptDisabled = false,
+  maxWidthClass = "max-w-2xl",
 }: ModalProps) => {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -52,7 +54,7 @@ export const Modal = ({
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-2xl transform rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
+        className={`relative w-full ${maxWidthClass} transform rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
           isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
         }`}
         role="dialog"

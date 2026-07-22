@@ -70,6 +70,9 @@ const budgetsSlice = createSlice({
       state.getStripeSecretRequest = requestIdle;
       state.getStripeFinalSecretRequest = requestIdle;
     },
+    clearRejectBudgetErrors: (state) => {
+      state.rejectBudgetRequest = requestIdle;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -211,7 +214,11 @@ const budgetsSlice = createSlice({
         state.rejectBudgetRequest = { inProgress: true, messages: "", ok: false };
       })
       .addCase(rejectBudgetThunk.fulfilled, (state) => {
-        state.rejectBudgetRequest = { inProgress: false, messages: "", ok: true };
+        state.rejectBudgetRequest = {
+          inProgress: false,
+          messages: "El presupuesto ha sido rechazado correctamente",
+          ok: true,
+        };
       })
       .addCase(rejectBudgetThunk.rejected, (state, action) => {
         state.rejectBudgetRequest = {
@@ -290,6 +297,7 @@ export const {
   clearCurrentBudget,
   clearReceipts,
   clearStripeSecrets,
+  clearRejectBudgetErrors,
 } = budgetsSlice.actions;
 
 export default budgetsSlice.reducer;
