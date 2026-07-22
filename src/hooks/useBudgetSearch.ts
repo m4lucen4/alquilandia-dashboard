@@ -9,6 +9,8 @@ interface UseBudgetSearchReturn {
   setPhone: (value: string) => void;
   status: string;
   setStatus: (value: string) => void;
+  address: string;
+  setAddress: (value: string) => void;
   eventDateFrom: string;
   setEventDateFrom: (value: string) => void;
   eventDateTo: string;
@@ -22,6 +24,7 @@ interface UseBudgetSearchReturn {
     clientName: string;
     phone: string;
     status: string;
+    address: string;
     eventDateFrom: string;
     eventDateTo: string;
     creationDateFrom: string;
@@ -54,6 +57,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState("");
+  const [address, setAddress] = useState("");
   const [eventDateFrom, setEventDateFrom] = useState("");
   const [eventDateTo, setEventDateTo] = useState("");
   const [creationDateFrom, setCreationDateFrom] = useState("");
@@ -65,6 +69,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     clientName: "",
     phone: "",
     status: "",
+    address: "",
     eventDateFrom: "",
     eventDateTo: "",
     creationDateFrom: "",
@@ -91,6 +96,10 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
 
     if (appliedFilters.status) {
       filters.push(`status=${encodeURIComponent(appliedFilters.status)}`);
+    }
+
+    if (appliedFilters.address) {
+      filters.push(`address=${encodeURIComponent(appliedFilters.address)}`);
     }
 
     // Add date range filters with ISO timestamp format
@@ -120,6 +129,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
       clientName: clientName.trim(),
       phone: phone.trim(),
       status: status.trim(),
+      address: address.trim(),
       eventDateFrom: eventDateFrom.trim(),
       eventDateTo: eventDateTo.trim(),
       creationDateFrom: creationDateFrom.trim(),
@@ -130,6 +140,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     clientName,
     phone,
     status,
+    address,
     eventDateFrom,
     eventDateTo,
     creationDateFrom,
@@ -144,6 +155,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setClientName("");
     setPhone("");
     setStatus("");
+    setAddress("");
     setEventDateFrom("");
     setEventDateTo("");
     setCreationDateFrom("");
@@ -153,6 +165,7 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
       clientName: "",
       phone: "",
       status: "",
+      address: "",
       eventDateFrom: "",
       eventDateTo: "",
       creationDateFrom: "",
@@ -169,6 +182,8 @@ export const useBudgetSearch = (): UseBudgetSearchReturn => {
     setPhone,
     status,
     setStatus,
+    address,
+    setAddress,
     eventDateFrom,
     setEventDateFrom,
     eventDateTo,

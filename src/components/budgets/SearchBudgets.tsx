@@ -16,6 +16,8 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
   setPhone,
   status,
   setStatus,
+  address,
+  setAddress,
   eventDateFrom,
   setEventDateFrom,
   eventDateTo,
@@ -104,6 +106,19 @@ export const SearchBudgets: FC<SearchBudgetsProps> = ({
             type="button"
           />
         </div>
+      </div>
+
+      {/* Input Dirección del Evento */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <InputField
+          label="Dirección del Evento"
+          name="address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Dirección del evento"
+          disabled={isLoading}
+        />
       </div>
 
       {/* Segunda fila: Rangos de fecha */}

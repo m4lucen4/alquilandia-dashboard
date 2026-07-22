@@ -42,6 +42,7 @@ export const Invoices: FC = () => {
   const {
     selectedBusinessId,
     budgetNumber,
+    invoiceNumber,
     appliedFilters,
     businesses,
     isLoading,
@@ -51,6 +52,7 @@ export const Invoices: FC = () => {
     handleClearFilters,
     handleBusinessChange,
     handleBudgetNumberChange,
+    handleInvoiceNumberChange,
     handlePageChange,
     handlePageSizeChange,
   } = useInvoiceSearch();
@@ -124,6 +126,7 @@ export const Invoices: FC = () => {
           fetchAllInvoices({
             businessId: appliedFilters.businessId || undefined,
             budgetReference: appliedFilters.budgetNumber || undefined,
+            invoiceNumber: appliedFilters.invoiceNumber || undefined,
             page: pageIndex,
             pageSize,
           }),
@@ -387,11 +390,13 @@ export const Invoices: FC = () => {
         <SearchInvoices
           selectedBusinessId={selectedBusinessId}
           budgetNumber={budgetNumber}
+          invoiceNumber={invoiceNumber}
           appliedFilters={appliedFilters}
           businesses={businesses}
           isLoading={isLoading}
           onBusinessChange={handleBusinessChange}
           onBudgetNumberChange={handleBudgetNumberChange}
+          onInvoiceNumberChange={handleInvoiceNumberChange}
           onSearch={handleSearch}
           onClearFilters={handleClearFilters}
         />

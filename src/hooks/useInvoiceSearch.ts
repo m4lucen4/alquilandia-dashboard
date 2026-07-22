@@ -11,6 +11,7 @@ export const useInvoiceSearch = () => {
   // Filter input states (controlled inputs)
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
   const [budgetNumber, setBudgetNumber] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
 
   // Pagination state
   const [pageIndex, setPageIndex] = useState(0);
@@ -20,6 +21,7 @@ export const useInvoiceSearch = () => {
   const [appliedFilters, setAppliedFilters] = useState({
     businessId: "",
     budgetNumber: "",
+    invoiceNumber: "",
   });
 
   // Load businesses on mount if not already loaded
@@ -35,6 +37,7 @@ export const useInvoiceSearch = () => {
       fetchAllInvoices({
         businessId: appliedFilters.businessId || undefined,
         budgetReference: appliedFilters.budgetNumber || undefined,
+        invoiceNumber: appliedFilters.invoiceNumber || undefined,
         page: pageIndex,
         pageSize,
       }),
@@ -47,17 +50,20 @@ export const useInvoiceSearch = () => {
     setAppliedFilters({
       businessId: selectedBusinessId,
       budgetNumber: budgetNumber.trim(),
+      invoiceNumber: invoiceNumber.trim(),
     });
-  }, [selectedBusinessId, budgetNumber]);
+  }, [selectedBusinessId, budgetNumber, invoiceNumber]);
 
   // Handle clear filters action
   const handleClearFilters = useCallback(() => {
     setSelectedBusinessId("");
     setBudgetNumber("");
+    setInvoiceNumber("");
     setPageIndex(0); // Reset to first page
     setAppliedFilters({
       businessId: "",
       budgetNumber: "",
+      invoiceNumber: "",
     });
   }, []);
 
@@ -69,6 +75,11 @@ export const useInvoiceSearch = () => {
   // Handle budget number input change
   const handleBudgetNumberChange = useCallback((value: string) => {
     setBudgetNumber(value);
+  }, []);
+
+  // Handle invoice number input change
+  const handleInvoiceNumberChange = useCallback((value: string) => {
+    setInvoiceNumber(value);
   }, []);
 
   // Handle page change
@@ -86,6 +97,7 @@ export const useInvoiceSearch = () => {
     // Filter states
     selectedBusinessId,
     budgetNumber,
+    invoiceNumber,
     appliedFilters,
 
     // Pagination
@@ -101,6 +113,7 @@ export const useInvoiceSearch = () => {
     handleClearFilters,
     handleBusinessChange,
     handleBudgetNumberChange,
+    handleInvoiceNumberChange,
     handlePageChange,
     handlePageSizeChange,
   };

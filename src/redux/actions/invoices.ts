@@ -23,6 +23,7 @@ export const fetchAllInvoices = createAsyncThunk(
           budgetReference?: string;
           page?: number;
           pageSize?: number;
+          invoiceNumber?: string;
         }
       | undefined,
     { rejectWithValue },
@@ -33,6 +34,7 @@ export const fetchAllInvoices = createAsyncThunk(
         filters?.budgetReference,
         filters?.page,
         filters?.pageSize,
+        filters?.invoiceNumber,
       );
       return { invoices, total };
     } catch (error) {

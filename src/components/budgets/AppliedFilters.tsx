@@ -13,6 +13,7 @@ export const AppliedFilters: FC<AppliedFiltersProps> = ({ appliedFilters }) => {
     appliedFilters.clientName ||
     appliedFilters.phone ||
     appliedFilters.status ||
+    appliedFilters.address ||
     appliedFilters.eventDateFrom ||
     appliedFilters.eventDateTo ||
     appliedFilters.creationDateFrom ||
@@ -45,6 +46,11 @@ export const AppliedFilters: FC<AppliedFiltersProps> = ({ appliedFilters }) => {
           }`}
         >
           {getStatusBadgeConfig(appliedFilters.status).label}
+        </span>
+      )}
+      {appliedFilters.address && (
+        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+          Dirección: {appliedFilters.address}
         </span>
       )}
       {(appliedFilters.eventDateFrom || appliedFilters.eventDateTo) && (

@@ -227,6 +227,7 @@ export interface AppliedFiltersType {
   clientName: string;
   phone: string;
   status: string;
+  address: string;
   eventDateFrom: string;
   eventDateTo: string;
   creationDateFrom: string;
@@ -242,6 +243,8 @@ export interface SearchBudgetsProps {
   setPhone: (value: string) => void;
   status: string;
   setStatus: (value: string) => void;
+  address: string;
+  setAddress: (value: string) => void;
   eventDateFrom: string;
   setEventDateFrom: (value: string) => void;
   eventDateTo: string;

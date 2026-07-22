@@ -88,6 +88,8 @@ export const Budgets: FC = () => {
     setPhone,
     status,
     setStatus,
+    address,
+    setAddress,
     eventDateFrom,
     setEventDateFrom,
     eventDateTo,
@@ -498,6 +500,8 @@ export const Budgets: FC = () => {
           setPhone={setPhone}
           status={status}
           setStatus={setStatus}
+          address={address}
+          setAddress={setAddress}
           eventDateFrom={eventDateFrom}
           setEventDateFrom={setEventDateFrom}
           eventDateTo={eventDateTo}

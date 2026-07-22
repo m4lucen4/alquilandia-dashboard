@@ -45,6 +45,7 @@ export const getAllInvoices = async (
   budgetReference?: string,
   page?: number,
   pageSize?: number,
+  invoiceNumber?: string,
 ): Promise<{ invoices: Invoice[]; total: number }> => {
   let query = supabase.from("invoices").select(
     `
@@ -71,7 +72,21 @@ export const getAllInvoices = async (
   }
 
   if (budgetReference) {
-    query = query.eq("budget_reference", Number(budgetReference));
+    const parsedBudgetReference = Number(budgetReference);
+    if (!Number.isNaN(parsedBudgetReference)) {
+      query = query.eq("budget_reference", parsedBudgetReference);
+    }
+  }
+
+  if (invoiceNumber) {
+    // Accepts either the raw number or the displayed "YYYY/XXXX" format
+    const numericPart = invoiceNumber.includes("/")
+      ? invoiceNumber.split("/").pop()
+      : invoiceNumber;
+    const parsedInvoiceNumber = Number(numericPart);
+    if (!Number.isNaN(parsedInvoiceNumber)) {
+      query = query.eq("invoice_number", parsedInvoiceNumber);
+    }
   }
 
   // Fetch all data without pagination to sort globally

@@ -7,11 +7,17 @@ import SelectField from "@/components/shared/SelectField";
 interface SearchInvoicesProps {
   selectedBusinessId: string;
   budgetNumber: string;
-  appliedFilters: { businessId: string; budgetNumber: string };
+  invoiceNumber: string;
+  appliedFilters: {
+    businessId: string;
+    budgetNumber: string;
+    invoiceNumber: string;
+  };
   businesses: Business[];
   isLoading: boolean;
   onBusinessChange: (businessId: string) => void;
   onBudgetNumberChange: (budgetNumber: string) => void;
+  onInvoiceNumberChange: (invoiceNumber: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
 }
@@ -19,15 +25,17 @@ interface SearchInvoicesProps {
 export const SearchInvoices: FC<SearchInvoicesProps> = ({
   selectedBusinessId,
   budgetNumber,
+  invoiceNumber,
   appliedFilters,
   businesses,
   isLoading,
   onBusinessChange,
   onBudgetNumberChange,
+  onInvoiceNumberChange,
   onSearch,
   onClearFilters,
 }) => {
-  // Memoize business options to avoid recalculating on every render
+
   const businessOptions = useMemo(
     () =>
       businesses.map((business) => ({
@@ -39,7 +47,7 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
 
   return (
     <div className="rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {/* Select Empresa */}
         <SelectField
           label="Empresa"
@@ -56,6 +64,21 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
           name="budgetNumber"
           value={budgetNumber}
           onChange={(e) => onBudgetNumberChange(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+              onSearch();
+            }
+          }}
+          placeholder="Ej: 12345"
+          type="text"
+        />
+
+        {/* Input Número de Factura */}
+        <InputField
+          label="Nº Factura"
+          name="invoiceNumber"
+          value={invoiceNumber}
+          onChange={(e) => onInvoiceNumberChange(e.target.value)}
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === "Enter") {
               onSearch();
@@ -87,7 +110,9 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
       </div>
 
       {/* Indicador de filtros activos */}
-      {(appliedFilters.businessId || appliedFilters.budgetNumber) && (
+      {(appliedFilters.businessId ||
+        appliedFilters.budgetNumber ||
+        appliedFilters.invoiceNumber) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600">Filtros activos:</span>
           {appliedFilters.businessId && (
@@ -99,7 +124,12 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
           )}
           {appliedFilters.budgetNumber && (
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-              Nº {appliedFilters.budgetNumber}
+              Nº Presupuesto: {appliedFilters.budgetNumber}
+            </span>
+          )}
+          {appliedFilters.invoiceNumber && (
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+              Nº Factura: {appliedFilters.invoiceNumber}
             </span>
           )}
         </div>
