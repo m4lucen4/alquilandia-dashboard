@@ -35,6 +35,8 @@ export const Users: FC = () => {
   const navigate = useNavigate();
   const { users, usersTotal, fetchPaginatedUsersRequest, sendMassiveEmailRequest, createUserRequest, editUserRequest } =
     useAppSelector((state) => state.users);
+  const { user: currentUser } = useAppSelector((state) => state.auth);
+  const isAdmin = currentUser?.role === "ADMIN";
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -89,8 +91,13 @@ export const Users: FC = () => {
 
   const handleCreateUser = useCallback(
     async (formData: CreateUserFormValues) => {
-      const { company, ...rest } = formData;
-      const payload: Partial<User> = { ...rest, company: mapFormCompany(company) };
+      const { company, password, ...rest } = formData;
+      const payload: Partial<User> = {
+        ...rest,
+        role: isAdmin ? rest.role : "CLIENT",
+        company: mapFormCompany(company),
+        ...(isAdmin && password ? { password } : {}),
+      };
       try {
         await dispatch(createUserThunk(payload)).unwrap();
         setIsCreateUserModalOpen(false);
@@ -100,7 +107,7 @@ export const Users: FC = () => {
         // error visible via createUserRequest.messages
       }
     },
-    [dispatch, buildFiltersQuery, pageSize, pageIndex],
+    [dispatch, buildFiltersQuery, pageSize, pageIndex, isAdmin],
   );
 
   const handleOpenEditUser = useCallback((user: User) => {
@@ -238,6 +245,7 @@ export const Users: FC = () => {
       <ModalCreateUser
         isOpen={isCreateUserModalOpen}
         isCreating={createUserRequest.inProgress}
+        isAdmin={isAdmin}
         onClose={() => setIsCreateUserModalOpen(false)}
         onSubmit={handleCreateUser}
       />

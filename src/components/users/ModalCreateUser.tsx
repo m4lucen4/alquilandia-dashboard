@@ -30,7 +30,7 @@ const createUserSchema = z.object({
   phone2: z.string().optional(),
   email: z.string().email("Email inválido"),
   problematic: z.boolean(),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  password: z.union([z.literal(""), z.string().min(6, "Mínimo 6 caracteres")]),
   company: companySchema.optional(),
 });
 
@@ -39,6 +39,7 @@ export type CreateUserFormValues = z.infer<typeof createUserSchema>;
 interface ModalCreateUserProps {
   isOpen: boolean;
   isCreating: boolean;
+  isAdmin: boolean;
   onClose: () => void;
   onSubmit: (data: CreateUserFormValues) => void;
 }
@@ -46,6 +47,7 @@ interface ModalCreateUserProps {
 export const ModalCreateUser: FC<ModalCreateUserProps> = ({
   isOpen,
   isCreating,
+  isAdmin,
   onClose,
   onSubmit,
 }) => {
@@ -57,7 +59,7 @@ export const ModalCreateUser: FC<ModalCreateUserProps> = ({
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      role: "",
+      role: "CLIENT",
       discount: 0,
       firstName: "",
       lastName: "",
@@ -123,22 +125,24 @@ export const ModalCreateUser: FC<ModalCreateUserProps> = ({
 
             <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Controller
-                  name="role"
-                  control={control}
-                  render={({ field }) => (
-                    <SelectField
-                      label="Rol"
-                      name={field.name}
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      options={ROLE_OPTIONS}
-                      placeholder="Selecciona un rol"
-                      required
-                      error={errors.role?.message}
-                    />
-                  )}
-                />
+                {isAdmin && (
+                  <Controller
+                    name="role"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectField
+                        label="Rol"
+                        name={field.name}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        options={ROLE_OPTIONS}
+                        placeholder="Selecciona un rol"
+                        required
+                        error={errors.role?.message}
+                      />
+                    )}
+                  />
+                )}
 
                 <Controller
                   name="discount"
@@ -321,23 +325,24 @@ export const ModalCreateUser: FC<ModalCreateUserProps> = ({
                 />
               </div>
 
-              <Controller
-                name="password"
-                control={control}
-                render={({ field }) => (
-                  <InputField
-                    label="Contraseña"
-                    name={field.name}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    error={errors.password?.message}
-                  />
-                )}
-              />
+              {isAdmin && (
+                <Controller
+                  name="password"
+                  control={control}
+                  render={({ field }) => (
+                    <InputField
+                      label="Contraseña (opcional)"
+                      name={field.name}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      type="password"
+                      autoComplete="new-password"
+                      error={errors.password?.message}
+                    />
+                  )}
+                />
+              )}
 
               <Controller
                 name="problematic"
