@@ -612,6 +612,8 @@ export const generateProformaPDF = async (
     }
 
     // Price summary — calculated from effective line prices
+    // Proforma 25 (showBudgetLines === false) never applies discounts, per business rule
+    const applyDiscounts = showBudgetLines;
     const summaryX = pageWidth - 70;
     let effectiveSubTotal = 0;
     let effectiveExtras = 0;
@@ -619,7 +621,7 @@ export const generateProformaPDF = async (
       const basePrice = getEffectiveUnitPrice(line, budget.eventDate);
       const unitPrice = Math.round(basePrice * factor * 100) / 100;
       const units = line.units || line.unidades || 1;
-      const lineDiscountFactor = 1 - (line.descuento || 0) / 100;
+      const lineDiscountFactor = applyDiscounts ? 1 - (line.descuento || 0) / 100 : 1;
       effectiveSubTotal += Math.round(unitPrice * units * lineDiscountFactor * 100) / 100;
       line.extras?.forEach((extra) => {
         if (extra.checked) {
@@ -628,8 +630,12 @@ export const generateProformaPDF = async (
       });
     });
 
-    const userDiscount = Math.round((budget.price?.userDiscount || 0) * factor * 100) / 100;
-    const couponDiscount = Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100;
+    const userDiscount = applyDiscounts
+      ? Math.round((budget.price?.userDiscount || 0) * factor * 100) / 100
+      : 0;
+    const couponDiscount = applyDiscounts
+      ? Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100
+      : 0;
     const vatBase = effectiveSubTotal + effectiveExtras - userDiscount - couponDiscount;
     const effectiveVat = Math.round(vatBase * (taxRate / 100) * 100) / 100;
     const effectiveTotal = Math.round((vatBase + effectiveVat) * 100) / 100;
