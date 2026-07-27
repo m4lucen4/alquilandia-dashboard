@@ -1,4 +1,5 @@
 import type { Budget, BudgetLine, Price, User } from "../types/budgets";
+import type { InvoicesType } from "../types/invoicesTypes";
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
@@ -129,3 +130,90 @@ export const getEffectiveUnitPrice = (
   );
   return exception ? exception.price : line.precioUd || 0;
 };
+
+/** Nombre del tipo de factura en el catálogo `invoices_types` reservado para
+ *  facturas de costes de rotura. Debe crearse una vez desde Settings. */
+export const BREAKAGE_INVOICE_TYPE_NAME = "Factura de rotura";
+
+export function resolveBreakageInvoiceType(
+  invoicesTypes: InvoicesType[],
+): InvoicesType | undefined {
+  return invoicesTypes.find(
+    (t) => t.invoices.trim().toLowerCase() === BREAKAGE_INVOICE_TYPE_NAME.toLowerCase(),
+  );
+}
+
+export interface BrokenLineInput {
+  lineId: string; // BudgetLine.id (== Inventory.id)
+  brokenUnits: number;
+}
+
+/** Líneas del presupuesto elegibles para rotura (excluye líneas de pack). */
+export function getBreakableBudgetLines(budget: Budget): BudgetLine[] {
+  return (budget.budgetLines ?? []).filter((l) => !l.packId);
+}
+
+/**
+ * Construye las líneas y el precio de una factura de rotura: cobra al
+ * cliente el precio de COSTE (preciocoste) de solo las unidades marcadas
+ * como rotas, no el precio de venta ni las unidades totales contratadas.
+ */
+export function buildBreakageInvoiceData(
+  budget: Budget,
+  brokenLines: BrokenLineInput[],
+  taxRate: number,
+): { budgetlines: BudgetLine[]; price: Price } {
+  const originalById = new Map(
+    getBreakableBudgetLines(budget).map((l) => [l.id, l]),
+  );
+
+  const budgetlines: BudgetLine[] = brokenLines
+    .filter((b) => b.brokenUnits > 0)
+    .map((b) => {
+      const original = originalById.get(b.lineId);
+      if (!original) {
+        throw new Error(`La línea ${b.lineId} ya no existe en el presupuesto`);
+      }
+
+      const unitCost = original.preciocoste;
+      const lineTotal = round(b.brokenUnits * unitCost);
+
+      return {
+        ...original,
+        units: b.brokenUnits,
+        // getEffectiveUnitPrice()/generateInvoicePDF leen precioUd (no
+        // preciocoste) para la columna "Precio Ud.", así que se reasigna aquí.
+        precioUd: unitCost,
+        originalPrice: unitCost,
+        costetotal: lineTotal,
+        totalPrice: lineTotal,
+        descuento: 0,
+        extra: "",
+        extras: [],
+        // Crítico: si no se vacía, una excepción de precio de venta para la
+        // fecha del evento pisaría el precio de coste recién asignado.
+        priceExceptionList: [],
+        packId: null,
+      };
+    });
+
+  const subTotal = round(budgetlines.reduce((acc, l) => acc + l.totalPrice, 0));
+  const vat = round(subTotal * (taxRate / 100));
+  const total = round(subTotal + vat);
+
+  const price: Price = {
+    costSend: 0,
+    subTotalWithExtras: subTotal,
+    userDiscountPercentage: 0,
+    userDiscount: 0,
+    extras: 0,
+    total,
+    vat,
+    packs: 0,
+    subTotal,
+    withIVA: true,
+    alreadyPaid: 0,
+  };
+
+  return { budgetlines, price };
+}

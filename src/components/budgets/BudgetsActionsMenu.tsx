@@ -13,6 +13,7 @@ interface BudgetsActionsMenuProps {
   onViewInvoice: (budget: Budget) => void;
   onViewBudget: (budget: Budget) => void;
   onGenerateBudgetPdf: (budget: Budget) => void;
+  onGenerateBreakageInvoice: (budget: Budget) => void;
 }
 
 export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
@@ -24,6 +25,7 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
   onViewInvoice,
   onViewBudget,
   onGenerateBudgetPdf,
+  onGenerateBreakageInvoice,
 }) => {
   return (
     <Menu as="div" className="relative inline-block text-left">
@@ -105,6 +107,21 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
               )}
             </MenuItem>
           )}
+
+          <MenuItem>
+            {({ focus }) => (
+              <div className="px-2">
+                <Button
+                  title="Costes de rotura"
+                  onClick={() => onGenerateBreakageInvoice(budget)}
+                  variant="ghost"
+                  size="sm"
+                  block
+                  className={focus ? "bg-gray-100" : ""}
+                />
+              </div>
+            )}
+          </MenuItem>
         </div>
       </MenuItems>
     </Menu>

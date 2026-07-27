@@ -23,6 +23,7 @@ interface BudgetsTableProps {
   onViewInvoice: (budget: Budget) => void;
   onViewBudget: (budget: Budget) => void;
   onGenerateBudgetPdf: (budget: Budget) => void;
+  onGenerateBreakageInvoice: (budget: Budget) => void;
 }
 
 export const BudgetsTable: FC<BudgetsTableProps> = ({
@@ -40,6 +41,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
   onViewInvoice,
   onViewBudget,
   onGenerateBudgetPdf,
+  onGenerateBreakageInvoice,
 }) => {
   const columns = useMemo<ColumnDef<Budget>[]>(
     () => [
@@ -128,6 +130,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
               onViewInvoice={onViewInvoice}
               onViewBudget={onViewBudget}
               onGenerateBudgetPdf={onGenerateBudgetPdf}
+              onGenerateBreakageInvoice={onGenerateBreakageInvoice}
             />
           );
         },
@@ -141,6 +144,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
       onViewInvoice,
       onViewBudget,
       onGenerateBudgetPdf,
+      onGenerateBreakageInvoice,
     ],
   );
 

@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets, rejectBudgetThunk } from "../redux/actions/budgets";
@@ -22,6 +22,8 @@ import type { Budget, User } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { getBudgetById } from "../services/budgetsServices";
+import { getInventoryDetails } from "../services/inventoryService";
+import { editInventoryThunk } from "../redux/actions/inventory";
 import { PageHeader } from "@/components/shared/PageHeader";
 import Button from "@/components/shared/Button";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
@@ -29,13 +31,23 @@ import {
   getClientDataFromUser,
   calculateAdjustedPrice,
   adjustBudgetLines,
+  buildBreakageInvoiceData,
+  resolveBreakageInvoiceType,
 } from "../helpers/budgets";
 import { fetchUserDetails } from "../redux/actions/users";
-import { generateBudgetPDF, generateProformaPDF } from "../services/pdfService";
+import {
+  generateBudgetPDF,
+  generateProformaPDF,
+  generateInvoicePDF,
+} from "../services/pdfService";
 import { ModalGenerateInvoice } from "../components/budgets/ModalGenerateInvoice";
 import { ModalGenerateBudgetPdf } from "../components/budgets/ModalGenerateBudgetPdf";
 import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
 import { ModalBudgetData } from "../components/budgets/ModalBudgetData";
+import {
+  ModalGenerateBreakageInvoice,
+  type BreakageFormValues,
+} from "../components/budgets/ModalGenerateBreakageInvoice";
 
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
@@ -80,6 +92,17 @@ export const Budgets: FC = () => {
   const [pdfDate, setPdfDate] = useState<string>("");
   const [pdfIncludeVAT, setPdfIncludeVAT] = useState<boolean>(true);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+
+  // Breakage invoice ("costes de rotura") modal state
+  const [isBreakageModalOpen, setIsBreakageModalOpen] = useState(false);
+  const [selectedBudgetForBreakage, setSelectedBudgetForBreakage] =
+    useState<Budget | null>(null);
+  const [isReducingInventory, setIsReducingInventory] = useState(false);
+  const [isDownloadingAnnex, setIsDownloadingAnnex] = useState(false);
+  const [reduceInventoryResult, setReduceInventoryResult] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
 
   const {
     budgetNumber,
@@ -333,6 +356,176 @@ export const Budgets: FC = () => {
     handleCloseBudgetPdfModal,
   ]);
 
+  const breakageInvoiceType = useMemo(
+    () => resolveBreakageInvoiceType(invoicesTypes),
+    [invoicesTypes],
+  );
+
+  const handleOpenBreakageModal = useCallback((budget: Budget) => {
+    setSelectedBudgetForBreakage(budget);
+    setReduceInventoryResult(null);
+    setIsBreakageModalOpen(true);
+  }, []);
+
+  const handleCloseBreakageModal = useCallback(() => {
+    setIsBreakageModalOpen(false);
+    setSelectedBudgetForBreakage(null);
+    setReduceInventoryResult(null);
+    dispatch(resetCreateInvoiceRequest());
+  }, [dispatch]);
+
+  const handleReduceInventoryForBreakage = useCallback(
+    async (values: BreakageFormValues) => {
+      const brokenLines = values.lines.filter((l) => l.brokenUnits > 0);
+      if (brokenLines.length === 0) return;
+
+      setIsReducingInventory(true);
+      setReduceInventoryResult(null);
+      try {
+        const results = await Promise.allSettled(
+          brokenLines.map(async (line) => {
+            const current = await getInventoryDetails(line.lineId);
+            const newUnidades = Math.max(0, (current.unidades || 0) - line.brokenUnits);
+            await dispatch(
+              editInventoryThunk({
+                id: line.lineId,
+                body: {
+                  elemento: current.elemento,
+                  categoria: current.categoria,
+                  unidades: newUnidades,
+                  precioUd: current.precioUd,
+                  precioCoste: current.precioCoste,
+                  costeTotal: newUnidades * current.precioCoste,
+                  private: current.private,
+                  observaciones: current.observaciones,
+                  archivo: current.archivo,
+                  extras: current.extras,
+                  priceExceptionList: current.priceExceptionList,
+                },
+              }),
+            ).unwrap();
+          }),
+        );
+        const failedCount = results.filter((r) => r.status === "rejected").length;
+        setReduceInventoryResult(
+          failedCount === 0
+            ? { ok: true, message: "Inventario reducido correctamente." }
+            : {
+                ok: false,
+                message: `No se pudo reducir el inventario de ${failedCount} de ${brokenLines.length} artículo(s).`,
+              },
+        );
+      } finally {
+        setIsReducingInventory(false);
+      }
+    },
+    [dispatch],
+  );
+
+  const handleDownloadBreakageAnnex = useCallback(
+    async (values: BreakageFormValues) => {
+      if (!selectedBudgetForBreakage) return;
+      const business = businesses.find((b) => b.id === values.businessId);
+      const taxType = taxesTypes.find((t) => t.id === values.taxesTypeId);
+      if (!business || !taxType) return;
+
+      setIsDownloadingAnnex(true);
+      try {
+        const { budgetlines, price } = buildBreakageInvoiceData(
+          selectedBudgetForBreakage,
+          values.lines,
+          taxType.tax,
+        );
+        const freshUser = await dispatch(
+          fetchUserDetails(selectedBudgetForBreakage.user.id),
+        ).unwrap();
+        const clientData = getClientDataFromUser(freshUser, "titular");
+
+        const syntheticInvoice: Invoice = {
+          id: "",
+          business_id: business.id,
+          invoices_type_id: breakageInvoiceType?.id ?? "",
+          taxes_type_id: taxType.id,
+          budget_reference: selectedBudgetForBreakage.budgetReference,
+          invoice_number: 0,
+          budgetlines,
+          price,
+          event_date: selectedBudgetForBreakage.eventDate,
+          created_at: new Date(values.createdAt).toISOString(),
+          additional_data: values.additionalData || undefined,
+          ...clientData,
+          business,
+          invoices_type: breakageInvoiceType ?? {
+            id: "",
+            invoices: "Anexo de rotura",
+            percentage: 100,
+            concept: "Anexo de rotura del presupuesto (documento sin valor fiscal)",
+            show_budgetlines: true,
+          },
+          taxes_type: taxType,
+        };
+
+        const blob = await generateInvoicePDF(syntheticInvoice);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `anexo_rotura_${selectedBudgetForBreakage.budgetReference}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } finally {
+        setIsDownloadingAnnex(false);
+      }
+    },
+    [selectedBudgetForBreakage, businesses, taxesTypes, breakageInvoiceType, dispatch],
+  );
+
+  const handleGenerateBreakageInvoice = useCallback(
+    async (values: BreakageFormValues) => {
+      if (!selectedBudgetForBreakage || !breakageInvoiceType) return;
+
+      const taxType = taxesTypes.find((t) => t.id === values.taxesTypeId);
+      const taxRate = taxType?.tax ?? 0;
+      const { budgetlines, price } = buildBreakageInvoiceData(
+        selectedBudgetForBreakage,
+        values.lines,
+        taxRate,
+      );
+
+      const freshUser = await dispatch(
+        fetchUserDetails(selectedBudgetForBreakage.user.id),
+      ).unwrap();
+      const clientData = getClientDataFromUser(freshUser, "titular");
+
+      const result = await dispatch(
+        createInvoice({
+          business_id: values.businessId,
+          invoices_type_id: breakageInvoiceType.id,
+          taxes_type_id: values.taxesTypeId,
+          budget_reference: selectedBudgetForBreakage.budgetReference,
+          budgetlines,
+          price,
+          ...clientData,
+          additional_data: values.additionalData || undefined,
+          event_date: selectedBudgetForBreakage.eventDate,
+          created_at: new Date(values.createdAt).toISOString(),
+        }),
+      );
+
+      if (createInvoice.fulfilled.match(result)) {
+        handleCloseBreakageModal();
+        navigate("/accounting/invoices");
+      }
+    },
+    [
+      selectedBudgetForBreakage,
+      breakageInvoiceType,
+      taxesTypes,
+      dispatch,
+      handleCloseBreakageModal,
+      navigate,
+    ],
+  );
+
   const handleViewBudget = useCallback(async (budget: Budget) => {
     setLoadingBudget(true);
     try {
@@ -463,6 +656,7 @@ export const Budgets: FC = () => {
         />
       )}
 
+
       <ModalGenerateBudgetPdf
         isOpen={isBudgetPdfModalOpen}
         onClose={handleCloseBudgetPdfModal}
@@ -517,6 +711,23 @@ export const Budgets: FC = () => {
         onRescue={handleRescueBudget}
         onReject={handleRejectBudget}
         isRejecting={rejectBudgetRequest.inProgress}
+      />
+
+      <ModalGenerateBreakageInvoice
+        isOpen={isBreakageModalOpen}
+        onClose={handleCloseBreakageModal}
+        budget={selectedBudgetForBreakage}
+        businesses={businesses}
+        taxesTypes={taxesTypes}
+        breakageInvoiceType={breakageInvoiceType}
+        isGeneratingInvoice={createInvoiceRequest.inProgress}
+        isReducingInventory={isReducingInventory}
+        isDownloadingAnnex={isDownloadingAnnex}
+        reduceInventoryResult={reduceInventoryResult}
+        onDismissReduceInventoryResult={() => setReduceInventoryResult(null)}
+        onGenerateInvoice={handleGenerateBreakageInvoice}
+        onReduceInventory={handleReduceInventoryForBreakage}
+        onDownloadAnnex={handleDownloadBreakageAnnex}
       />
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
@@ -589,6 +800,7 @@ export const Budgets: FC = () => {
           onViewInvoice={handleViewInvoice}
           onViewBudget={handleViewBudget}
           onGenerateBudgetPdf={handleOpenBudgetPdfModal}
+          onGenerateBreakageInvoice={handleOpenBreakageModal}
         />
       </div>
     </>

@@ -13,6 +13,8 @@ description: "Cómo trabajar con PDFs en este proyecto: estructura, funciones, f
 ### `generateInvoicePDF(invoice: Invoice): Promise<Blob>`
 - `invoice` ya lleva `business`, `invoices_type`, `taxes_type` y `original_invoice` embebidos (se obtienen con join antes de llamar)
 - Renderiza bloque rojo de factura rectificativa si `invoice.is_corrective === true`
+- Renderiza bloque naranja "FACTURA POR COSTES DE ROTURA" si `invoice.invoices_type.invoices` coincide (case-insensitive) con `BREAKAGE_INVOICE_TYPE_NAME` (`"Factura de rotura"`, definido en `helpers/budgets.ts`) — no depende de ninguna columna nueva en `invoices`, solo del nombre del tipo de factura
+- "CONCEPTO" (amarillo) muestra solo `invoice.invoices_type.concept`. "OBSERVACIONES" (azul) es un bloque separado que muestra `invoice.additional_data` — antes se mezclaban en un único bloque "CONCEPTO", ahora están deliberadamente separados
 - La tabla de líneas solo se renderiza si `invoice.invoices_type.show_budgetlines !== false`
 
 ### `generateBudgetPDF(budget, business, clientData, includeVAT, date): Promise<Blob>`
@@ -46,9 +48,11 @@ El nombre de fichero se genera con `buildInvoicePdfFileName(invoice_number, crea
 |---|---|---|
 | Cliente | `(232,245,233)` verde claro | `(129,199,132)` |
 | Concepto | `(255,248,225)` amarillo | `(255,193,7)` |
+| Observaciones (factura) | `(227,242,253)` azul | `(100,181,246)` |
 | Factura rectificativa | `(255,235,238)` rojo claro | `(244,67,54)` |
-| Comentarios cliente | `(227,242,253)` azul | `(100,181,246)` |
-| Notas internas | `(255,243,224)` naranja | `(255,167,38)` |
+| Factura de rotura | `(255,243,224)` naranja | `(255,167,38)` |
+| Comentarios cliente (presupuesto) | `(227,242,253)` azul | `(100,181,246)` |
+| Notas internas (presupuesto) | `(255,243,224)` naranja | `(255,167,38)` |
 
 ## Tabla de líneas (autoTable)
 

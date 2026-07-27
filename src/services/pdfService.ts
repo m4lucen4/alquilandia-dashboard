@@ -4,7 +4,11 @@ import type { Invoice } from "@/types/invoices";
 import type { Budget } from "@/types/budgets";
 import type { Business } from "@/types/business";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
-import { calculateBudgetTotal, getEffectiveUnitPrice } from "@/helpers/budgets";
+import {
+  calculateBudgetTotal,
+  getEffectiveUnitPrice,
+  BREAKAGE_INVOICE_TYPE_NAME,
+} from "@/helpers/budgets";
 import logoImage from "@/assets/logo.png";
 
 /**
@@ -187,15 +191,36 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       yPosition += correctiveHeight + 8;
     }
 
-    // Concept + Additional data
-    const conceptText = [
-      invoice.invoices_type?.concept,
-      invoice.additional_data,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    // Breakage Invoice Notice (only for the "Factura de rotura" invoice type)
+    const isBreakageInvoice =
+      invoice.invoices_type?.invoices?.trim().toLowerCase() ===
+      BREAKAGE_INVOICE_TYPE_NAME.toLowerCase();
 
-    if (conceptText) {
+    if (isBreakageInvoice) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(230, 126, 0);
+      doc.text("FACTURA POR COSTES DE ROTURA", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      const breakageNotice = `Esta factura corresponde al coste de reposición de artículos dañados o rotos durante el evento del presupuesto ${invoice.budget_reference}. Los importes se calculan sobre el precio de coste, no sobre el precio de venta.`;
+      const breakageLines = doc.splitTextToSize(breakageNotice, pageWidth - 44);
+      const breakageHeight = breakageLines.length * 5 + 4;
+
+      doc.setFillColor(255, 243, 224);
+      doc.rect(20, yPosition, pageWidth - 40, breakageHeight, "F");
+      doc.setDrawColor(255, 167, 38);
+      doc.rect(20, yPosition, pageWidth - 40, breakageHeight, "S");
+
+      doc.text(breakageLines, 24, yPosition + 5);
+      yPosition += breakageHeight + 8;
+    }
+
+    // Concept (from invoice type)
+    if (invoice.invoices_type?.concept) {
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.text("CONCEPTO", 20, yPosition);
@@ -203,7 +228,7 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
       doc.setFont("helvetica", "normal");
       doc.setFillColor(255, 248, 225);
-      const conceptLines = doc.splitTextToSize(conceptText, pageWidth - 44);
+      const conceptLines = doc.splitTextToSize(invoice.invoices_type.concept, pageWidth - 44);
       const conceptHeight = conceptLines.length * 5 + 4;
 
       doc.rect(20, yPosition, pageWidth - 40, conceptHeight, "F");
@@ -212,6 +237,26 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
       doc.text(conceptLines, 24, yPosition + 5);
       yPosition += conceptHeight + 8;
+    }
+
+    // Observaciones (additional data entered when generating the invoice)
+    if (invoice.additional_data) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("OBSERVACIONES", 20, yPosition);
+      yPosition += 5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFillColor(227, 242, 253);
+      const observationLines = doc.splitTextToSize(invoice.additional_data, pageWidth - 44);
+      const observationHeight = observationLines.length * 5 + 4;
+
+      doc.rect(20, yPosition, pageWidth - 40, observationHeight, "F");
+      doc.setDrawColor(100, 181, 246);
+      doc.rect(20, yPosition, pageWidth - 40, observationHeight, "S");
+
+      doc.text(observationLines, 24, yPosition + 5);
+      yPosition += observationHeight + 8;
     }
 
     // Budget Lines Table (only if show_budgetlines is true)
