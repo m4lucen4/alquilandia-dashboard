@@ -50,6 +50,12 @@ const usersSlice = createSlice({
       state.usersTotal = 0;
       state.fetchPaginatedUsersRequest = requestIdle;
     },
+    clearUsersScreenErrors: (state) => {
+      state.fetchPaginatedUsersRequest = requestIdle;
+      state.sendMassiveEmailRequest = requestIdle;
+      state.createUserRequest = requestIdle;
+      state.editUserRequest = requestIdle;
+    },
   },
   extraReducers: (builder) => {
     // fetchUserDetails
@@ -335,5 +341,6 @@ const usersSlice = createSlice({
   },
 });
 
-export const { clearCurrentUser, clearUsersTable } = usersSlice.actions;
+export const { clearCurrentUser, clearUsersTable, clearUsersScreenErrors } =
+  usersSlice.actions;
 export default usersSlice.reducer;
