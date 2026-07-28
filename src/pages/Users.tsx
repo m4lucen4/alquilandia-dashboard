@@ -155,7 +155,6 @@ export const Users: FC = () => {
           pageSize={pageSize}
           isLoading={fetchPaginatedUsersRequest.inProgress}
           selectedIds={selectedIds}
-          isAdmin={isAdmin}
           onPageChange={setPageIndex}
           onPageSizeChange={handlePageSizeChange}
           onSelectionChange={handleSelectionChange}

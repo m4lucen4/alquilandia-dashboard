@@ -6,14 +6,12 @@ import type { User } from "../../types/budgets";
 
 interface UsersActionsMenuProps {
   user: User;
-  isAdmin: boolean;
   onEditUser: (user: User) => void;
   onGenerateBudget: (user: User) => void;
 }
 
 export const UsersActionsMenu: FC<UsersActionsMenuProps> = ({
   user,
-  isAdmin,
   onEditUser,
   onGenerateBudget,
 }) => {
@@ -30,7 +28,6 @@ export const UsersActionsMenu: FC<UsersActionsMenuProps> = ({
         className="z-50 w-48 rounded-md bg-white shadow-lg ring-1 ring-black/5 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
       >
         <div className="py-1">
-          {isAdmin && (
             <MenuItem>
               {({ focus }) => (
                 <div className="px-2">
@@ -45,7 +42,6 @@ export const UsersActionsMenu: FC<UsersActionsMenuProps> = ({
                 </div>
               )}
             </MenuItem>
-          )}
           <MenuItem>
             {({ focus }) => (
               <div className="px-2">

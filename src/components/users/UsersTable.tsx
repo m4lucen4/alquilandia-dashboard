@@ -12,7 +12,6 @@ interface UsersTableProps {
   pageSize: number;
   isLoading: boolean;
   selectedIds: Set<string>;
-  isAdmin: boolean;
   onPageChange: (pageIndex: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onSelectionChange: (id: string, checked: boolean) => void;
@@ -27,7 +26,6 @@ export const UsersTable: FC<UsersTableProps> = ({
   pageSize,
   isLoading,
   selectedIds,
-  isAdmin,
   onPageChange,
   onPageSizeChange,
   onSelectionChange,
@@ -118,14 +116,13 @@ export const UsersTable: FC<UsersTableProps> = ({
         cell: (info) => (
           <UsersActionsMenu
             user={info.row.original}
-            isAdmin={isAdmin}
             onEditUser={onEditUser}
             onGenerateBudget={onGenerateBudget}
           />
         ),
       },
     ],
-    [selectedIds, isAdmin, onSelectionChange, onEditUser, onGenerateBudget],
+    [selectedIds, onSelectionChange, onEditUser, onGenerateBudget],
   );
 
   return (
