@@ -88,16 +88,22 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
 
     yPosition += 35;
 
+    // An annex is a synthetic, non-persisted invoice (no id) used as an
+    // informative document, so it must not display an invoice number.
+    const isAnnex = !invoice.id;
+
     // Invoice and Budget Reference
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.text(
-      `Nº Factura: ${formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}`,
-      20,
-      yPosition,
-    );
-    yPosition += 7;
+    if (!isAnnex) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `Nº Factura: ${formatInvoiceNumber(invoice.invoice_number, invoice.created_at)}`,
+        20,
+        yPosition,
+      );
+      yPosition += 7;
+    }
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -200,13 +206,13 @@ export const generateInvoicePDF = async (invoice: Invoice): Promise<Blob> => {
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(230, 126, 0);
-      doc.text("FACTURA POR COSTES DE ROTURA", 20, yPosition);
+      doc.text("COSTES DE ROTURA", 20, yPosition);
       yPosition += 5;
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
 
-      const breakageNotice = `Esta factura corresponde al coste de reposición de artículos dañados o rotos durante el evento del presupuesto ${invoice.budget_reference}. Los importes se calculan sobre el precio de coste, no sobre el precio de venta.`;
+      const breakageNotice = `Este documento corresponde al coste de reposición de artículos dañados o rotos durante el evento del presupuesto ${invoice.budget_reference}. Los importes se calculan sobre el precio de coste, no sobre el precio de venta.`;
       const breakageLines = doc.splitTextToSize(breakageNotice, pageWidth - 44);
       const breakageHeight = breakageLines.length * 5 + 4;
 

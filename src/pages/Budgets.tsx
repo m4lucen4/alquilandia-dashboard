@@ -60,6 +60,8 @@ export const Budgets: FC = () => {
   const { invoices, createInvoiceRequest } = useAppSelector(
     (state) => state.invoices,
   );
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const canReduceInventory = currentUser?.role === "ADMIN";
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -720,6 +722,7 @@ export const Budgets: FC = () => {
         businesses={businesses}
         taxesTypes={taxesTypes}
         breakageInvoiceType={breakageInvoiceType}
+        canReduceInventory={canReduceInventory}
         isGeneratingInvoice={createInvoiceRequest.inProgress}
         isReducingInventory={isReducingInventory}
         isDownloadingAnnex={isDownloadingAnnex}
