@@ -1,8 +1,10 @@
 import { type FC } from "react";
 import Button from "@/components/shared/Button";
 import InputField from "@/components/shared/InputField";
+import SelectField from "@/components/shared/SelectField";
 import { AppliedFiltersUsers } from "./AppliedFiltersUsers";
 import type { UsersAppliedFilters } from "@/hooks/useUserSearch";
+import { ROLE_OPTIONS } from "@/constants";
 
 interface SearchUsersProps {
   email: string;
@@ -15,6 +17,8 @@ interface SearchUsersProps {
   setDnif: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
+  role: string;
+  setRole: (value: string) => void;
   appliedFilters: UsersAppliedFilters;
   isLoading?: boolean;
   onSearch: () => void;
@@ -32,6 +36,8 @@ export const SearchUsers: FC<SearchUsersProps> = ({
   setDnif,
   phone,
   setPhone,
+  role,
+  setRole,
   appliedFilters,
   isLoading = false,
   onSearch,
@@ -91,6 +97,16 @@ export const SearchUsers: FC<SearchUsersProps> = ({
           onChange={(e) => setPhone(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="600000000"
+          disabled={isLoading}
+        />
+
+        <SelectField
+          label="Tipo de usuario"
+          name="role"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          options={ROLE_OPTIONS}
+          placeholder="Todos"
           disabled={isLoading}
         />
 

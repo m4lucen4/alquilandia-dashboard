@@ -1,5 +1,6 @@
 import { type FC } from "react";
 import type { UsersAppliedFilters } from "@/hooks/useUserSearch";
+import { ROLE_OPTIONS } from "@/constants";
 
 interface AppliedFiltersUsersProps {
   appliedFilters: UsersAppliedFilters;
@@ -13,7 +14,12 @@ export const AppliedFiltersUsers: FC<AppliedFiltersUsersProps> = ({
     appliedFilters.firstName ||
     appliedFilters.lastName ||
     appliedFilters.dnif ||
-    appliedFilters.phone;
+    appliedFilters.phone ||
+    appliedFilters.role;
+
+  const roleLabel = ROLE_OPTIONS.find(
+    (option) => option.value === appliedFilters.role,
+  )?.label;
 
   if (!hasActiveFilters) return null;
 
@@ -43,6 +49,11 @@ export const AppliedFiltersUsers: FC<AppliedFiltersUsersProps> = ({
       {appliedFilters.phone && (
         <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
           Teléfono: {appliedFilters.phone}
+        </span>
+      )}
+      {appliedFilters.role && (
+        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+          Tipo de usuario: {roleLabel ?? appliedFilters.role}
         </span>
       )}
     </div>

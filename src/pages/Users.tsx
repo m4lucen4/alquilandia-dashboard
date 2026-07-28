@@ -50,6 +50,8 @@ export const Users: FC = () => {
     setDnif,
     phone,
     setPhone,
+    role,
+    setRole,
     appliedFilters,
     handleSearch,
     handleClearFilters,
@@ -114,6 +116,8 @@ export const Users: FC = () => {
           setDnif={setDnif}
           phone={phone}
           setPhone={setPhone}
+          role={role}
+          setRole={setRole}
           appliedFilters={appliedFilters}
           isLoading={fetchPaginatedUsersRequest.inProgress}
           onSearch={() => {

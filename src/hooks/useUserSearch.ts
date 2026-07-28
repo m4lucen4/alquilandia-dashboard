@@ -6,6 +6,7 @@ export interface UsersAppliedFilters {
   lastName: string;
   dnif: string;
   phone: string;
+  role: string;
 }
 
 interface UseUserSearchReturn {
@@ -19,6 +20,8 @@ interface UseUserSearchReturn {
   setDnif: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
+  role: string;
+  setRole: (value: string) => void;
   appliedFilters: UsersAppliedFilters;
   handleSearch: () => void;
   handleClearFilters: () => void;
@@ -31,6 +34,7 @@ const emptyFilters: UsersAppliedFilters = {
   lastName: "",
   dnif: "",
   phone: "",
+  role: "",
 };
 
 export const useUserSearch = (): UseUserSearchReturn => {
@@ -39,6 +43,7 @@ export const useUserSearch = (): UseUserSearchReturn => {
   const [lastName, setLastName] = useState("");
   const [dnif, setDnif] = useState("");
   const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<UsersAppliedFilters>(emptyFilters);
 
   const buildFiltersQuery = useCallback((): string => {
@@ -59,6 +64,9 @@ export const useUserSearch = (): UseUserSearchReturn => {
     if (appliedFilters.phone) {
       filters.push(`phone=${encodeURIComponent(appliedFilters.phone)}`);
     }
+    if (appliedFilters.role) {
+      filters.push(`role=${encodeURIComponent(appliedFilters.role)}`);
+    }
 
     return filters.join("&");
   }, [appliedFilters]);
@@ -70,8 +78,9 @@ export const useUserSearch = (): UseUserSearchReturn => {
       lastName: lastName.trim(),
       dnif: dnif.trim(),
       phone: phone.trim(),
+      role,
     });
-  }, [email, firstName, lastName, dnif, phone]);
+  }, [email, firstName, lastName, dnif, phone, role]);
 
   const handleClearFilters = useCallback(() => {
     setEmail("");
@@ -79,6 +88,7 @@ export const useUserSearch = (): UseUserSearchReturn => {
     setLastName("");
     setDnif("");
     setPhone("");
+    setRole("");
     setAppliedFilters(emptyFilters);
   }, []);
 
@@ -93,6 +103,8 @@ export const useUserSearch = (): UseUserSearchReturn => {
     setDnif,
     phone,
     setPhone,
+    role,
+    setRole,
     appliedFilters,
     handleSearch,
     handleClearFilters,
