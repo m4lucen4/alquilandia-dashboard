@@ -10,6 +10,7 @@ import {
   deleteBudgetThunk,
   rejectBudgetThunk,
   fetchBudgetReceipts,
+  removeReceiptProductsThunk,
   checkoutBudgetThunk,
   getStripeSecretThunk,
   getStripeFinalSecretThunk,
@@ -35,6 +36,7 @@ const initialState: BudgetsState = {
   deleteBudgetRequest: requestIdle,
   rejectBudgetRequest: requestIdle,
   fetchBudgetReceiptsRequest: requestIdle,
+  removeReceiptProductsRequest: requestIdle,
   checkoutRequest: requestIdle,
   getStripeSecretRequest: requestIdle,
   getStripeFinalSecretRequest: requestIdle,
@@ -239,6 +241,20 @@ const budgetsSlice = createSlice({
         state.fetchBudgetReceiptsRequest = {
           inProgress: false,
           messages: (action.payload as string) || "Error al obtener los recibos",
+          ok: false,
+        };
+      })
+      // removeReceiptProductsThunk
+      .addCase(removeReceiptProductsThunk.pending, (state) => {
+        state.removeReceiptProductsRequest = { inProgress: true, messages: "", ok: false };
+      })
+      .addCase(removeReceiptProductsThunk.fulfilled, (state) => {
+        state.removeReceiptProductsRequest = { inProgress: false, messages: "", ok: true };
+      })
+      .addCase(removeReceiptProductsThunk.rejected, (state, action) => {
+        state.removeReceiptProductsRequest = {
+          inProgress: false,
+          messages: (action.payload as string) || "Error al reducir el inventario",
           ok: false,
         };
       })

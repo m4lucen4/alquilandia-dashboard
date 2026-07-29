@@ -2,6 +2,7 @@ import { apiClient } from "./api";
 import type {
   BudgetsResponse,
   Budget,
+  BudgetLine,
   BudgetPaginatedProductsResponse,
   Receipt,
   UnavailableProduct,
@@ -167,6 +168,24 @@ export const rejectBudget = async (budgetId: string): Promise<void> => {
 export const getBudgetReceipts = async (id: string): Promise<Receipt[]> => {
   const response = await apiClient(`/budgets/${id}/receipts`);
   return response.json();
+};
+
+export interface RemoveReceiptProductsParams {
+  budgetId: string;
+  budgetReference: number;
+  budgetLines: BudgetLine[];
+  clientEmail?: string;
+  netTotal: number;
+  vatTotal: number;
+}
+
+export const removeReceiptProducts = async (
+  body: RemoveReceiptProductsParams,
+): Promise<void> => {
+  await apiClient("/receipts/removeProducts", {
+    method: "POST",
+    body: JSON.stringify({ ...body, nfacture: 1, type: "Rotura", creationDate: new Date() }),
+  });
 };
 
 export const checkoutBudget = async ({

@@ -48,7 +48,6 @@ interface ModalGenerateBreakageInvoiceProps {
   businesses: Business[];
   taxesTypes: TaxesType[];
   breakageInvoiceType: InvoicesType | undefined;
-  canReduceInventory: boolean;
   isGeneratingInvoice: boolean;
   isReducingInventory: boolean;
   isDownloadingAnnex: boolean;
@@ -66,7 +65,6 @@ export const ModalGenerateBreakageInvoice: FC<ModalGenerateBreakageInvoiceProps>
   businesses,
   taxesTypes,
   breakageInvoiceType,
-  canReduceInventory,
   isGeneratingInvoice,
   isReducingInventory,
   isDownloadingAnnex,
@@ -139,7 +137,6 @@ export const ModalGenerateBreakageInvoice: FC<ModalGenerateBreakageInvoiceProps>
   }, [watchedLines, watchedTaxesTypeId, taxesTypes]);
 
   const handleReduceInventory = async () => {
-    if (!canReduceInventory) return;
     const valid = await trigger("lines");
     if (!valid) return;
     onReduceInventory(getValues());
@@ -272,13 +269,6 @@ export const ModalGenerateBreakageInvoice: FC<ModalGenerateBreakageInvoiceProps>
                 </p>
               )}
 
-              {!canReduceInventory && (
-                <p className="text-sm font-semibold text-amber-600">
-                  ⚠ Solo un administrador puede reducir el inventario. Puedes
-                  generar el anexo o la factura sin este paso.
-                </p>
-              )}
-
               <div className="rounded-md border border-gray-200">
                 <div className="divide-y divide-gray-100 px-4">
                   {fields.map((field, index) => (
@@ -373,7 +363,7 @@ export const ModalGenerateBreakageInvoice: FC<ModalGenerateBreakageInvoiceProps>
                 variant="secondary"
                 type="button"
                 loading={isReducingInventory}
-                disabled={isBusy || !canReduceInventory}
+                disabled={isBusy}
               />
               <Button
                 title="Descargar anexo"

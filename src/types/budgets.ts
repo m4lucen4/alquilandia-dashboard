@@ -217,6 +217,7 @@ export interface BudgetsState {
   deleteBudgetRequest: IRequest;
   rejectBudgetRequest: IRequest;
   fetchBudgetReceiptsRequest: IRequest;
+  removeReceiptProductsRequest: IRequest;
   checkoutRequest: IRequest;
   getStripeSecretRequest: IRequest;
   getStripeFinalSecretRequest: IRequest;

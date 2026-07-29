@@ -1,7 +1,11 @@
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { fetchBudgets, rejectBudgetThunk } from "../redux/actions/budgets";
+import {
+  fetchBudgets,
+  rejectBudgetThunk,
+  removeReceiptProductsThunk,
+} from "../redux/actions/budgets";
 import {
   clearBudgetsErrors,
   clearRejectBudgetErrors,
@@ -22,8 +26,6 @@ import type { Budget, User } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
 import { getBudgetById } from "../services/budgetsServices";
-import { getInventoryDetails } from "../services/inventoryService";
-import { editInventoryThunk } from "../redux/actions/inventory";
 import { PageHeader } from "@/components/shared/PageHeader";
 import Button from "@/components/shared/Button";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
@@ -60,8 +62,6 @@ export const Budgets: FC = () => {
   const { invoices, createInvoiceRequest } = useAppSelector(
     (state) => state.invoices,
   );
-  const currentUser = useAppSelector((state) => state.auth.user);
-  const canReduceInventory = currentUser?.role === "ADMIN";
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -378,50 +378,47 @@ export const Budgets: FC = () => {
 
   const handleReduceInventoryForBreakage = useCallback(
     async (values: BreakageFormValues) => {
+      if (!selectedBudgetForBreakage) return;
       const brokenLines = values.lines.filter((l) => l.brokenUnits > 0);
       if (brokenLines.length === 0) return;
 
       setIsReducingInventory(true);
       setReduceInventoryResult(null);
       try {
-        const results = await Promise.allSettled(
-          brokenLines.map(async (line) => {
-            const current = await getInventoryDetails(line.lineId);
-            const newUnidades = Math.max(0, (current.unidades || 0) - line.brokenUnits);
-            await dispatch(
-              editInventoryThunk({
-                id: line.lineId,
-                body: {
-                  elemento: current.elemento,
-                  categoria: current.categoria,
-                  unidades: newUnidades,
-                  precioUd: current.precioUd,
-                  precioCoste: current.precioCoste,
-                  costeTotal: newUnidades * current.precioCoste,
-                  private: current.private,
-                  observaciones: current.observaciones,
-                  archivo: current.archivo,
-                  extras: current.extras,
-                  priceExceptionList: current.priceExceptionList,
-                },
-              }),
-            ).unwrap();
+        const { budgetlines, price } = buildBreakageInvoiceData(
+          selectedBudgetForBreakage,
+          brokenLines,
+          21,
+        );
+
+        await dispatch(
+          removeReceiptProductsThunk({
+            budgetId: selectedBudgetForBreakage.budgetId,
+            budgetReference: selectedBudgetForBreakage.budgetReference,
+            budgetLines: budgetlines,
+            clientEmail: selectedBudgetForBreakage.user.email,
+            netTotal: price.subTotal,
+            vatTotal: price.vat,
           }),
-        );
-        const failedCount = results.filter((r) => r.status === "rejected").length;
-        setReduceInventoryResult(
-          failedCount === 0
-            ? { ok: true, message: "Inventario reducido correctamente." }
-            : {
-                ok: false,
-                message: `No se pudo reducir el inventario de ${failedCount} de ${brokenLines.length} artículo(s).`,
-              },
-        );
+        ).unwrap();
+
+        setReduceInventoryResult({
+          ok: true,
+          message: "Inventario reducido correctamente.",
+        });
+      } catch (error) {
+        setReduceInventoryResult({
+          ok: false,
+          message:
+            typeof error === "string"
+              ? error
+              : "No se pudo reducir el inventario.",
+        });
       } finally {
         setIsReducingInventory(false);
       }
     },
-    [dispatch],
+    [selectedBudgetForBreakage, dispatch],
   );
 
   const handleDownloadBreakageAnnex = useCallback(
@@ -722,7 +719,6 @@ export const Budgets: FC = () => {
         businesses={businesses}
         taxesTypes={taxesTypes}
         breakageInvoiceType={breakageInvoiceType}
-        canReduceInventory={canReduceInventory}
         isGeneratingInvoice={createInvoiceRequest.inProgress}
         isReducingInventory={isReducingInventory}
         isDownloadingAnnex={isDownloadingAnnex}

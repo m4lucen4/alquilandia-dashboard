@@ -11,6 +11,7 @@ import {
   deleteBudget,
   rejectBudget,
   getBudgetReceipts,
+  removeReceiptProducts,
   checkoutBudget,
   getStripeSecret,
   getStripeFinalSecret,
@@ -22,6 +23,7 @@ import {
   type CheckoutBudgetParams,
   type GetStripeSecretParams,
   type FetchBudgetCatalogParams,
+  type RemoveReceiptProductsParams,
 } from "../../services/budgetsServices";
 import { getProductStock } from "../../services/inventoryService";
 import type { BudgetError } from "../../types/budgets";
@@ -282,6 +284,19 @@ export const fetchBudgetReceipts = createAsyncThunk(
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al obtener los recibos";
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const removeReceiptProductsThunk = createAsyncThunk(
+  "budgets/removeReceiptProducts",
+  async (params: RemoveReceiptProductsParams, { rejectWithValue }) => {
+    try {
+      return await removeReceiptProducts(params);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al reducir el inventario";
       return rejectWithValue(errorMessage);
     }
   },
