@@ -45,29 +45,31 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
           const invoiceTypeName = invoice.invoices_type?.invoices;
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1">
               <span className="font-medium text-gray-900">
                 {formatInvoiceNumber(
                   info.getValue() as number,
                   invoice.created_at,
                 )}
               </span>
-              {invoice.is_corrective ? (
-                <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                  Rectificativa
-                </span>
-              ) : (
-                invoiceTypeName && (
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                    {invoiceTypeName}
+              <div className="flex items-center gap-1">
+                {invoice.is_corrective ? (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                    Rectificativa
                   </span>
-                )
-              )}
-              {rectifiedIds.has(invoice.id) && (
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                  Rectificada
-                </span>
-              )}
+                ) : (
+                  invoiceTypeName && (
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                      {invoiceTypeName}
+                    </span>
+                  )
+                )}
+                {rectifiedIds.has(invoice.id) && (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    Rectificada
+                  </span>
+                )}
+              </div>
             </div>
           );
         },
@@ -87,7 +89,16 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
         cell: (info) => {
           const invoice = info.row.original;
           const businessName = invoice.business?.name || "-";
-          return <span className="text-gray-900">{businessName}</span>;
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-gray-900">{businessName}</span>
+              {invoice.client_name && (
+                <span className="text-xs text-gray-500">
+                  {invoice.client_name}
+                </span>
+              )}
+            </div>
+          );
         },
       },
       {

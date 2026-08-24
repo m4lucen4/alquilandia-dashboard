@@ -76,7 +76,18 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
         cell: (info) => {
           const budget = info.row.original;
           const clientName = budget.client || budget.user?.FullName || "-";
-          return <span className="text-gray-900">{clientName}</span>;
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-gray-900">{clientName}</span>
+              {budget.address && (
+                <span className="text-xs text-gray-500">
+                  {budget.address.length > 50
+                    ? `${budget.address.slice(0, 50)}...`
+                    : budget.address}
+                </span>
+              )}
+            </div>
+          );
         },
       },
       {
