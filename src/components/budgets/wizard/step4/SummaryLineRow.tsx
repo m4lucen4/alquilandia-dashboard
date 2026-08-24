@@ -2,13 +2,12 @@ import { type FC, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import type { BudgetLine, Extra } from "@/types/budgets";
 import type { Discount } from "@/types/discounts";
-import { getExceptionPrice, formatCurrency } from "@/helpers";
+import { formatCurrency } from "@/helpers";
 import { ExtrasModal } from "../step3/ExtrasModal";
 import type { ProductCardFormValues } from "../step3/ProductCard";
 
 interface SummaryLineRowProps {
   line: BudgetLine;
-  eventDate: string;
   maxUnits: number;
   discounts: Discount[];
   showDiscount: boolean;
@@ -19,7 +18,6 @@ interface SummaryLineRowProps {
 
 export const SummaryLineRow: FC<SummaryLineRowProps> = ({
   line,
-  eventDate,
   maxUnits,
   discounts,
   showDiscount,
@@ -51,10 +49,8 @@ export const SummaryLineRow: FC<SummaryLineRowProps> = ({
   const currentExtras = watch("extras");
   const checkedExtrasCount = currentExtras.filter((e) => e.checked).length;
 
-  const unitPrice = getExceptionPrice(
-    { precioUd: line.originalPrice, priceExceptionList: line.priceExceptionList },
-    eventDate,
-  );
+  const unitPrice = line.precioUd;
+  const displayTotal = unitPrice * currentUnits * (1 - line.descuento / 100);
 
   const handleUnitsChange = (val: number) => {
     const clamped = Math.min(Math.max(1, val), maxUnits);
@@ -81,7 +77,7 @@ export const SummaryLineRow: FC<SummaryLineRowProps> = ({
         </span>
         <div className="flex items-center gap-3 shrink-0">
           <span className="text-sm font-bold text-blue-600">
-            {formatCurrency(line.totalPrice)}
+            {formatCurrency(displayTotal)}
           </span>
           <button
             type="button"

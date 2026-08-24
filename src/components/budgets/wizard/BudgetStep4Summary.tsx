@@ -133,7 +133,6 @@ export const BudgetStep4Summary: FC = () => {
               <SummaryLineRow
                 key={line.id}
                 line={line}
-                eventDate={budget.eventDate}
                 maxUnits={getMaxUnits(line.id, line.unidades)}
                 discounts={discounts}
                 showDiscount={showAdminControls}

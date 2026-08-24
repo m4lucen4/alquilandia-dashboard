@@ -266,10 +266,7 @@ export function setBudgetLineUnits(
 ): Budget {
   const lines = (budget.budgetLines ?? []).map((l) => {
     if (l.id !== lineId) return l;
-    const unitPrice = getExceptionPrice(
-      { precioUd: l.originalPrice, priceExceptionList: l.priceExceptionList },
-      budget.eventDate,
-    );
+    const unitPrice = l.precioUd;
     const totalPrice = units * unitPrice - (units * unitPrice * l.descuento) / 100;
     return { ...l, units, totalPrice };
   });
@@ -288,10 +285,7 @@ export function updateBudgetLineValues(
     const units = patch.units ?? l.units;
     const descuento = patch.descuento ?? l.descuento;
     const extras = patch.extras ?? l.extras;
-    const unitPrice = getExceptionPrice(
-      { precioUd: l.originalPrice, priceExceptionList: l.priceExceptionList },
-      budget.eventDate,
-    );
+    const unitPrice = l.precioUd;
     const totalPrice = units * unitPrice - (units * unitPrice * descuento) / 100;
     return { ...l, units, descuento, extras, totalPrice };
   });
