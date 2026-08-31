@@ -8,16 +8,19 @@ interface SearchInvoicesProps {
   selectedBusinessId: string;
   budgetNumber: string;
   invoiceNumber: string;
+  clientName: string;
   appliedFilters: {
     businessId: string;
     budgetNumber: string;
     invoiceNumber: string;
+    clientName: string;
   };
   businesses: Business[];
   isLoading: boolean;
   onBusinessChange: (businessId: string) => void;
   onBudgetNumberChange: (budgetNumber: string) => void;
   onInvoiceNumberChange: (invoiceNumber: string) => void;
+  onClientNameChange: (clientName: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
 }
@@ -26,12 +29,14 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
   selectedBusinessId,
   budgetNumber,
   invoiceNumber,
+  clientName,
   appliedFilters,
   businesses,
   isLoading,
   onBusinessChange,
   onBudgetNumberChange,
   onInvoiceNumberChange,
+  onClientNameChange,
   onSearch,
   onClearFilters,
 }) => {
@@ -47,7 +52,7 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
 
   return (
     <div className="rounded-lg bg-white p-4 shadow ring-1 ring-black/5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {/* Select Empresa */}
         <SelectField
           label="Empresa"
@@ -56,6 +61,21 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
           onChange={(e) => onBusinessChange(e.target.value)}
           options={businessOptions}
           placeholder="Todas las empresas"
+        />
+
+        {/* Input Nombre de Cliente */}
+        <InputField
+          label="Nombre cliente"
+          name="clientName"
+          value={clientName}
+          onChange={(e) => onClientNameChange(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+              onSearch();
+            }
+          }}
+          placeholder="Ej: Juan García"
+          type="text"
         />
 
         {/* Input Número de Presupuesto */}
@@ -89,7 +109,7 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
         />
 
         {/* Botones */}
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
+        <div className="flex items-end gap-2 sm:col-span-2">
           <Button
             title="Buscar"
             onClick={onSearch}
@@ -111,6 +131,7 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
 
       {/* Indicador de filtros activos */}
       {(appliedFilters.businessId ||
+        appliedFilters.clientName ||
         appliedFilters.budgetNumber ||
         appliedFilters.invoiceNumber) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -120,6 +141,11 @@ export const SearchInvoices: FC<SearchInvoicesProps> = ({
               Empresa:{" "}
               {businesses.find((b) => b.id === appliedFilters.businessId)
                 ?.name || appliedFilters.businessId}
+            </span>
+          )}
+          {appliedFilters.clientName && (
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+              Cliente: {appliedFilters.clientName}
             </span>
           )}
           {appliedFilters.budgetNumber && (

@@ -46,6 +46,7 @@ export const getAllInvoices = async (
   page?: number,
   pageSize?: number,
   invoiceNumber?: string,
+  clientName?: string,
 ): Promise<{ invoices: Invoice[]; total: number }> => {
   let query = supabase.from("invoices").select(
     `
@@ -87,6 +88,10 @@ export const getAllInvoices = async (
     if (!Number.isNaN(parsedInvoiceNumber)) {
       query = query.eq("invoice_number", parsedInvoiceNumber);
     }
+  }
+
+  if (clientName) {
+    query = query.ilike("client_name", `%${clientName}%`);
   }
 
   // Fetch all data without pagination to sort globally
