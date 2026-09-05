@@ -59,6 +59,30 @@ export interface Invoice {
 }
 
 /**
+ * Invoice data returned by the paginated invoices listing.
+ * Full invoice details are loaded only when opening the edit workflow.
+ */
+export interface InvoiceListItem {
+  id: string;
+  invoice_number: number;
+  budget_reference: number;
+  pdf_url?: string;
+  created_at?: string;
+  client_name?: string;
+  is_corrective?: boolean;
+  total: number;
+  business?: {
+    id: string;
+    name: string;
+    is_default?: boolean;
+  };
+  invoices_type?: {
+    id: string;
+    invoices: string;
+  };
+}
+
+/**
  * Data required to create a new invoice
  */
 export interface CreateInvoiceData {
@@ -115,7 +139,7 @@ export interface CreateCorrectiveInvoiceData {
  * Redux state for invoices
  */
 export interface InvoicesState {
-  invoices: Invoice[];
+  invoices: InvoiceListItem[];
   total: number;
   fetchInvoicesRequest: IRequest;
   createInvoiceRequest: IRequest;

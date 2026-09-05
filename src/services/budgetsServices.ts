@@ -105,6 +105,10 @@ export interface GetStripeSecretParams {
   budgetId: string;
 }
 
+export interface StripeClientSecretResponse {
+  clientSecret: string;
+}
+
 export const getBudgetFinalDetails = async (id: string): Promise<Budget> => {
   const response = await apiClient(`/budgets/detailsFinal/${id}`);
   return response.json();
@@ -210,7 +214,7 @@ export const getStripeSecret = async ({
 export const getStripeFinalSecret = async ({
   amount,
   budgetId,
-}: GetStripeSecretParams): Promise<string | UnavailableProduct[]> => {
+}: GetStripeSecretParams): Promise<StripeClientSecretResponse | UnavailableProduct[]> => {
   const response = await apiClient(
     `/budgets/${budgetId}/finalSecret/${amount}`,
   );

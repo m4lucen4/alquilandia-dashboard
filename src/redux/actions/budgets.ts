@@ -359,7 +359,7 @@ export const getStripeFinalSecretThunk = createAsyncThunk(
           products: result,
         } satisfies BudgetError);
       }
-      return result;
+      return result.clientSecret;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al obtener el secret final de Stripe";

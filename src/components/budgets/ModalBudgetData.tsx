@@ -2,9 +2,15 @@ import { type FC, useState } from "react";
 import { Modal } from "../shared/Modal";
 import Button from "../shared/Button";
 import type { Budget, User } from "../../types/budgets";
+import type { CurrentUser } from "@/types/auth";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
 import { calculateBudgetTotal, getEffectiveUnitPrice } from "@/helpers/budgets";
+import {
+  canCopyFinalPaymentLink,
+  canValidateBudget,
+  getFinalPaymentUrl,
+} from "@/helpers/budgetFinalPayment";
 
 interface ModalBudgetDataProps {
   isOpen: boolean;
@@ -14,6 +20,10 @@ interface ModalBudgetDataProps {
   onRescue?: () => void;
   onReject?: () => void;
   isRejecting?: boolean;
+  currentUser?: CurrentUser | null;
+  hideButtons?: boolean;
+  isValidating?: boolean;
+  onValidate?: () => void;
 }
 
 export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
@@ -24,14 +34,28 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
   onRescue,
   onReject,
   isRejecting = false,
+  currentUser = null,
+  hideButtons = false,
+  isValidating = false,
+  onValidate,
 }) => {
   const [isConfirmingReject, setIsConfirmingReject] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<"success" | "error" | null>(null);
 
   if (!isOpen || !budget) return null;
 
   const handleReject = () => {
     setIsConfirmingReject(false);
     onReject?.();
+  };
+
+  const handleCopyFinalPaymentLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getFinalPaymentUrl(budget.id));
+      setCopyFeedback("success");
+    } catch {
+      setCopyFeedback("error");
+    }
   };
 
   const clientName =
@@ -263,8 +287,44 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
           </div>
 
           {/* Actions */}
-          {(onReject || onRescue) && (
+          {(onReject ||
+            onRescue ||
+            onValidate ||
+            (currentUser && canCopyFinalPaymentLink(budget.status, currentUser.role))) &&
+            !hideButtons && (
             <div className="flex flex-col gap-3">
+              {currentUser && canValidateBudget(budget.status, currentUser.role) && onValidate && (
+                <Button
+                  title="Validar"
+                  onClick={onValidate}
+                  variant="primary"
+                  loading={isValidating}
+                  block
+                />
+              )}
+              {currentUser &&
+                canCopyFinalPaymentLink(budget.status, currentUser.role) && (
+                  <div>
+                    <Button
+                      title="Link de pago final"
+                      onClick={handleCopyFinalPaymentLink}
+                      variant="secondary"
+                      block
+                    />
+                    {copyFeedback && (
+                      <p
+                        className={`mt-2 text-center text-sm font-medium ${
+                          copyFeedback === "success" ? "text-green-600" : "text-red-600"
+                        }`}
+                        role="status"
+                      >
+                        {copyFeedback === "success"
+                          ? "Link copiado al portapapeles"
+                          : "No se pudo copiar el link. Inténtalo de nuevo."}
+                      </p>
+                    )}
+                  </div>
+                )}
               {onReject && budget.status !== "REJECTED" && (
                 <Button
                   title="Rechazar presupuesto"

@@ -5,13 +5,13 @@ import {
   ArrowPathIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
-import type { Invoice } from "@/types/invoices";
+import type { InvoiceListItem } from "@/types/invoices";
 import { formatDate } from "@/helpers/dates";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 import { Table } from "@/components/shared/Table";
 
 interface InvoicesTableProps {
-  invoices: Invoice[];
+  invoices: InvoiceListItem[];
   total: number;
   pageIndex: number;
   pageSize: number;
@@ -19,8 +19,8 @@ interface InvoicesTableProps {
   rectifiedIds: Set<string>;
   onPageChange: (pageIndex: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onOpenCorrectiveModal: (invoice: Invoice) => void;
-  onEditInvoice: (invoice: Invoice) => void;
+  onOpenCorrectiveModal: (invoice: InvoiceListItem) => void;
+  onEditInvoice: (invoice: InvoiceListItem) => void;
 }
 
 export const InvoicesTable: FC<InvoicesTableProps> = ({
@@ -35,7 +35,7 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
   onOpenCorrectiveModal,
   onEditInvoice,
 }) => {
-  const columns = useMemo<ColumnDef<Invoice>[]>(
+  const columns = useMemo<ColumnDef<InvoiceListItem>[]>(
     () => [
       {
         accessorKey: "invoice_number",
@@ -102,13 +102,13 @@ export const InvoicesTable: FC<InvoicesTableProps> = ({
         },
       },
       {
-        accessorKey: "price.total",
+        accessorKey: "total",
         header: "Total",
         cell: (info) => {
           const invoice = info.row.original;
           return (
             <span className="font-semibold text-gray-900">
-              {formatCurrency(invoice.price?.total || 0)}
+              {formatCurrency(invoice.total)}
             </span>
           );
         },

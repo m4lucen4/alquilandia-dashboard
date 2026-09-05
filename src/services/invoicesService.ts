@@ -4,6 +4,7 @@ import type {
   CreateCorrectiveInvoiceData,
   UpdateInvoiceData,
   Invoice,
+  InvoiceListItem,
 } from "@/types/invoices";
 import type { Json } from "@/types/supabase";
 import { generateInvoicePDF } from "./pdfService";
@@ -43,14 +44,21 @@ const buildInvoicePdfFileName = (
 export const getAllInvoices = async (
   businessId?: string,
   budgetReference?: string,
-  page?: number,
-  pageSize?: number,
+  page = 0,
+  pageSize = 10,
   invoiceNumber?: string,
   clientName?: string,
-): Promise<{ invoices: Invoice[]; total: number }> => {
+): Promise<{ invoices: InvoiceListItem[]; total: number }> => {
   let query = supabase.from("invoices").select(
     `
-      *,
+      id,
+      invoice_number,
+      budget_reference,
+      pdf_url,
+      created_at,
+      client_name,
+      is_corrective,
+      total:price->>total,
       business:business_id (
         id,
         name,
@@ -58,13 +66,10 @@ export const getAllInvoices = async (
       ),
       invoices_type:invoices_type_id (
         id,
-        invoices,
-        percentage,
-        concept,
-        show_budgetlines
+        invoices
       )
     `,
-    { count: "exact" },
+    { count: "planned" },
   );
 
   // Apply filters if provided
@@ -94,7 +99,15 @@ export const getAllInvoices = async (
     query = query.ilike("client_name", `%${clientName}%`);
   }
 
-  // Fetch all data without pagination to sort globally
+  query = query
+    .order("business(is_default)", { ascending: false })
+    .order("invoice_number", { ascending: false })
+    .order("id", { ascending: true });
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  query = query.range(from, to);
+
   const { data, error, count } = await query;
 
   if (error) {
@@ -105,32 +118,72 @@ export const getAllInvoices = async (
     );
   }
 
-  // Sort client-side: first by business.is_default (true first), then by invoice_number (descending)
-  const sortedInvoices = ((data || []) as unknown as Invoice[]).sort((a, b) => {
-    // First, sort by is_default (true comes first)
-    const aIsDefault = a.business?.is_default ?? false;
-    const bIsDefault = b.business?.is_default ?? false;
-
-    if (aIsDefault !== bIsDefault) {
-      return bIsDefault ? 1 : -1; // true (1) comes before false (0)
-    }
-
-    // Then, sort by invoice_number (descending)
-    return (b.invoice_number || 0) - (a.invoice_number || 0);
-  });
-
-  // Apply pagination after sorting
-  let paginatedInvoices = sortedInvoices;
-  if (page !== undefined && pageSize !== undefined) {
-    const from = page * pageSize;
-    const to = from + pageSize;
-    paginatedInvoices = sortedInvoices.slice(from, to);
-  }
+  const invoices = ((data || []) as unknown as Array<
+    Omit<InvoiceListItem, "total"> & { total: string | null }
+  >).map((invoice) => ({
+    ...invoice,
+    total: Number(invoice.total) || 0,
+  }));
 
   return {
-    invoices: paginatedInvoices,
+    invoices,
     total: count || 0,
   };
+};
+
+/**
+ * Gets a complete invoice for the edit workflow.
+ *
+ * @param invoiceId - Invoice ID
+ * @returns Complete invoice
+ * @throws Error if fetch fails
+ */
+export const getInvoiceById = async (invoiceId: string): Promise<Invoice> => {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(
+      `
+      *,
+      business:business_id (
+        id,
+        name,
+        nif,
+        address,
+        locality,
+        province,
+        phone,
+        postal_code,
+        additional_data
+      ),
+      invoices_type:invoices_type_id (
+        id,
+        invoices,
+        percentage,
+        concept,
+        show_budgetlines
+      ),
+      taxes_type:taxes_type_id (
+        id,
+        name,
+        tax
+      ),
+      original_invoice:original_invoice_id (
+        invoice_number
+      )
+    `,
+    )
+    .eq("id", invoiceId)
+    .single();
+
+  if (error || !data) {
+    console.error("Error fetching invoice by ID:", error);
+    throw new Error(
+      error?.message ||
+        "No se pudo cargar la factura. Por favor, inténtelo de nuevo.",
+    );
+  }
+
+  return data as unknown as Invoice;
 };
 
 /**

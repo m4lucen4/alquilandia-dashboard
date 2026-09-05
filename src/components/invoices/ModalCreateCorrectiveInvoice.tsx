@@ -1,13 +1,13 @@
 import { type FC, useState } from "react";
 import { Modal } from "../shared/Modal";
-import type { Invoice } from "@/types/invoices";
+import type { InvoiceListItem } from "@/types/invoices";
 import { formatCurrency, formatInvoiceNumber } from "@/helpers";
 
 interface ModalCreateCorrectiveInvoiceProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
-  invoice: Invoice | null;
+  invoice: InvoiceListItem | null;
   isCreating: boolean;
 }
 
@@ -58,7 +58,7 @@ export const ModalCreateCorrectiveInvoice: FC<
             <div className="flex justify-between text-sm">
               <dt className="font-medium text-gray-700">Total:</dt>
               <dd className="font-semibold text-gray-900">
-                {formatCurrency(invoice.price?.total || 0)}
+                {formatCurrency(invoice.total)}
               </dd>
             </div>
           </dl>

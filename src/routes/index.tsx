@@ -10,6 +10,7 @@ import { Users } from "@/pages/Users";
 import { InventoryPage } from "@/pages/Inventory";
 import { Settings } from "@/pages/Settings";
 import { Profile } from "@/pages/Profile";
+import { FinalBudgetPayment } from "@/pages/FinalBudgetPayment";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import PublicRoute from "./PublicRoute";
@@ -72,6 +73,10 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: "/reserva/:budgetId/pago-final",
+    element: <FinalBudgetPayment />,
   },
   {
     path: "/login",

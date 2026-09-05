@@ -20,10 +20,13 @@ import { AlertInvoices } from "@/components/invoices/AlertInvoices";
 import { SearchInvoices } from "@/components/invoices/SearchInvoices";
 import { InvoicesTable } from "@/components/invoices/InvoicesTable";
 import { useInvoiceSearch } from "@/hooks/useInvoiceSearch";
-import { getRectifiedInvoiceIds } from "@/services/invoicesService";
+import {
+  getInvoiceById,
+  getRectifiedInvoiceIds,
+} from "@/services/invoicesService";
 import { getBudgetByReference } from "@/services/budgetsServices";
 import { getClientDataFromUser } from "@/helpers/budgets";
-import type { Invoice } from "@/types/invoices";
+import type { Invoice, InvoiceListItem } from "@/types/invoices";
 import type { User } from "@/types/budgets";
 
 export const Invoices: FC = () => {
@@ -79,7 +82,7 @@ export const Invoices: FC = () => {
   // Corrective invoice modal states
   const [isCorrectiveModalOpen, setIsCorrectiveModalOpen] = useState(false);
   const [selectedInvoiceForCorrective, setSelectedInvoiceForCorrective] =
-    useState<Invoice | null>(null);
+    useState<InvoiceListItem | null>(null);
 
   // Edit invoice modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -99,7 +102,7 @@ export const Invoices: FC = () => {
   };
 
   // --- Corrective modal handlers ---
-  const handleOpenCorrectiveModal = useCallback((invoice: Invoice) => {
+  const handleOpenCorrectiveModal = useCallback((invoice: InvoiceListItem) => {
     setSelectedInvoiceForCorrective(invoice);
     setIsCorrectiveModalOpen(true);
   }, []);
@@ -148,26 +151,28 @@ export const Invoices: FC = () => {
   );
 
   // --- Edit modal handlers ---
-  const handleOpenEditModal = useCallback(async (invoice: Invoice) => {
-    setSelectedInvoiceForEdit(invoice);
-    setEditBusinessId(invoice.business_id);
-    setEditInvoicesTypeId(invoice.invoices_type_id);
-    setEditTaxesTypeId(invoice.taxes_type_id);
-    setEditAdditionalData(invoice.additional_data || "");
+  const handleOpenEditModal = useCallback(async (invoice: InvoiceListItem) => {
+    const fullInvoice = await getInvoiceById(invoice.id);
+
+    setSelectedInvoiceForEdit(fullInvoice);
+    setEditBusinessId(fullInvoice.business_id);
+    setEditInvoicesTypeId(fullInvoice.invoices_type_id);
+    setEditTaxesTypeId(fullInvoice.taxes_type_id);
+    setEditAdditionalData(fullInvoice.additional_data || "");
     setEditCreatedAt(
-      invoice.created_at ? invoice.created_at.split("T")[0] : "",
+      fullInvoice.created_at ? fullInvoice.created_at.split("T")[0] : "",
     );
 
     // Fetch budget to get coupon_discount and user
-    if (invoice.budget_reference) {
+    if (fullInvoice.budget_reference) {
       try {
-        const budget = await getBudgetByReference(invoice.budget_reference);
+        const budget = await getBudgetByReference(fullInvoice.budget_reference);
 
         // For old invoices (coupon_discount not stored), use budget value
-        if (!invoice.coupon_discount && budget?.totalCouponDiscount) {
+        if (!fullInvoice.coupon_discount && budget?.totalCouponDiscount) {
           setEditCouponDiscount(budget.totalCouponDiscount);
         } else {
-          setEditCouponDiscount(invoice.coupon_discount || 0);
+          setEditCouponDiscount(fullInvoice.coupon_discount || 0);
         }
 
         // Fetch fresh user data for titular/empresa selection
@@ -186,10 +191,10 @@ export const Invoices: FC = () => {
           }
         }
       } catch {
-        setEditCouponDiscount(invoice.coupon_discount || 0);
+        setEditCouponDiscount(fullInvoice.coupon_discount || 0);
       }
     } else {
-      setEditCouponDiscount(invoice.coupon_discount || 0);
+      setEditCouponDiscount(fullInvoice.coupon_discount || 0);
     }
 
     setIsEditModalOpen(true);

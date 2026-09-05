@@ -35,8 +35,9 @@ import { BudgetLocationMapPanel } from "../components/budgets/BudgetLocationMapP
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { budgets, total, fetchBudgetsRequest, rejectBudgetRequest } =
+  const { budgets, total, fetchBudgetsRequest, rejectBudgetRequest, updateBudgetRequest } =
     useAppSelector((state) => state.budgets);
+  const { user: currentUser } = useAppSelector((state) => state.auth);
   const { businesses } = useAppSelector((state) => state.business);
   const { taxesTypes } = useAppSelector((state) => state.taxesTypes);
   const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
@@ -248,6 +249,9 @@ export const Budgets: FC = () => {
         onRescue={budgetDetails.handleRescueBudget}
         onReject={budgetDetails.handleRejectBudget}
         isRejecting={rejectBudgetRequest.inProgress}
+        currentUser={currentUser}
+        onValidate={budgetDetails.handleValidateBudget}
+        isValidating={updateBudgetRequest.inProgress}
       />
 
       <ModalGenerateBreakageInvoice
