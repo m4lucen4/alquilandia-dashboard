@@ -4,7 +4,7 @@ import {
   logoutUser,
   requestPasswordChange,
 } from "../../services/authService";
-import type { LoginPayload } from "@/types/auth";
+import { isAllowedPlatformRole, type LoginPayload } from "@/types/auth";
 
 // Thunk para login
 export const login = createAsyncThunk(
@@ -12,6 +12,9 @@ export const login = createAsyncThunk(
   async (payload: LoginPayload, { rejectWithValue }) => {
     try {
       const response = await loginUser(payload);
+      if (!isAllowedPlatformRole(response.currentUser?.role)) {
+        return rejectWithValue("No tienes permisos para acceder a la plataforma");
+      }
       return response;
     } catch (error) {
       const errorMessage =

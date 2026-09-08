@@ -11,6 +11,7 @@ import { InventoryPage } from "@/pages/Inventory";
 import { Settings } from "@/pages/Settings";
 import { Profile } from "@/pages/Profile";
 import { FinalBudgetPayment } from "@/pages/FinalBudgetPayment";
+import { VisualStock } from "@/pages/VisualStock";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import PublicRoute from "./PublicRoute";
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
             element: <InventoryPage />,
           },
           {
+            path: "stock",
+            element: <VisualStock />,
+          },
+          {
             path: "profile",
             element: <Profile />,
           },
@@ -75,8 +80,13 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "/reserva/:budgetId/pago-final",
-    element: <FinalBudgetPayment />,
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: "/reserva/:budgetId/pago-final",
+        element: <FinalBudgetPayment />,
+      },
+    ],
   },
   {
     path: "/login",

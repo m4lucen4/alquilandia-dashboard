@@ -9,6 +9,7 @@ interface PaginationProps {
   onPageSizeChange: (pageSize: number) => void;
   canPreviousPage: boolean;
   canNextPage: boolean;
+  showPageSize?: boolean;
 }
 
 export const Pagination: FC<PaginationProps> = ({
@@ -20,6 +21,7 @@ export const Pagination: FC<PaginationProps> = ({
   onPageSizeChange,
   canPreviousPage,
   canNextPage,
+  showPageSize = true,
 }) => {
   const getPageNumbers = () => {
     const maxVisiblePages = 5;
@@ -102,21 +104,23 @@ export const Pagination: FC<PaginationProps> = ({
             Mostrando <span className="font-medium">{startItem}</span> a{" "}
             <span className="font-medium">{endItem}</span> resultados
           </p>
-          <div className="flex items-center gap-2">
-            <label htmlFor="pageSize" className="text-sm text-gray-700">
-              Mostrar:
-            </label>
-            <select
-              id="pageSize"
-              value={pageSize}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
+          {showPageSize && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="pageSize" className="text-sm text-gray-700">
+                Mostrar:
+              </label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          )}
         </div>
         <div>
           <nav

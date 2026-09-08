@@ -31,6 +31,7 @@ interface ModalBudgetDataProps {
     description: string;
     type: "success" | "error";
   } | null;
+  technicianName?: string;
 }
 
 export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
@@ -48,6 +49,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
   onPostpone,
   isPostponing = false,
   feedback = null,
+  technicianName,
 }) => {
   const [isConfirmingReject, setIsConfirmingReject] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<"success" | "error" | null>(null);
@@ -73,6 +75,14 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     budget.client ||
     "-";
+  const resolvedTechnicianName =
+    technicianName ||
+    (budget.technician?.firstName
+      ? `${budget.technician.firstName} ${budget.technician.lastName}`.trim()
+      : "-");
+  const cardPaymentAmount = budget.payment?.type === "CREDIT_CARD_PAYMENT"
+    ? budget.payment.hpp?.AMOUNT
+    : undefined;
 
   const statusConfig = getStatusBadgeConfig(budget.status);
   const canPostpone =
@@ -133,6 +143,18 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                Fecha de creación
+              </p>
+              <p className="mt-0.5 text-gray-900">{formatDate(budget.creationDate)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                Técnico
+              </p>
+              <p className="mt-0.5 text-gray-900">{resolvedTechnicianName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                 Estado
               </p>
               <span
@@ -146,7 +168,7 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                 Dirección evento
               </p>
               <p className="mt-0.5 text-gray-900">
-                {budget.address || "-"}
+                {budget.address || "Recogida en almacén"}
               </p>
             </div>
           </div>
@@ -264,6 +286,12 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                     <span>Subtotal</span>
                     <span>{formatCurrency(subTotal)}</span>
                   </div>
+                  {cardPaymentAmount && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Pago por tarjeta</span>
+                      <span>{formatCurrency(Number(cardPaymentAmount) / 100)}</span>
+                    </div>
+                  )}
                   {extras > 0 && (
                     <div className="flex justify-between text-gray-600">
                       <span>Extras</span>

@@ -1,10 +1,11 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAppSelector } from '@/redux/hooks';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAppSelector } from "@/redux/hooks";
+import { isAuthorizedPlatformSession } from "@/types/auth";
 
 const ProtectedRoute = () => {
-  const isAuthenticated = useAppSelector((state) => state.auth.authenticated);
+  const { authenticated, user } = useAppSelector((state) => state.auth);
 
-  if (!isAuthenticated) {
+  if (!isAuthorizedPlatformSession(authenticated, user)) {
     return <Navigate to="/login" replace />;
   }
 

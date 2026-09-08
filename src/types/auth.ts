@@ -41,6 +41,18 @@ export interface CurrentUser {
   problematic: boolean;
 }
 
+export const platformRoles = ["ADMIN", "TECHNICIAN", "MANAGER"] as const;
+
+export type PlatformRole = (typeof platformRoles)[number];
+
+export const isAllowedPlatformRole = (role: unknown): role is PlatformRole =>
+  typeof role === "string" && platformRoles.includes(role as PlatformRole);
+
+export const isAuthorizedPlatformSession = (
+  authenticated: boolean,
+  user: CurrentUser | null,
+): boolean => authenticated && isAllowedPlatformRole(user?.role);
+
 export interface LoginPayload {
     email: string;
     password: string;
