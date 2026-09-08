@@ -74,4 +74,81 @@ describe("ModalBudgetData", () => {
       "No se pudo copiar el link. Inténtalo de nuevo.",
     );
   });
+
+  it.each([
+    { role: "ADMIN", status: "PAID25" },
+    { role: "MANAGER", status: "PAID" },
+    { role: "TECHNICIAN", status: "TRANSFER_PAID" },
+  ])(
+    "shows postpone for $role when the budget is $status",
+    ({ role, status }) => {
+      render(
+        <ModalBudgetData
+          isOpen
+          onClose={vi.fn()}
+          budget={{ ...budget, status }}
+          user={null}
+          currentUser={{ ...currentUser, role }}
+          onPostpone={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole("button", { name: "Posponer" })).toBeVisible();
+    },
+  );
+
+  it.each([
+    { role: "CLIENT", status: "PAID25", hideButtons: false },
+    { role: "MANAGER", status: "DRAFT", hideButtons: false },
+    { role: "MANAGER", status: "PAID", hideButtons: true },
+  ])("hides postpone when access requirements are not met", ({ role, status, hideButtons }) => {
+    render(
+      <ModalBudgetData
+        isOpen
+        onClose={vi.fn()}
+        budget={{ ...budget, status }}
+        user={null}
+        currentUser={{ ...currentUser, role }}
+        hideButtons={hideButtons}
+        onPostpone={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Posponer" })).not.toBeInTheDocument();
+  });
+
+  it("disables postpone while the update is in progress", () => {
+    render(
+      <ModalBudgetData
+        isOpen
+        onClose={vi.fn()}
+        budget={budget}
+        user={null}
+        currentUser={currentUser}
+        onPostpone={vi.fn()}
+        isPostponing
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Posponer" })).toBeDisabled();
+  });
+
+  it("shows postponement feedback inside the modal", () => {
+    render(
+      <ModalBudgetData
+        isOpen
+        onClose={vi.fn()}
+        budget={budget}
+        user={null}
+        currentUser={currentUser}
+        feedback={{
+          title: "Presupuesto pospuesto",
+          description: "El presupuesto 123 ha sido marcado como pospuesto",
+          type: "success",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Presupuesto pospuesto");
+  });
 });

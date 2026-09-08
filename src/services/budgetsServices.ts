@@ -66,6 +66,11 @@ export const getBudgetById = async (budgetId: string): Promise<Budget> => {
   return data;
 };
 
+export const getBudgetDetailsByRecordId = async (id: string): Promise<Budget> => {
+  const response = await apiClient(`/budgets/details/${id}`);
+  return response.json();
+};
+
 /**
  * Obtiene un presupuesto por su número de referencia
  * @param budgetReference - Número de referencia del presupuesto

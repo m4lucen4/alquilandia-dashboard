@@ -252,6 +252,9 @@ export const Budgets: FC = () => {
         currentUser={currentUser}
         onValidate={budgetDetails.handleValidateBudget}
         isValidating={updateBudgetRequest.inProgress}
+        onPostpone={budgetDetails.handlePostponeBudget}
+        isPostponing={budgetDetails.isPostponing}
+        feedback={budgetDetails.budgetDetailsFeedback}
       />
 
       <ModalGenerateBreakageInvoice

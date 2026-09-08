@@ -24,6 +24,13 @@ interface ModalBudgetDataProps {
   hideButtons?: boolean;
   isValidating?: boolean;
   onValidate?: () => void;
+  onPostpone?: () => void;
+  isPostponing?: boolean;
+  feedback?: {
+    title: string;
+    description: string;
+    type: "success" | "error";
+  } | null;
 }
 
 export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
@@ -38,6 +45,9 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
   hideButtons = false,
   isValidating = false,
   onValidate,
+  onPostpone,
+  isPostponing = false,
+  feedback = null,
 }) => {
   const [isConfirmingReject, setIsConfirmingReject] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<"success" | "error" | null>(null);
@@ -65,6 +75,11 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
     "-";
 
   const statusConfig = getStatusBadgeConfig(budget.status);
+  const canPostpone =
+    Boolean(currentUser) &&
+    !hideButtons &&
+    currentUser?.role !== "CLIENT" &&
+    ["PAID25", "PAID", "TRANSFER_PAID"].includes(budget.status);
 
   return (
     <Modal
@@ -290,9 +305,19 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
           {(onReject ||
             onRescue ||
             onValidate ||
+            (onPostpone && canPostpone) ||
             (currentUser && canCopyFinalPaymentLink(budget.status, currentUser.role))) &&
             !hideButtons && (
             <div className="flex flex-col gap-3">
+              {onPostpone && canPostpone && (
+                <Button
+                  title="Posponer"
+                  onClick={onPostpone}
+                  variant="secondary"
+                  loading={isPostponing}
+                  block
+                />
+              )}
               {currentUser && canValidateBudget(budget.status, currentUser.role) && onValidate && (
                 <Button
                   title="Validar"
@@ -342,6 +367,20 @@ export const ModalBudgetData: FC<ModalBudgetDataProps> = ({
                   block
                 />
               )}
+            </div>
+          )}
+
+          {feedback && (
+            <div
+              className={`rounded-lg border p-3 text-sm ${
+                feedback.type === "success"
+                  ? "border-green-200 bg-green-50 text-green-800"
+                  : "border-red-200 bg-red-50 text-red-800"
+              }`}
+              role={feedback.type === "success" ? "status" : "alert"}
+            >
+              <p className="font-medium">{feedback.title}</p>
+              <p className="mt-1">{feedback.description}</p>
             </div>
           )}
 
