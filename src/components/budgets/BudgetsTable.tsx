@@ -76,9 +76,13 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
         cell: (info) => {
           const budget = info.row.original;
           const clientName = budget.client || budget.user?.FullName || "-";
+          const phone = budget.phone.trim();
           return (
             <div className="flex flex-col gap-1">
-              <span className="text-gray-900">{clientName}</span>
+              <span className="text-gray-900">
+                {clientName}
+                {phone && ` (${phone})`}
+              </span>
               {budget.address && (
                 <span className="text-xs text-gray-500">
                   {budget.address.length > 50
