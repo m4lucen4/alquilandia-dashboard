@@ -11,6 +11,7 @@ interface PlacesAutocompleteFieldProps {
   name: string;
   value: string;
   onChange: (value: string) => void;
+  onManualInput?: () => void;
   onLocationChange?: (location: Location) => void;
   onBlur?: () => void;
   error?: string;
@@ -37,6 +38,7 @@ export const PlacesAutocompleteField: FC<PlacesAutocompleteFieldProps> = ({
   name,
   value,
   onChange,
+  onManualInput,
   onLocationChange,
   onBlur,
   error,
@@ -151,7 +153,10 @@ export const PlacesAutocompleteField: FC<PlacesAutocompleteFieldProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           autoComplete="off"
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            onManualInput?.();
+            onChange(e.target.value);
+          }}
           onBlur={onBlur}
           className={`${BASE_INPUT_CLASSES} ${error ? ERROR_INPUT_CLASSES : NORMAL_INPUT_CLASSES} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
           aria-invalid={error ? "true" : "false"}

@@ -1,4 +1,4 @@
-import { type FC, useEffect } from "react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,18 +9,13 @@ import InputField from "@/components/shared/InputField";
 import Button from "@/components/shared/Button";
 import { CalendarPicker } from "@/components/shared/CalendarPicker";
 import { PlacesAutocompleteField } from "@/components/shared/PlacesAutocompleteField";
+import {
+  calculateDrivingMileage,
+  type EventLocation,
+} from "./BudgetStep2EventDetails.utils";
+import { loadGoogleMaps } from "@/components/shared/googleMaps";
 
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+type MileageStatus = "idle" | "loading" | "resolved" | "error" | "unavailable";
 
 const step2Schema = z.object({
   address: z.string().min(1, "La dirección del evento es obligatoria"),
@@ -48,7 +43,12 @@ export const BudgetStep2EventDetails: FC = () => {
   const { budgetId, budget, updateEventDetailsRequest } = useAppSelector(
     (state) => state.budgetWizard,
   );
-  const warehouses = useAppSelector((state) => state.warehouses.warehouses);
+  const { warehouses, fetchWarehousesRequest } = useAppSelector(
+    (state) => state.warehouses,
+  );
+  const [mileageStatus, setMileageStatus] = useState<MileageStatus>("idle");
+  const [mileageError, setMileageError] = useState("");
+  const routeRequestIdRef = useRef(0);
 
   useEffect(() => {
     dispatch(fetchAllWarehouses());
@@ -79,26 +79,103 @@ export const BudgetStep2EventDetails: FC = () => {
 
   const distance = watch("distance");
   const pickupInWarehouse = watch("pickupInWarehouse");
+  const location = watch("location");
+  const mileageWarehouses = useMemo(
+    () => warehouses.filter((warehouse) => warehouse.use_for_mileage),
+    [warehouses],
+  );
 
-  const handleLocationChange = (loc: { latitude: string; longitude: string }) => {
-    setValue("location", loc);
-    const mileageWarehouses = warehouses.filter((w) => w.use_for_mileage);
-    if (mileageWarehouses.length === 0) return;
-
-    const eventLat = Number.parseFloat(loc.latitude);
-    const eventLon = Number.parseFloat(loc.longitude);
-    const minKm = Math.min(
-      ...mileageWarehouses.map((w) =>
-        haversineKm(w.latitude, w.longitude, eventLat, eventLon),
-      ),
-    );
-    const formatted =
-      minKm.toLocaleString("es-ES", { maximumFractionDigits: 1 }) + " km";
-    setValue("distance", formatted);
+  const invalidateMileage = () => {
+    routeRequestIdRef.current += 1;
+    setValue("location", undefined);
+    setValue("distance", undefined);
+    setMileageStatus("idle");
+    setMileageError("");
   };
+
+  const handleLocationChange = (loc: EventLocation) => {
+    routeRequestIdRef.current += 1;
+    setValue("location", loc);
+    setValue("distance", undefined);
+    setMileageStatus("loading");
+    setMileageError("");
+  };
+
+  useEffect(() => {
+    const requestId = routeRequestIdRef.current + 1;
+    routeRequestIdRef.current = requestId;
+    const clearMileage = () => setValue("distance", undefined);
+
+    if (pickupInWarehouse) {
+      setMileageStatus("idle");
+      setMileageError("");
+    } else if (!location) {
+      clearMileage();
+      setMileageStatus("idle");
+      setMileageError("Selecciona una dirección del autocompletado para calcular la distancia por carretera.");
+    } else if (fetchWarehousesRequest.inProgress) {
+      clearMileage();
+      setMileageStatus("loading");
+      setMileageError("");
+    } else if (!fetchWarehousesRequest.ok) {
+      clearMileage();
+      setMileageStatus("error");
+      setMileageError("No se han podido cargar los almacenes para calcular el kilometraje.");
+    } else if (mileageWarehouses.length === 0) {
+      clearMileage();
+      setMileageStatus("unavailable");
+      setMileageError("No hay almacenes habilitados para calcular el kilometraje.");
+    } else {
+      clearMileage();
+      setMileageStatus("loading");
+      setMileageError("");
+
+      const calculateMileage = async () => {
+        try {
+          await loadGoogleMaps();
+          const { Route } = await google.maps.importLibrary("routes");
+          const calculatedDistance = await calculateDrivingMileage(
+            Route,
+            location,
+            mileageWarehouses,
+          );
+
+          if (routeRequestIdRef.current !== requestId) return;
+          setValue("distance", calculatedDistance);
+          setMileageStatus("resolved");
+        } catch {
+          if (routeRequestIdRef.current !== requestId) return;
+          clearMileage();
+          setMileageStatus("error");
+          setMileageError("No se ha podido calcular la distancia por carretera. Selecciona otra dirección o inténtalo de nuevo.");
+        }
+      };
+
+      void calculateMileage();
+    }
+
+    return () => {
+      if (routeRequestIdRef.current === requestId) {
+        routeRequestIdRef.current += 1;
+      }
+    };
+  }, [
+    fetchWarehousesRequest.inProgress,
+    fetchWarehousesRequest.ok,
+    location,
+    mileageWarehouses,
+    pickupInWarehouse,
+    setValue,
+  ]);
 
   const onSubmit = (values: Step2FormValues) => {
     if (!budgetId || !budget) return;
+    if (
+      !values.pickupInWarehouse &&
+      (mileageStatus !== "resolved" || !values.location || !values.distance)
+    ) {
+      return;
+    }
     dispatch(
       updateBudgetEventDetailsThunk({
         budgetId,
@@ -110,7 +187,7 @@ export const BudgetStep2EventDetails: FC = () => {
           comments: values.comments ?? "",
           commentsalquilandia: values.commentsalquilandia ?? "",
           location: values.location ?? budget.location,
-          distance: values.pickupInWarehouse ? "0" : (values.distance ?? budget.distance ?? ""),
+          distance: values.pickupInWarehouse ? "0" : (values.distance ?? ""),
           nosend: values.pickupInWarehouse ?? false,
         },
       }),
@@ -150,6 +227,7 @@ export const BudgetStep2EventDetails: FC = () => {
                     name={field.name}
                     value={field.value}
                     onChange={(val) => field.onChange(val)}
+                    onManualInput={invalidateMileage}
                     onLocationChange={handleLocationChange}
                     onBlur={field.onBlur}
                     required
@@ -164,6 +242,16 @@ export const BudgetStep2EventDetails: FC = () => {
                   <span className="font-medium">Distancia al almacén más cercano:</span>
                   <span className="font-bold">{distance}</span>
                 </div>
+              )}
+              {!pickupInWarehouse && mileageStatus === "loading" && (
+                <p className="text-sm text-blue-700" role="status">
+                  Calculando distancia por carretera...
+                </p>
+              )}
+              {!pickupInWarehouse && mileageError && (
+                <p className="text-sm text-red-600" role="alert">
+                  {mileageError}
+                </p>
               )}
             </div>
           </div>
@@ -251,6 +339,7 @@ export const BudgetStep2EventDetails: FC = () => {
             variant="primary"
             type="submit"
             loading={updateEventDetailsRequest.inProgress}
+            disabled={!pickupInWarehouse && mileageStatus !== "resolved"}
           />
         </div>
       </form>
