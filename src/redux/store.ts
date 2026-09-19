@@ -16,6 +16,8 @@ import inventoryCategoriesReducer from "./slices/inventoryCategoriesSlice";
 import inventoryReducer from "./slices/inventorySlice";
 import discountsReducer from "./slices/discountsSlice";
 import visualStockReducer from "./slices/visualStockSlice";
+import expensesReducer from "./slices/expensesSlice";
+import expensesCategoriesReducer from "./slices/expensesCategoriesSlice";
 
 const persistConfig = {
   key: "auth",
@@ -61,6 +63,8 @@ export const store = configureStore({
     inventory: inventoryReducer,
     discounts: discountsReducer,
     visualStock: visualStockReducer,
+    expenses: expensesReducer,
+    expensesCategories: expensesCategoriesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

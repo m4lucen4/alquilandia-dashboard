@@ -4,6 +4,7 @@ import { Home } from "@/pages/Home";
 import { Login } from "@/pages/Login";
 import Accounting from "@/pages/accounting/Accounting";
 import Invoices from "@/pages/accounting/Invoices";
+import Expenses from "@/pages/accounting/Expenses";
 import { Budgets } from "@/pages/Budgets";
 import { CreateBudgetPage } from "@/pages/CreateBudgetPage";
 import { Users } from "@/pages/Users";
@@ -35,6 +36,15 @@ export const router = createBrowserRouter([
           {
             path: "accounting/invoices",
             element: <Invoices />,
+          },
+          {
+            element: <AdminRoute />,
+            children: [
+              {
+                path: "accounting/expenses",
+                element: <Expenses />,
+              },
+            ],
           },
           {
             path: "users",

@@ -15,6 +15,8 @@ interface InputFieldProps {
   required?: boolean;
   disabled?: boolean;
   autoComplete?: string;
+  list?: string;
+  step?: number | string;
   className?: string;
   onBlur?:
     | ((e: React.FocusEvent<HTMLInputElement>) => void)
@@ -47,6 +49,8 @@ const InputField = ({
   required = false,
   disabled = false,
   autoComplete,
+  list,
+  step,
   className = "",
   onBlur,
   onKeyDown,
@@ -98,6 +102,8 @@ const InputField = ({
             required={required}
             disabled={disabled}
             autoComplete={autoComplete}
+            list={list}
+            step={step}
             className={inputClasses}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={error ? `${inputId}-error` : undefined}
