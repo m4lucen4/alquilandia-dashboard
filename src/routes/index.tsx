@@ -5,6 +5,7 @@ import { Login } from "@/pages/Login";
 import Accounting from "@/pages/accounting/Accounting";
 import Invoices from "@/pages/accounting/Invoices";
 import Expenses from "@/pages/accounting/Expenses";
+import Statistics from "@/pages/accounting/Statistics";
 import { Budgets } from "@/pages/Budgets";
 import { CreateBudgetPage } from "@/pages/CreateBudgetPage";
 import { Users } from "@/pages/Users";
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
               {
                 path: "accounting/expenses",
                 element: <Expenses />,
+              },
+              {
+                path: "accounting/statistics",
+                element: <Statistics />,
               },
             ],
           },

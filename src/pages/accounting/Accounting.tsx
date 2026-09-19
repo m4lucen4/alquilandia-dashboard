@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router-dom";
-import { BanknotesIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import { BanknotesIcon, ChartBarIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { Card } from "@/components/shared/Card";
 import { useAppSelector } from "@/redux/hooks";
 
@@ -12,6 +12,7 @@ export const Accounting: FC = () => {
     navigate("/accounting/invoices");
   };
   const handleGastosClick = () => navigate("/accounting/expenses");
+  const handleStatisticsClick = () => navigate("/accounting/statistics");
 
   return (
     <div className="space-y-6">
@@ -31,7 +32,10 @@ export const Accounting: FC = () => {
           onClick={handleFacturasClick}
         />
         {user?.role === "ADMIN" && (
-          <Card title="Gastos" color="#10B981" icon={BanknotesIcon} onClick={handleGastosClick} />
+          <>
+            <Card title="Gastos" color="#10B981" icon={BanknotesIcon} onClick={handleGastosClick} />
+            <Card title="Estadísticas" color="#8B5CF6" icon={ChartBarIcon} onClick={handleStatisticsClick} />
+          </>
         )}
       </div>
     </div>

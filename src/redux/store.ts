@@ -18,6 +18,7 @@ import discountsReducer from "./slices/discountsSlice";
 import visualStockReducer from "./slices/visualStockSlice";
 import expensesReducer from "./slices/expensesSlice";
 import expensesCategoriesReducer from "./slices/expensesCategoriesSlice";
+import statisticsReducer from "./slices/statisticsSlice";
 
 const persistConfig = {
   key: "auth",
@@ -65,6 +66,7 @@ export const store = configureStore({
     visualStock: visualStockReducer,
     expenses: expensesReducer,
     expensesCategories: expensesCategoriesReducer,
+    statistics: statisticsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
