@@ -687,7 +687,8 @@ export const generateProformaPDF = async (
     const couponDiscount = applyDiscounts
       ? Math.round((budget.totalCouponDiscount || 0) * factor * 100) / 100
       : 0;
-    const vatBase = effectiveSubTotal + effectiveExtras - userDiscount - couponDiscount;
+    const costSend = showBudgetLines ? (budget.price?.costSend || 0) : 0;
+    const vatBase = effectiveSubTotal + effectiveExtras + costSend - userDiscount - couponDiscount;
     const effectiveVat = Math.round(vatBase * (taxRate / 100) * 100) / 100;
     const effectiveTotal = Math.round((vatBase + effectiveVat) * 100) / 100;
 
@@ -702,6 +703,12 @@ export const generateProformaPDF = async (
     if (effectiveExtras > 0) {
       doc.text("Extras:", summaryX, yPosition, { align: "right" });
       doc.text(formatCurrency(effectiveExtras), pageWidth - 20, yPosition, { align: "right" });
+      yPosition += 5;
+    }
+
+    if (showBudgetLines) {
+      doc.text("Gastos de transporte:", summaryX, yPosition, { align: "right" });
+      doc.text(formatCurrency(costSend), pageWidth - 20, yPosition, { align: "right" });
       yPosition += 5;
     }
 
