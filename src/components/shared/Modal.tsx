@@ -10,6 +10,7 @@ interface ModalProps {
   cancelText?: string;
   acceptDisabled?: boolean;
   maxWidthClass?: string;
+  viewportScrollable?: boolean;
 }
 
 export const Modal = ({
@@ -21,6 +22,7 @@ export const Modal = ({
   cancelText = "Cancelar",
   acceptDisabled = false,
   maxWidthClass = "max-w-2xl",
+  viewportScrollable = false,
 }: ModalProps) => {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -55,6 +57,8 @@ export const Modal = ({
       {/* Modal */}
       <div
         className={`relative w-full ${maxWidthClass} transform rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
+          viewportScrollable ? "flex max-h-[calc(100dvh-2rem)] flex-col" : ""
+        } ${
           isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
         }`}
         role="dialog"
@@ -82,7 +86,11 @@ export const Modal = ({
         </button>
 
         {/* Content */}
-        <div className="p-6 sm:p-8">
+        <div
+          className={`p-6 sm:p-8 ${viewportScrollable ? "min-h-0 overflow-y-auto" : ""}`}
+          tabIndex={viewportScrollable ? 0 : undefined}
+          aria-label={viewportScrollable ? "Contenido desplazable del modal" : undefined}
+        >
           <h3
             id="modal-title"
             className="mb-4 text-xl font-semibold text-gray-900 sm:text-2xl"
@@ -95,7 +103,7 @@ export const Modal = ({
         </div>
 
         {/* Footer with buttons */}
-        <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 sm:px-8">
+        <div className={`border-t border-gray-100 bg-gray-50 px-6 py-4 sm:px-8 ${viewportScrollable ? "shrink-0" : ""}`}>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             {cancelText && (
               <Button

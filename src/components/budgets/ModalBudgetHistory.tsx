@@ -173,7 +173,7 @@ const HistoricBudgetSnapshotDetails: FC<{
         </section>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
+      <div className="max-h-80 overflow-x-auto overflow-y-auto rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -237,7 +237,15 @@ export const ModalBudgetHistory: FC<ModalBudgetHistoryProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal title="Historial del presupuesto" onAccept={onClose} onClose={onClose} acceptText="Cerrar" cancelText="" maxWidthClass="max-w-5xl">
+    <Modal
+      title="Historial del presupuesto"
+      onAccept={onClose}
+      onClose={onClose}
+      acceptText="Cerrar"
+      cancelText=""
+      maxWidthClass="max-w-5xl"
+      viewportScrollable
+    >
       {isLoading ? (
         <p role="status" className="py-8 text-center text-gray-500">Cargando historial...</p>
       ) : error ? (

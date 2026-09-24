@@ -43,6 +43,19 @@ describe("ModalBudgetHistory", () => {
     expect(entries[0].eventType).toBe("BUDGET_CREATED");
   });
 
+  it("uses viewport containment and keeps historical budget lines in their own vertical scroller", async () => {
+    const user = userEvent.setup();
+    render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={entries} technicians={[]} />);
+
+    expect(screen.getByRole("dialog")).toHaveClass("max-h-[calc(100dvh-2rem)]");
+    expect(screen.getByLabelText("Acciones históricas")).toHaveClass("max-h-[28rem]", "overflow-y-auto");
+    await user.click(screen.getByRole("button", { name: /Factura 100%/ }));
+
+    expect(screen.getByRole("table").parentElement).toHaveClass("max-h-80", "overflow-y-auto");
+    expect(screen.getByRole("button", { name: "Cerrar modal" })).toBeVisible();
+    expect(screen.getAllByText("Total")[1]).toBeVisible();
+  });
+
   it("shows only the selected entry snapshot and its supplied historic receipts", async () => {
     const user = userEvent.setup();
     render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={entries} technicians={[]} />);
