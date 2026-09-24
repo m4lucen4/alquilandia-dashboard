@@ -12,6 +12,7 @@ interface BudgetsActionsMenuProps {
   onGenerateInvoice: (budget: Budget) => void;
   onViewInvoice: (budget: Budget) => void;
   onViewBudget: (budget: Budget) => void;
+  onViewHistory: (budget: Budget) => void;
   onGenerateBudgetPdf: (budget: Budget) => void;
   onGenerateBreakageInvoice: (budget: Budget) => void;
 }
@@ -24,6 +25,7 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
   onGenerateInvoice,
   onViewInvoice,
   onViewBudget,
+  onViewHistory,
   onGenerateBudgetPdf,
   onGenerateBreakageInvoice,
 }) => {
@@ -51,6 +53,21 @@ export const BudgetsActionsMenu: FC<BudgetsActionsMenuProps> = ({
                   block
                   disabled={loadingBudget}
                   loading={loadingBudget}
+                  className={focus ? "bg-gray-100" : ""}
+                />
+              </div>
+            )}
+          </MenuItem>
+
+          <MenuItem>
+            {({ focus }) => (
+              <div className="px-2">
+                <Button
+                  title="Ver historial"
+                  onClick={() => onViewHistory(budget)}
+                  variant="ghost"
+                  size="sm"
+                  block
                   className={focus ? "bg-gray-100" : ""}
                 />
               </div>

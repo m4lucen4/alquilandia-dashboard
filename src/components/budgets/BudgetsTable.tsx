@@ -22,6 +22,7 @@ interface BudgetsTableProps {
   onGenerateInvoice: (budget: Budget) => void;
   onViewInvoice: (budget: Budget) => void;
   onViewBudget: (budget: Budget) => void;
+  onViewHistory: (budget: Budget) => void;
   onGenerateBudgetPdf: (budget: Budget) => void;
   onGenerateBreakageInvoice: (budget: Budget) => void;
 }
@@ -40,6 +41,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
   onGenerateInvoice,
   onViewInvoice,
   onViewBudget,
+  onViewHistory,
   onGenerateBudgetPdf,
   onGenerateBreakageInvoice,
 }) => {
@@ -144,6 +146,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
               onGenerateInvoice={onGenerateInvoice}
               onViewInvoice={onViewInvoice}
               onViewBudget={onViewBudget}
+              onViewHistory={onViewHistory}
               onGenerateBudgetPdf={onGenerateBudgetPdf}
               onGenerateBreakageInvoice={onGenerateBreakageInvoice}
             />
@@ -158,6 +161,7 @@ export const BudgetsTable: FC<BudgetsTableProps> = ({
       onGenerateInvoice,
       onViewInvoice,
       onViewBudget,
+      onViewHistory,
       onGenerateBudgetPdf,
       onGenerateBreakageInvoice,
     ],
