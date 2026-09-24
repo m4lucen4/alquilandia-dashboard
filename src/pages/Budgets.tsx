@@ -11,6 +11,7 @@ import { fetchAllBusiness } from "../redux/actions/business";
 import { fetchAllTaxesTypes } from "../redux/actions/taxesTypes";
 import { fetchAllInvoicesTypes } from "../redux/actions/invoicesTypes";
 import { fetchAllInvoices } from "../redux/actions/invoices";
+import { getAdminAndTechniciansThunk } from "../redux/actions/users";
 import { clearInvoicesErrors } from "../redux/slices/invoicesSlice";
 import { Alert } from "../components/shared/Alert";
 import { SearchBudgets } from "../components/budgets/SearchBudgets";
@@ -45,6 +46,9 @@ export const Budgets: FC = () => {
   const { invoicesTypes } = useAppSelector((state) => state.invoicesTypes);
   const { invoices, createInvoiceRequest } = useAppSelector(
     (state) => state.invoices,
+  );
+  const { technicians, getAdminAndTechniciansRequest } = useAppSelector(
+    (state) => state.users,
   );
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -111,6 +115,17 @@ export const Budgets: FC = () => {
       dispatch(fetchAllInvoices(undefined)),
     ]);
   }, [dispatch, businesses.length, taxesTypes.length, invoicesTypes.length]);
+
+  useEffect(() => {
+    if (
+      technicians.length === 0 &&
+      !getAdminAndTechniciansRequest.inProgress &&
+      !getAdminAndTechniciansRequest.messages &&
+      !getAdminAndTechniciansRequest.ok
+    ) {
+      dispatch(getAdminAndTechniciansThunk());
+    }
+  }, [dispatch, getAdminAndTechniciansRequest.inProgress, getAdminAndTechniciansRequest.messages, getAdminAndTechniciansRequest.ok, technicians.length]);
 
   const budgetHasInvoice = useCallback(
     (budgetReference: number): boolean =>
@@ -297,6 +312,7 @@ export const Budgets: FC = () => {
         historyId={budgetHistoryId}
         onClose={handleCloseBudgetHistoryModal}
         entries={budgetHistoryEntries}
+        technicians={technicians}
         isLoading={isBudgetHistoryLoading}
         error={budgetHistoryError}
       />

@@ -6,6 +6,7 @@ import type {
   BudgetHistoryEntry,
   HistoricBudgetSnapshot,
   HistoricReceipt,
+  User,
 } from "@/types/budgets";
 
 interface ModalBudgetHistoryProps {
@@ -13,6 +14,7 @@ interface ModalBudgetHistoryProps {
   historyId: number;
   onClose: () => void;
   entries: BudgetHistoryEntry[] | null;
+  technicians: User[];
   isLoading?: boolean;
   error?: string | null;
 }
@@ -76,7 +78,10 @@ const getHistoricSummary = (budget: HistoricBudgetSnapshot) => {
   return { couponDiscount, discountedSubtotal, vat, total };
 };
 
-const HistoricBudgetSnapshotDetails: FC<{ entry: BudgetHistoryEntry }> = ({ entry }) => {
+const HistoricBudgetSnapshotDetails: FC<{
+  entry: BudgetHistoryEntry;
+  technicians: User[];
+}> = ({ entry, technicians }) => {
   const budget = entry.budget;
   if (!budget) {
     return <p className="py-8 text-center text-gray-500">No hay una versión histórica disponible para esta acción.</p>;
@@ -91,12 +96,20 @@ const HistoricBudgetSnapshotDetails: FC<{ entry: BudgetHistoryEntry }> = ({ entr
     `${budget.user?.firstName || ""} ${budget.user?.lastName || ""}`.trim() ||
     budget.client ||
     "-";
-  const technicianName =
+  const historicalTechnicianName =
     budget.technician?.FullName ||
     budget.technician?.name ||
-    `${budget.technician?.firstName || ""} ${budget.technician?.lastName || ""}`.trim() ||
-    budget.technicianEmailHash ||
-    "Sin seleccionar";
+    `${budget.technician?.firstName || ""} ${budget.technician?.lastName || ""}`.trim();
+  const matchedTechnician = technicians.find(
+    (technician) => technician.emailHash === budget.technicianEmailHash,
+  );
+  const technicianName =
+    historicalTechnicianName ||
+    (matchedTechnician
+      ? `${matchedTechnician.firstName} ${matchedTechnician.lastName}`.trim()
+      : budget.technicianEmailHash
+        ? "Técnico no disponible"
+        : "Sin seleccionar");
   const statusConfig = getStatusBadgeConfig(budget.status || "");
   const summary = getHistoricSummary(budget);
   const hasDiscount =
@@ -201,6 +214,7 @@ export const ModalBudgetHistory: FC<ModalBudgetHistoryProps> = ({
   historyId,
   onClose,
   entries,
+  technicians,
   isLoading = false,
   error = null,
 }) => {
@@ -249,7 +263,7 @@ export const ModalBudgetHistory: FC<ModalBudgetHistoryProps> = ({
               })}
           </div>
           <div>
-            {selectedEntry ? <HistoricBudgetSnapshotDetails entry={selectedEntry} /> : <p className="py-8 text-center text-gray-500">Selecciona una acción para ver su versión histórica.</p>}
+            {selectedEntry ? <HistoricBudgetSnapshotDetails entry={selectedEntry} technicians={technicians} /> : <p className="py-8 text-center text-gray-500">Selecciona una acción para ver su versión histórica.</p>}
           </div>
         </div>
       )}
