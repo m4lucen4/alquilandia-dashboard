@@ -199,6 +199,37 @@ export interface Receipt {
   id: string;
 }
 
+export interface HistoricReceipt {
+  id?: string;
+  type?: string;
+  nfacture?: string | number;
+  creationDate?: string;
+}
+
+export interface HistoricBudgetUser extends Partial<User> {
+  name?: string;
+}
+
+export type HistoricBudgetSnapshot = Omit<
+  Partial<Budget>,
+  "user" | "technician" | "price" | "budgetLines"
+> & {
+  user?: HistoricBudgetUser;
+  technician?: HistoricBudgetUser;
+  price?: Partial<Price>;
+  budgetLines?: Partial<BudgetLine>[];
+  receipts?: HistoricReceipt[];
+  budgetReceipts?: HistoricReceipt[];
+};
+
+export interface BudgetHistoryEntry {
+  id?: string;
+  historyDate: string;
+  eventType: string;
+  budget?: HistoricBudgetSnapshot;
+  receipts?: HistoricReceipt[];
+}
+
 // Redux State
 export interface BudgetsState {
   budgets: Budget[];
