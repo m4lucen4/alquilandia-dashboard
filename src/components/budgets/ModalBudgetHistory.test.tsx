@@ -54,7 +54,7 @@ describe("ModalBudgetHistory", () => {
       budget: {
         ...createSnapshot(3),
         client: "",
-        user: { name: "Cliente histórico", discount: 10 },
+        user: { name: "Cliente histórico", phone: "600 123 456", email: "historico@example.com", discount: 10 },
         technician: { firstName: "Grace", lastName: "Hopper" },
         coupon: { discount: 5 },
         totalCouponDiscount: 5,
@@ -65,6 +65,8 @@ describe("ModalBudgetHistory", () => {
     await user.click(screen.getByRole("button", { name: /Cambio de estado/ }));
 
     expect(screen.getByText("Cliente histórico")).toBeVisible();
+    expect(screen.getByText("Teléfono").parentElement).toHaveTextContent("600 123 456");
+    expect(screen.getByText("Email").parentElement).toHaveTextContent("historico@example.com");
     expect(screen.getByText("Grace Hopper")).toBeVisible();
     expect(screen.getByText("Subtotal con descuento").parentElement).toHaveTextContent("35,00 €");
     expect(screen.getByText("Extras").parentElement).toHaveTextContent("10,00 €");
@@ -72,6 +74,24 @@ describe("ModalBudgetHistory", () => {
     expect(screen.getByText("Gastos del envío").parentElement).toHaveTextContent("5,00 €");
     expect(screen.getByText("IVA (21%)").parentElement).toHaveTextContent("7,77 €");
     expect(screen.getAllByText("Total")[1].parentElement).toHaveTextContent("44,77 €");
+  });
+
+  it("omits historical contact details when they are not supplied", async () => {
+    const user = userEvent.setup();
+    const historicalEntry: BudgetHistoryEntry = {
+      historyDate: "2026-02-01T10:00:00.000Z",
+      eventType: "STATUS_CHANGE",
+      budget: {
+        ...createSnapshot(3),
+        user: { name: "Cliente histórico" },
+      } as HistoricBudgetSnapshot,
+    };
+    render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={[historicalEntry]} />);
+
+    await user.click(screen.getByRole("button", { name: /Cambio de estado/ }));
+
+    expect(screen.queryByText("Teléfono")).not.toBeInTheDocument();
+    expect(screen.queryByText("Email")).not.toBeInTheDocument();
   });
 
   it("uses unique keys for duplicate events and clears a stale selected entry after entries change", async () => {

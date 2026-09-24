@@ -111,6 +111,18 @@ const HistoricBudgetSnapshotDetails: FC<{ entry: BudgetHistoryEntry }> = ({ entr
           <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Cliente</p>
           <p className="mt-0.5 font-medium text-gray-900">{clientName}</p>
         </div>
+        {budget.user?.phone && (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Teléfono</p>
+            <p className="mt-0.5 text-gray-900">{budget.user.phone}</p>
+          </div>
+        )}
+        {budget.user?.email && (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Email</p>
+            <p className="mt-0.5 text-gray-900">{budget.user.email}</p>
+          </div>
+        )}
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Fecha de creación</p>
           <p className="mt-0.5 text-gray-900">{formatDate(budget.creationDate ?? "")}</p>
