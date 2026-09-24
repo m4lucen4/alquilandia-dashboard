@@ -165,6 +165,7 @@ export interface Budget {
   budgetLines: BudgetLine[];
   totalCouponDiscount: number;
   coupon?: Coupon | null;
+  history?: BudgetHistoryEntry[];
 }
 
 // API Response

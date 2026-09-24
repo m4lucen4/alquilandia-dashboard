@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { fetchBudgets } from "../redux/actions/budgets";
@@ -15,9 +15,10 @@ import { clearInvoicesErrors } from "../redux/slices/invoicesSlice";
 import { Alert } from "../components/shared/Alert";
 import { SearchBudgets } from "../components/budgets/SearchBudgets";
 import { BudgetsTable } from "../components/budgets/BudgetsTable";
-import type { Budget } from "../types/budgets";
+import type { Budget, BudgetHistoryEntry } from "../types/budgets";
 import type { Invoice } from "../types/invoices";
 import { getInvoicesByBudgetReference } from "../services/invoicesService";
+import { getBudgetDetailsByRecordId } from "../services/budgetsServices";
 import { PageHeader } from "@/components/shared/PageHeader";
 import Button from "@/components/shared/Button";
 import { useBudgetSearch } from "../hooks/useBudgetSearch";
@@ -31,6 +32,7 @@ import { ModalInvoiceData } from "../components/budgets/ModalinvoiceData";
 import { ModalBudgetData } from "../components/budgets/ModalBudgetData";
 import { ModalGenerateBreakageInvoice } from "../components/budgets/ModalGenerateBreakageInvoice";
 import { BudgetLocationMapPanel } from "../components/budgets/BudgetLocationMapPanel";
+import { ModalBudgetHistory } from "../components/budgets/ModalBudgetHistory";
 
 export const Budgets: FC = () => {
   const dispatch = useAppDispatch();
@@ -49,6 +51,14 @@ export const Budgets: FC = () => {
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<Invoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
+  const [isBudgetHistoryModalOpen, setIsBudgetHistoryModalOpen] = useState(false);
+  const [budgetHistoryEntries, setBudgetHistoryEntries] = useState<
+    BudgetHistoryEntry[] | null
+  >(null);
+  const [isBudgetHistoryLoading, setIsBudgetHistoryLoading] = useState(false);
+  const [budgetHistoryError, setBudgetHistoryError] = useState<string | null>(null);
+  const [budgetHistoryId, setBudgetHistoryId] = useState(0);
+  const historyRequestIdRef = useRef(0);
   const [viewMode, setViewMode] = useState<"table" | "map">("table");
 
   const {
@@ -151,6 +161,47 @@ export const Budgets: FC = () => {
     setSelectedInvoices([]);
   }, []);
 
+  const handleViewHistory = useCallback(async (budget: Budget) => {
+    const requestId = historyRequestIdRef.current + 1;
+    historyRequestIdRef.current = requestId;
+    setBudgetHistoryId(requestId);
+    setIsBudgetHistoryModalOpen(true);
+    setBudgetHistoryEntries(null);
+    setBudgetHistoryError(null);
+    setIsBudgetHistoryLoading(true);
+
+    try {
+      const budgetDetails = await getBudgetDetailsByRecordId(budget.id);
+      if (requestId !== historyRequestIdRef.current) return;
+
+      if (budgetDetails.id !== budget.id) {
+        setBudgetHistoryError(
+          "El detalle obtenido no corresponde al presupuesto seleccionado",
+        );
+        return;
+      }
+
+      setBudgetHistoryEntries(budgetDetails.history ?? []);
+    } catch (error) {
+      if (requestId !== historyRequestIdRef.current) return;
+      setBudgetHistoryError(
+        error instanceof Error ? error.message : "No se pudo cargar el historial",
+      );
+    } finally {
+      if (requestId === historyRequestIdRef.current) {
+        setIsBudgetHistoryLoading(false);
+      }
+    }
+  }, []);
+
+  const handleCloseBudgetHistoryModal = useCallback(() => {
+    historyRequestIdRef.current += 1;
+    setIsBudgetHistoryModalOpen(false);
+    setBudgetHistoryEntries(null);
+    setBudgetHistoryError(null);
+    setIsBudgetHistoryLoading(false);
+  }, []);
+
   const handlePageSizeChange = useCallback((newPageSize: number) => {
     setPageSize(newPageSize);
     setPageIndex(0);
@@ -239,6 +290,15 @@ export const Budgets: FC = () => {
         isOpen={isViewInvoiceModalOpen}
         onClose={handleCloseViewInvoiceModal}
         invoices={selectedInvoices}
+      />
+
+      <ModalBudgetHistory
+        isOpen={isBudgetHistoryModalOpen}
+        historyId={budgetHistoryId}
+        onClose={handleCloseBudgetHistoryModal}
+        entries={budgetHistoryEntries}
+        isLoading={isBudgetHistoryLoading}
+        error={budgetHistoryError}
       />
 
       <ModalBudgetData
@@ -352,6 +412,7 @@ export const Budgets: FC = () => {
               onGenerateInvoice={invoiceGeneration.handleOpenModal}
               onViewInvoice={handleViewInvoice}
               onViewBudget={budgetDetails.handleViewBudget}
+              onViewHistory={handleViewHistory}
               onGenerateBudgetPdf={budgetPdfGeneration.handleOpenBudgetPdfModal}
               onGenerateBreakageInvoice={breakageInvoice.handleOpenBreakageModal}
             />

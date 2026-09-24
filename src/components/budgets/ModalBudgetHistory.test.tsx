@@ -27,7 +27,7 @@ const entries: BudgetHistoryEntry[] = [
 
 describe("ModalBudgetHistory", () => {
   it("sorts entries newest first without mutating the supplied history", () => {
-    render(<ModalBudgetHistory isOpen onClose={() => undefined} entries={entries} />);
+    render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={entries} />);
 
     expect(screen.getAllByRole("button", { name: /Creado|Factura 100%/ }).map((button) => button.textContent)).toEqual([
       expect.stringContaining("Factura 100%"),
@@ -38,7 +38,7 @@ describe("ModalBudgetHistory", () => {
 
   it("shows only the selected entry snapshot and its supplied historic receipts", async () => {
     const user = userEvent.setup();
-    render(<ModalBudgetHistory isOpen onClose={() => undefined} entries={entries} />);
+    render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={entries} />);
 
     await user.click(screen.getByRole("button", { name: /Factura 100%/ }));
 
@@ -60,7 +60,7 @@ describe("ModalBudgetHistory", () => {
         totalCouponDiscount: 5,
       } as HistoricBudgetSnapshot,
     };
-    render(<ModalBudgetHistory isOpen onClose={() => undefined} entries={[historicalEntry]} />);
+    render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={[historicalEntry]} />);
 
     await user.click(screen.getByRole("button", { name: /Cambio de estado/ }));
 
@@ -80,24 +80,48 @@ describe("ModalBudgetHistory", () => {
       ...entries,
       { ...entries[1], budget: createSnapshot(4) },
     ];
-    const { rerender } = render(<ModalBudgetHistory isOpen onClose={() => undefined} entries={duplicateEntries} />);
+    const { rerender } = render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={duplicateEntries} />);
 
     expect(screen.getAllByRole("button", { name: /Factura 100%/ })).toHaveLength(2);
     await user.click(screen.getAllByRole("button", { name: /Factura 100%/ })[0]);
     expect(screen.getByText("Calle Histórica 10")).toBeVisible();
 
-    rerender(<ModalBudgetHistory isOpen onClose={() => undefined} entries={[entries[0]]} />);
+    rerender(<ModalBudgetHistory isOpen historyId={2} onClose={() => undefined} entries={[entries[0]]} />);
     expect(screen.getByText("Selecciona una acción para ver su versión histórica.")).toBeVisible();
   });
 
+  it("clears the selected snapshot after close/reopen and when another budget reuses its entry key", async () => {
+    const user = userEvent.setup();
+    const secondBudgetEntries: BudgetHistoryEntry[] = [{
+      ...entries[1],
+      budget: { ...createSnapshot(3), address: "Calle del segundo presupuesto" },
+    }];
+    const { rerender } = render(
+      <ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={[entries[1]]} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Factura 100%/ }));
+    expect(screen.getByText("Calle Histórica 10")).toBeVisible();
+
+    rerender(<ModalBudgetHistory isOpen={false} historyId={1} onClose={() => undefined} entries={[entries[1]]} />);
+    rerender(<ModalBudgetHistory isOpen historyId={2} onClose={() => undefined} entries={[entries[1]]} />);
+    expect(screen.getByText("Selecciona una acción para ver su versión histórica.")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: /Factura 100%/ }));
+    rerender(<ModalBudgetHistory isOpen historyId={3} onClose={() => undefined} entries={secondBudgetEntries} />);
+
+    expect(screen.getByText("Selecciona una acción para ver su versión histórica.")).toBeVisible();
+    expect(screen.queryByText("Calle del segundo presupuesto")).not.toBeInTheDocument();
+  });
+
   it("renders loading, error, and empty states from props", () => {
-    const { rerender } = render(<ModalBudgetHistory isOpen onClose={() => undefined} entries={null} isLoading />);
+    const { rerender } = render(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={null} isLoading />);
     expect(screen.getByRole("status")).toHaveTextContent("Cargando historial...");
 
-    rerender(<ModalBudgetHistory isOpen onClose={() => undefined} entries={null} error="No se pudo cargar el historial" />);
+    rerender(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={null} error="No se pudo cargar el historial" />);
     expect(screen.getByRole("alert")).toHaveTextContent("No se pudo cargar el historial");
 
-    rerender(<ModalBudgetHistory isOpen onClose={() => undefined} entries={[]} />);
+    rerender(<ModalBudgetHistory isOpen historyId={1} onClose={() => undefined} entries={[]} />);
     expect(screen.getByText("Sin histórico.")).toBeVisible();
   });
 });

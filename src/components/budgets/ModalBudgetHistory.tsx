@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Modal } from "../shared/Modal";
 import { formatCurrency, getStatusBadgeConfig } from "@/helpers";
 import { formatDate } from "@/helpers/dates";
@@ -10,6 +10,7 @@ import type {
 
 interface ModalBudgetHistoryProps {
   isOpen: boolean;
+  historyId: number;
   onClose: () => void;
   entries: BudgetHistoryEntry[] | null;
   isLoading?: boolean;
@@ -51,6 +52,9 @@ const receiptLabel = (receipt: HistoricReceipt) => {
 
 const formatHistoricAmount = (amount: number | undefined) =>
   typeof amount === "number" && Number.isFinite(amount) ? formatCurrency(amount) : "-";
+
+const getEntryKey = (entry: BudgetHistoryEntry, index: number) =>
+  entry.id ?? `${entry.historyDate}-${entry.eventType}-${index}`;
 
 const getHistoricSummary = (budget: HistoricBudgetSnapshot) => {
   const price = budget.price;
@@ -182,20 +186,27 @@ const HistoricBudgetSnapshotDetails: FC<{ entry: BudgetHistoryEntry }> = ({ entr
 
 export const ModalBudgetHistory: FC<ModalBudgetHistoryProps> = ({
   isOpen,
+  historyId,
   onClose,
   entries,
   isLoading = false,
   error = null,
 }) => {
-  const [selectedEntry, setSelectedEntry] = useState<BudgetHistoryEntry | null>(null);
+  const [selection, setSelection] = useState<{
+    historyId: number;
+    entryKey: string;
+  } | null>(null);
   const sortedEntries = useMemo(
     () => [...(entries ?? [])].sort((first, second) => Date.parse(second.historyDate) - Date.parse(first.historyDate)),
     [entries],
   );
 
-  useEffect(() => {
-    setSelectedEntry(null);
-  }, [entries, isOpen]);
+  const selectedEntry =
+    selection?.historyId === historyId
+      ? sortedEntries.find(
+          (entry, index) => getEntryKey(entry, index) === selection.entryKey,
+        )
+      : undefined;
 
   if (!isOpen) return null;
 
@@ -210,17 +221,20 @@ export const ModalBudgetHistory: FC<ModalBudgetHistoryProps> = ({
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div className="max-h-[28rem] space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-2" aria-label="Acciones históricas">
-            {sortedEntries.map((entry, index) => (
-              <button
-                key={entry.id ?? `${entry.historyDate}-${entry.eventType}-${index}`}
-                type="button"
-                onClick={() => setSelectedEntry(entry)}
-                className={`w-full rounded-lg p-3 text-left transition-colors ${selectedEntry === entry ? "bg-blue-50 ring-1 ring-blue-300" : "hover:bg-gray-50"}`}
-              >
-                <p className="font-medium text-gray-900">{eventTypeLabels[entry.eventType] ?? "-"}</p>
-                <p className="mt-1 text-xs text-gray-500">{formatDateTime(entry.historyDate)}</p>
-              </button>
-            ))}
+              {sortedEntries.map((entry, index) => {
+                const entryKey = getEntryKey(entry, index);
+                return (
+                  <button
+                    key={entryKey}
+                    type="button"
+                    onClick={() => setSelection({ historyId, entryKey })}
+                    className={`w-full rounded-lg p-3 text-left transition-colors ${selection?.historyId === historyId && selection.entryKey === entryKey ? "bg-blue-50 ring-1 ring-blue-300" : "hover:bg-gray-50"}`}
+                  >
+                    <p className="font-medium text-gray-900">{eventTypeLabels[entry.eventType] ?? "-"}</p>
+                    <p className="mt-1 text-xs text-gray-500">{formatDateTime(entry.historyDate)}</p>
+                  </button>
+                );
+              })}
           </div>
           <div>
             {selectedEntry ? <HistoricBudgetSnapshotDetails entry={selectedEntry} /> : <p className="py-8 text-center text-gray-500">Selecciona una acción para ver su versión histórica.</p>}

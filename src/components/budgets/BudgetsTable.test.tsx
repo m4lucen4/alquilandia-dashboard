@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BudgetsTable } from "./BudgetsTable";
 import type { Budget, User } from "../../types/budgets";
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+vi.stubGlobal("ResizeObserver", ResizeObserverMock);
 
 const baseUser: User = {
   id: "user-123",
@@ -78,7 +87,7 @@ const baseBudget: Budget = {
   totalCouponDiscount: 0,
 };
 
-const renderBudgetsTable = (budget: Budget) => {
+const renderBudgetsTable = (budget: Budget, onViewHistory = vi.fn()) => {
   render(
     <BudgetsTable
       budgets={[budget]}
@@ -94,6 +103,7 @@ const renderBudgetsTable = (budget: Budget) => {
       onGenerateInvoice={vi.fn()}
       onViewInvoice={vi.fn()}
       onViewBudget={vi.fn()}
+      onViewHistory={onViewHistory}
       onGenerateBudgetPdf={vi.fn()}
       onGenerateBreakageInvoice={vi.fn()}
     />,
@@ -117,5 +127,16 @@ describe("BudgetsTable", () => {
 
     expect(screen.getByText("-")).toBeVisible();
     expect(screen.queryByText(/\(/)).not.toBeInTheDocument();
+  });
+
+  it("forwards the selected budget when opening its history from the actions menu", async () => {
+    const user = userEvent.setup();
+    const onViewHistory = vi.fn();
+    renderBudgetsTable(baseBudget, onViewHistory);
+
+    await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+    await user.click(screen.getByRole("button", { name: "Ver historial" }));
+
+    expect(onViewHistory).toHaveBeenCalledWith(baseBudget);
   });
 });
